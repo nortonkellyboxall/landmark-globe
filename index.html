@@ -1963,6 +1963,7 @@
       SPACE_VIEW_HINTS,
     } from "./space-catalog.js";
     import { createCardMedia } from "./card-media.js";
+    import { createGlobe } from "./globe-app.js";
 
     (function () {
       const DATASETS = {
@@ -2008,22 +2009,12 @@
       let globe = null;
       let selectedId = null;
       let soundOn = false;
-      let autoRotate = true;
-      let resumeTimer = null;
       let coachHidden = false;
       let audioCtx = null;
       let ambientNodes = null;
       let nightMode = false;
-      let sunDirLight = null;
-      let cloudsMesh = null;
-      let cloudsRaf = 0;
       let globeReady = false;
       let spaceTransitioning = false;
-
-      const EARTH_DAY = "textures/earth/earth-blue-marble.jpg";
-      const EARTH_BUMP = "textures/earth/earth-topology.png";
-      const EARTH_CLOUDS = "https://cdn.jsdelivr.net/gh/vasturiano/three-globe/example/img/earth-clouds.png";
-      const EARTH_NIGHT = "https://cdn.jsdelivr.net/gh/vasturiano/three-globe/example/img/earth-night.jpg";
 
       const els = {
         loader: document.getElementById("loader"),
@@ -2357,7 +2348,7 @@
             )
             .forEach((p) => p.classList.remove("selected"));
           syncStrip();
-          if (activeTab !== "space") setAutoRotate(true);
+          if (activeTab !== "space" && globe) globe.setAutoRotate(true);
         },
       });
 
@@ -2597,31 +2588,6 @@
         if (changed && !(opts && opts.silent)) playPop();
       }
 
-      function setGlobeEngineActive(active) {
-        if (!globe) return;
-        if (active) {
-          if (typeof globe.resumeAnimation === "function") globe.resumeAnimation();
-          globe.controls().enabled = true;
-          if (cloudsMesh && !cloudsRaf) {
-            (function rotateClouds() {
-              if (!cloudsMesh || activeTab === "space") {
-                cloudsRaf = 0;
-                return;
-              }
-              cloudsMesh.rotation.y += 0.0004;
-              cloudsRaf = requestAnimationFrame(rotateClouds);
-            })();
-          }
-        } else {
-          if (typeof globe.pauseAnimation === "function") globe.pauseAnimation();
-          globe.controls().enabled = false;
-          if (cloudsRaf) {
-            cancelAnimationFrame(cloudsRaf);
-            cloudsRaf = 0;
-          }
-        }
-      }
-
       function enterSpaceMode() {
         if (spaceTransitioning) return;
         spaceTransitioning = true;
@@ -2634,11 +2600,11 @@
         setAmbientForMode();
 
         if (globe) {
-          setAutoRotate(false);
-          globe.htmlElementsData([]);
+          globe.setAutoRotate(false);
+          globe.setPlaces([]);
           const pov = globe.pointOfView();
-          globe.pointOfView({ lat: pov.lat || 15, lng: pov.lng || 10, altitude: 2.4 }, 0);
-          globe.pointOfView({ lat: 12, lng: 20, altitude: 9.5 }, 1700);
+          globe.pointOfView(pov.lat || 15, pov.lng || 10, 2.4, 0);
+          globe.pointOfView(12, 20, 9.5, 1700);
         }
 
         // Prefetch 3D module during zoom-out
@@ -2647,12 +2613,12 @@
         const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         const zoomMs = reduce ? 200 : 1600;
         if (reduce && globe) {
-          globe.pointOfView({ lat: 12, lng: 20, altitude: 9.5 }, 0);
+          globe.pointOfView(12, 20, 9.5, 0);
         }
         window.setTimeout(() => {
           els.globeViz.classList.add("hidden-view");
           if (els.globeShadow) els.globeShadow.classList.add("hidden-view");
-          setGlobeEngineActive(false);
+          if (globe) globe.setActive(false);
           els.solarSystem.classList.add("show");
           setSpaceView(spaceView || "spheres", { silent: true, introZoom: !reduce });
           if (els.spaceHandoff) {
@@ -2671,8 +2637,10 @@
         els.globeViz.classList.remove("hidden-view");
         if (els.globeShadow) els.globeShadow.classList.remove("hidden-view");
         if (els.nightBtn) els.nightBtn.style.display = "";
-        setGlobeEngineActive(true);
-        applyNightMode(nightMode);
+        if (globe) {
+          globe.setActive(true);
+          globe.setNight(nightMode);
+        }
         playFlyWhoosh();
         window.setTimeout(() => {
           if (activeTab !== "space") els.solarSystem.hidden = true;
@@ -2680,50 +2648,11 @@
       }
 
       /* —— Globe helpers —— */
-      function setAutoRotate(on) {
-        autoRotate = on;
-        if (globe) {
-          globe.controls().autoRotate = on;
-          globe.controls().autoRotateSpeed = 0.45;
-        }
-      }
-
-      function pauseAutoRotateTemporarily() {
-        setAutoRotate(false);
-        clearTimeout(resumeTimer);
-        resumeTimer = setTimeout(() => {
-          if (!selectedId) setAutoRotate(true);
-        }, 4000);
-      }
-
       function hideCoach() {
         if (coachHidden) return;
         coachHidden = true;
         els.coach.classList.add("hide");
         setTimeout(() => els.coach.remove(), 450);
-      }
-
-      function createPin(lm, index) {
-        const el = document.createElement("button");
-        el.type = "button";
-        el.className = "pin" + (index < 4 ? " pin-bounce" : "");
-        el.dataset.id = lm.id;
-        el.setAttribute("aria-label", lm.name);
-        el.style.setProperty("--pin-color", lm.color === "#ffffff" ? "#dfe7ee" : lm.color);
-        el.style.setProperty("--delay", (index % 8) * 0.18 + "s");
-        el.innerHTML = `
-          <span class="pin-inner">
-            <span class="pin-glow"></span>
-            <span class="pin-emoji">${lm.emoji}</span>
-          </span>
-        `;
-        el.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const rect = el.getBoundingClientRect();
-          sparkAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
-          openLandmark(lm.id, el);
-        });
-        return el;
       }
 
       function openLandmark(id, sourceEl) {
@@ -2753,9 +2682,9 @@
         }
 
         if (!globe) return;
-        setAutoRotate(false);
+        globe.setAutoRotate(false);
         const alt = activeTab === "countries" ? 1.35 : activeTab === "continents" ? 1.9 : 1.55;
-        globe.pointOfView({ lat: lm.lat, lng: lm.lng, altitude: alt }, 1400);
+        globe.pointOfView(lm.lat, lm.lng, alt, 1400);
         setTimeout(() => card.openPlaceCard(lm), 900);
 
         scrollStripToId(id);
@@ -2844,28 +2773,25 @@
           if (leavingSpace) leaveSpaceMode();
           if (els.spaceSubtabs) els.spaceSubtabs.classList.remove("show");
           if (globe) {
-            globe.htmlElementsData([]);
-            const pinData = (tab === "countries" || tab === "continents")
-              ? staggerPinPlaces(places)
-              : places;
-            globe
-              .htmlElementsData(pinData)
-              .htmlElement((d) => createPin(d, pinData.findIndex((p) => p.id === d.id)));
+            const pinData =
+              tab === "countries" || tab === "continents" ? staggerPinPlaces(places) : places;
+            globe.setPlaces(pinData);
             const views = {
-              landmarks: { lat: 20, lng: 20, altitude: 2.2 },
-              wonders: { lat: 10, lng: 30, altitude: 2.25 },
-              continents: { lat: 15, lng: 20, altitude: 2.35 },
-              countries: { lat: 18, lng: 12, altitude: 1.85 },
+              landmarks: [20, 20, 2.2],
+              wonders: [10, 30, 2.25],
+              continents: [15, 20, 2.35],
+              countries: [18, 12, 1.85],
             };
-            globe.pointOfView(views[tab] || views.landmarks, leavingSpace ? 1100 : 900);
+            const v = views[tab] || views.landmarks;
+            globe.pointOfView(v[0], v[1], v[2], leavingSpace ? 1100 : 900);
+            globe.setAutoRotate(true);
           }
-          setAutoRotate(true);
           setAmbientForMode();
         }
         playPop();
       }
 
-      /* —— Night lights / terminator —— */
+      /* —— Night lights chrome (materials live in globe-app) —— */
       function applyNightMode(on) {
         nightMode = !!on;
         if (els.nightBtn) {
@@ -2873,26 +2799,7 @@
           const icon = document.getElementById("nightIcon");
           if (icon) icon.textContent = nightMode ? "☀️" : "🌙";
         }
-        if (!globe) return;
-        globe.globeImageUrl(nightMode ? EARTH_NIGHT : EARTH_DAY);
-        globe.atmosphereColor(nightMode ? "#1b3a6b" : "#7ec8e3");
-        globe.atmosphereAltitude(nightMode ? 0.22 : 0.18);
-        if (sunDirLight) {
-          sunDirLight.intensity = nightMode ? 0.55 : 1.35;
-          sunDirLight.color.set(nightMode ? 0x9eb7ff : 0xfff2d6);
-        }
-        if (cloudsMesh && cloudsMesh.material) {
-          cloudsMesh.material.opacity = nightMode ? 0.18 : 0.45;
-          cloudsMesh.visible = !nightMode;
-        }
-        try {
-          const mat = globe.globeMaterial();
-          const T = window.THREE;
-          if (mat && T) {
-            if (!mat.emissive) mat.emissive = new T.Color(0x000000);
-            mat.emissiveIntensity = nightMode ? 0.25 : 0.05;
-          }
-        } catch (_) {}
+        if (globe) globe.setNight(nightMode);
       }
 
       function toggleNightMode() {
@@ -2908,101 +2815,13 @@
       }
 
       function initGlobe() {
-        const world = Globe()(els.globeViz)
-          .globeImageUrl(EARTH_DAY)
-          .bumpImageUrl(EARTH_BUMP)
-          .backgroundColor("rgba(0,0,0,0)")
-          .showAtmosphere(true)
-          .atmosphereColor("#7ec8e3")
-          .atmosphereAltitude(0.18)
-          .htmlElementsData(places)
-          .htmlElement((d) => createPin(d, places.indexOf(d)))
-          .htmlAltitude(0.02)
-          .htmlElementVisibilityModifier((el, isVisible) => {
-            el.style.opacity = isVisible ? 1 : 0;
-            el.style.pointerEvents = isVisible ? "auto" : "none";
-          });
-
-        world.controls().enableDamping = true;
-        world.controls().dampingFactor = 0.08;
-        world.controls().minDistance = 140;
-        world.controls().maxDistance = 520;
-        world.controls().autoRotate = true;
-        world.controls().autoRotateSpeed = 0.45;
-
-        world.pointOfView({ lat: 20, lng: 20, altitude: 2.2 }, 0);
-
-        const controls = world.controls();
-        controls.addEventListener("start", pauseAutoRotateTemporarily);
-
-        function resize() {
-          world.width(els.globeViz.clientWidth);
-          world.height(els.globeViz.clientHeight);
-        }
-        resize();
-        window.addEventListener("resize", resize);
-
-        const THREE = window.THREE;
-        if (THREE) {
-          // Day/night terminator via a sun-like directional light
-          sunDirLight = new THREE.DirectionalLight(0xfff2d6, 1.35);
-          sunDirLight.position.set(-4, 1.2, 2.5);
-          world.scene().add(sunDirLight);
-          // Soft fill so the dark side isn’t pure black
-          const fill = new THREE.AmbientLight(0x334455, 0.35);
-          world.scene().add(fill);
-
-          try {
-            const mat = world.globeMaterial();
-            if (mat) {
-              mat.emissive = new THREE.Color(0x112233);
-              mat.emissiveIntensity = 0.05;
-            }
-          } catch (_) {}
-
-          new THREE.TextureLoader().load(
-            EARTH_CLOUDS,
-            (cloudsTexture) => {
-              cloudsMesh = new THREE.Mesh(
-                new THREE.SphereGeometry(world.getGlobeRadius() * 1.01, 64, 64),
-                new THREE.MeshPhongMaterial({ map: cloudsTexture, transparent: true, opacity: 0.45 })
-              );
-              world.scene().add(cloudsMesh);
-              (function rotateClouds() {
-                if (!cloudsMesh || activeTab === "space") {
-                  cloudsRaf = 0;
-                  return;
-                }
-                cloudsMesh.rotation.y += 0.0004;
-                cloudsRaf = requestAnimationFrame(rotateClouds);
-              })();
-            },
-            undefined,
-            () => {}
-          );
-        }
-
-        // Ready when day texture paints (with hard fallback)
-        let pending = 2;
-        const bumpDone = () => {
-          pending -= 1;
-          if (pending <= 0) markGlobeReady();
-        };
-        try {
-          const loader = window.THREE && new THREE.TextureLoader();
-          if (loader) {
-            loader.load(EARTH_DAY, () => bumpDone(), undefined, () => bumpDone());
-            loader.load(EARTH_BUMP, () => bumpDone(), undefined, () => bumpDone());
-          } else {
-            setTimeout(markGlobeReady, 800);
-          }
-        } catch (_) {
-          setTimeout(markGlobeReady, 800);
-        }
-        // Safety: never leave kids on the loader forever
-        setTimeout(markGlobeReady, 5000);
-
-        globe = world;
+        globe = createGlobe(els.globeViz, {
+          places,
+          onSelect: (id) => openLandmark(id),
+          sparkAt,
+          onReady: markGlobeReady,
+          hasSelection: () => !!selectedId,
+        });
         applyNightMode(false);
       }
 
