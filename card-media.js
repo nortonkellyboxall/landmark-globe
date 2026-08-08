@@ -465,7 +465,6 @@ export function createCardMedia(els, deps) {
   return {
     openPlaceCard,
     close,
-    speak,
     tryDismiss,
   };
 }
