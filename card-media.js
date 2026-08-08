@@ -1,3 +1,5 @@
+import { speakCard, stopSpeech } from "./speak.js";
+
 /** CardMedia — place detail card: gallery, video/anthem, speech. */
 
 /**
@@ -6,16 +8,16 @@
  *   playPop: () => void,
  *   playChime?: () => void,
  *   onClose?: () => void,
- *   onShowLandmarks?: (place: object) => void,
- *   landmarksForContinent?: (continentId: string) => object[],
+ *   onShowPlaces?: (place: object) => void,
+ *   placesForContinent?: (continentId: string) => object[],
  * }} deps
  */
 export function createCardMedia(els, deps) {
   const playPop = deps.playPop || (() => {});
   const playChime = deps.playChime || (() => {});
   const onClose = deps.onClose || (() => {});
-  const onShowLandmarks = deps.onShowLandmarks || (() => {});
-  const landmarksForContinent = deps.landmarksForContinent || (() => []);
+  const onShowPlaces = deps.onShowPlaces || (() => {});
+  const placesForContinent = deps.placesForContinent || (() => []);
   const compactMq = window.matchMedia("(max-height: 720px), (max-width: 560px)");
 
   let photoIndex = 0;
@@ -193,7 +195,7 @@ export function createCardMedia(els, deps) {
     els.watchBtn.setAttribute("aria-pressed", "false");
     els.watchBtn.innerHTML = '<span class="icon">🎬</span> Watch';
     els.anthemBtn.setAttribute("aria-pressed", "false");
-    els.anthemBtn.innerHTML = '<span class="icon">🎵</span> National Anthem';
+    els.anthemBtn.innerHTML = '<span class="icon">🎵</span> Anthem';
     videoOpen = false;
     mediaMode = null;
   }
@@ -253,7 +255,7 @@ export function createCardMedia(els, deps) {
   }
 
   function clearMediaSurface() {
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    stopSpeech();
     const iframe = els.videoPanel.querySelector("iframe");
     if (iframe) iframe.remove();
     stopAnthemAudio();
@@ -269,7 +271,7 @@ export function createCardMedia(els, deps) {
       els.watchBtn.setAttribute("aria-pressed", "false");
       els.watchBtn.innerHTML = '<span class="icon">🎬</span> Watch';
       els.anthemBtn.setAttribute("aria-pressed", "true");
-      els.anthemBtn.innerHTML = '<span class="icon">🎵</span> Stop anthem';
+      els.anthemBtn.innerHTML = '<span class="icon">🎵</span> Stop';
 
       if (isAnthemAudioSrc(currentAnthemUrl)) {
         playAnthemAudio(currentAnthemUrl);
@@ -310,7 +312,7 @@ export function createCardMedia(els, deps) {
     els.watchBtn.setAttribute("aria-pressed", "true");
     els.watchBtn.innerHTML = '<span class="icon">🎬</span> Hide video';
     els.anthemBtn.setAttribute("aria-pressed", "false");
-    els.anthemBtn.innerHTML = '<span class="icon">🎵</span> National Anthem';
+    els.anthemBtn.innerHTML = '<span class="icon">🎵</span> Anthem';
 
     els.videoStart.style.setProperty(
       "--poster",
@@ -346,14 +348,13 @@ export function createCardMedia(els, deps) {
     currentAnthemUrl = place.anthem || null;
     els.watchBtn.hidden = !currentVideoId;
     els.anthemBtn.hidden = !currentAnthemUrl;
-    els.anthemBtn.style.display = currentAnthemUrl ? "inline-flex" : "none";
-    const landmarkHits =
-      place.kind === "continent" ? landmarksForContinent(place.id) : [];
-    if (els.showLandmarksBtn) {
-      els.showLandmarksBtn.hidden = landmarkHits.length === 0;
+    const placeHits =
+      place.kind === "continent" ? placesForContinent(place.id) : [];
+    if (els.showPlacesBtn) {
+      els.showPlacesBtn.hidden = placeHits.length === 0;
     }
-    const needMore = !!currentAnthemUrl || isCompact();
-    els.cardMoreBtn.hidden = !needMore;
+    // "More" only reveals the story on compact screens
+    els.cardMoreBtn.hidden = !isCompact();
     setCardMoreOpen(false);
     els.cardTitle.textContent = place.name;
     els.cardPlace.textContent = place.place;
@@ -370,7 +371,7 @@ export function createCardMedia(els, deps) {
   }
 
   function close() {
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    stopSpeech();
     stopVideo();
     setCardMoreOpen(false);
     els.overlay.classList.remove("open");
@@ -389,21 +390,8 @@ export function createCardMedia(els, deps) {
 
   function speak(place) {
     const lm = place || currentPlace;
-    if (!lm || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const text = `${lm.name}. ${lm.place}. ${lm.story} ${lm.wow}`;
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.rate = 0.95;
-    utt.pitch = 1.05;
-    const voices = window.speechSynthesis.getVoices();
-    const preferred =
-      voices.find(
-        (v) =>
-          /en(-|_)?(GB|AU|NZ|US)/i.test(v.lang) &&
-          /female|samantha|karen|moira|google/i.test(v.name)
-      ) || voices.find((v) => /^en/i.test(v.lang));
-    if (preferred) utt.voice = preferred;
-    window.speechSynthesis.speak(utt);
+    if (!lm) return;
+    speakCard(lm);
   }
 
   /** Stop media if open, else close card. Returns true if something was dismissed. */
@@ -434,9 +422,9 @@ export function createCardMedia(els, deps) {
     els.speakBtn.addEventListener("click", () => speak());
     els.watchBtn.addEventListener("click", toggleVideo);
     els.anthemBtn.addEventListener("click", toggleAnthem);
-    if (els.showLandmarksBtn) {
-      els.showLandmarksBtn.addEventListener("click", () => {
-        if (currentPlace) onShowLandmarks(currentPlace);
+    if (els.showPlacesBtn) {
+      els.showPlacesBtn.addEventListener("click", () => {
+        if (currentPlace) onShowPlaces(currentPlace);
       });
     }
     els.cardMoreBtn.addEventListener("click", () => {

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="app.css" />
+  <link rel="stylesheet" href="app.css?v=clips2" />
 </head>
 <body>
   <div class="sky" aria-hidden="true"></div>
@@ -33,13 +33,11 @@
       <button type="button" class="btn icon-only" id="settingsBtn" aria-expanded="false" aria-controls="settingsPanel" title="Settings" aria-label="Settings">
         <span class="icon" aria-hidden="true">⚙️</span>
       </button>
-      <button type="button" class="btn" id="adventuresBtn" aria-expanded="false" aria-controls="adventureNav" title="More adventures">
-        <span class="icon" aria-hidden="true">🗺️</span>
-        <span class="btn-label-more">More</span>
+      <button type="button" class="btn icon-only" id="findBtn" title="Find" aria-label="Find this place">
+        <span class="icon" aria-hidden="true">🔍</span>
       </button>
-      <button type="button" class="btn primary" id="surpriseBtn">
-        <span class="icon" id="surpriseIcon">🎲</span>
-        Surprise!
+      <button type="button" class="btn primary icon-only" id="surpriseBtn" title="Surprise" aria-label="Surprise me">
+        <span class="icon" id="surpriseIcon" aria-hidden="true">🎲</span>
       </button>
     </div>
     <div class="settings-panel" id="settingsPanel" role="dialog" aria-label="Settings">
@@ -54,69 +52,67 @@
     </div>
   </header>
 
-  <nav class="tabs" id="adventureNav" role="tablist" aria-label="Adventure type">
-    <button type="button" class="tab active" role="tab" id="tabLandmarks" aria-selected="true" data-tab="landmarks">
-      <span class="tab-emoji">🏛️</span><span class="tab-text">Landmarks</span>
+  <nav class="mode-dock" id="adventureNav" role="tablist" aria-label="Pick an adventure">
+    <button type="button" class="mode-tab active" role="tab" id="tabLandmarks" aria-selected="true" data-tab="landmarks" title="Landmarks" aria-label="Landmarks">
+      <span class="mode-emoji" aria-hidden="true">🏛️</span>
+      <span class="mode-label">Landmarks</span>
     </button>
-    <button type="button" class="tab" role="tab" id="tabWonders" aria-selected="false" data-tab="wonders">
-      <span class="tab-emoji">🌋</span><span class="tab-text">Natural wonders</span>
+    <button type="button" class="mode-tab" role="tab" id="tabWonders" aria-selected="false" data-tab="wonders" title="Natural wonders" aria-label="Natural wonders">
+      <span class="mode-emoji" aria-hidden="true">🌋</span>
+      <span class="mode-label">Wonders</span>
     </button>
-    <button type="button" class="tab" role="tab" id="tabGeography" aria-selected="false" data-tab="geography">
-      <span class="tab-emoji">🗺️</span><span class="tab-text">Geography</span>
+    <button type="button" class="mode-tab" role="tab" id="tabContinents" aria-selected="false" data-tab="continents" title="Continents" aria-label="Continents">
+      <span class="mode-emoji" aria-hidden="true">🌍</span>
+      <span class="mode-label">Continents</span>
     </button>
-    <button type="button" class="tab" role="tab" id="tabSpace" aria-selected="false" data-tab="space">
-      <span class="tab-emoji">🚀</span><span class="tab-text">Space</span>
+    <button type="button" class="mode-tab" role="tab" id="tabCountries" aria-selected="false" data-tab="countries" title="Countries" aria-label="Countries">
+      <span class="mode-emoji" aria-hidden="true">🚩</span>
+      <span class="mode-label">Countries</span>
+    </button>
+    <button type="button" class="mode-tab" role="tab" id="tabSpace" aria-selected="false" data-tab="space" title="Space" aria-label="Space">
+      <span class="mode-emoji" aria-hidden="true">🚀</span>
+      <span class="mode-label">Space</span>
     </button>
   </nav>
 
-  <div class="subtabs" id="geoSubtabs" role="tablist" aria-label="Geography mode">
-    <button type="button" class="subtab active" id="subContinents" aria-selected="true" data-geo="continents">
-      Continents
-    </button>
-    <button type="button" class="subtab" id="subCountries" aria-selected="false" data-geo="countries">
-      Countries
-    </button>
-  </div>
-
-  <div class="subtabs" id="spaceSubtabs" role="tablist" aria-label="Space view">
-    <button type="button" class="subtab active" id="subSpheres" aria-selected="true" data-space-view="spheres">
-      3D
-    </button>
-    <button type="button" class="subtab" id="subSizes" aria-selected="false" data-space-view="sizes">
-      Sizes
-    </button>
-    <button type="button" class="subtab" id="subOrbits" aria-selected="false" data-space-view="orbits">
-      Orbits
-    </button>
-  </div>
-
   <div class="stage">
-    <div class="coach" id="coach">Tap the glowing dots! ✨</div>
     <div id="globeViz" role="application" aria-label="Interactive Earth"></div>
     <div class="globe-shadow" id="globeShadow" aria-hidden="true"></div>
     <div class="space-handoff" id="spaceHandoff" aria-hidden="true"></div>
     <div id="solarSystem" aria-label="Interactive solar system" hidden>
       <div class="ss-views">
-        <div class="ss-view" id="ssViewOrbits" data-view="orbits" aria-hidden="true">
-          <div class="ss-scene" id="ssScene"></div>
-        </div>
-        <div class="ss-view" id="ssViewSizes" data-view="sizes" aria-hidden="true">
-          <div class="ss-sizes">
-            <p class="ss-sizes-note" id="ssSizesNote">Planet sizes next to each other · Sun shown smaller than real</p>
-            <div class="ss-sizes-row" id="ssSizesRow"></div>
-          </div>
-        </div>
         <div class="ss-view active" id="ssViewIso" data-view="spheres">
           <div id="ss3d" class="ss-3d" role="application" aria-label="3D solar system"></div>
+          <aside class="ss-sizes open" id="ssSizesPanel" aria-label="Planet sizes">
+            <button type="button" class="ss-sizes-toggle" id="ssSizesToggle" aria-expanded="true" aria-controls="ssSizesPanel" title="Sizes" aria-label="Show or hide planet sizes">
+              <span class="ss-sizes-toggle-emoji" aria-hidden="true">📏</span>
+            </button>
+            <div class="ss-sizes-body">
+              <p class="ss-sizes-note" id="ssSizesNote">Real sizes · Sun shown smaller</p>
+              <div class="ss-sizes-row" id="ssSizesRow"></div>
+            </div>
+          </aside>
         </div>
       </div>
-      <p class="ss-hint" id="ssHint">Tap the Sun, planets &amp; more!</p>
-      <p class="ss-toast" id="ssToast" hidden>Drag · pinch · tap a planet</p>
+    </div>
+    <div class="find-prompt" id="findPrompt" hidden>
+      <button type="button" class="find-exit" id="findExit" aria-label="Stop finding">×</button>
+      <p class="find-cue" id="findCue">Find this!</p>
+      <div class="find-emoji" id="findEmoji" aria-hidden="true"></div>
+      <img class="find-photo" id="findPhoto" alt="" hidden />
+      <div class="find-actions">
+        <button type="button" class="btn icon-only" id="findHear" title="Hear name" aria-label="Hear the name">
+          <span class="icon" aria-hidden="true">🔊</span>
+        </button>
+        <button type="button" class="btn primary icon-only" id="findAgain" title="Again" aria-label="Find another" hidden>
+          <span class="icon" aria-hidden="true">🔁</span>
+        </button>
+      </div>
     </div>
   </div>
 
   <section class="explore" aria-label="Place shortcuts">
-    <div class="explore-label" id="exploreLabel">Explore landmarks</div>
+    <div class="explore-label" id="exploreLabel">🏛️ Landmarks</div>
     <div class="strip" id="strip"></div>
   </section>
 
@@ -152,18 +148,17 @@
       <button type="button" class="btn watch" id="watchBtn" aria-pressed="false" hidden>
         <span class="icon">🎬</span> Watch
       </button>
-      <button type="button" class="btn ghost" id="showLandmarksBtn" hidden>
-        <span class="icon">🏛️</span> Landmarks here
+      <button type="button" class="btn anthem" id="anthemBtn" aria-pressed="false" hidden>
+        <span class="icon">🎵</span> Anthem
+      </button>
+      <button type="button" class="btn ghost" id="showPlacesBtn" hidden>
+        <span class="icon">✨</span> Explore here
       </button>
       <button type="button" class="btn ghost" id="cardMoreBtn" aria-expanded="false" aria-controls="cardMore">
         More
       </button>
     </div>
-    <div class="card-more" id="cardMore">
-      <button type="button" class="btn anthem" id="anthemBtn" aria-pressed="false" hidden>
-        <span class="icon">🎵</span> National Anthem
-      </button>
-    </div>
+    <div class="card-more" id="cardMore"></div>
     <div class="video-panel" id="videoPanel" hidden>
       <button type="button" class="video-placeholder" id="videoStart" aria-label="Play video">
         <span class="play">▶</span>
@@ -191,6 +186,6 @@
   <script src="landmarks.js"></script>
   <script src="wonders.js"></script>
   <script src="geography.js"></script>
-  <script type="module" src="boot.js"></script>
+  <script type="module" src="boot.js?v=clips2"></script>
 </body>
 </html>

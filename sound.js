@@ -40,6 +40,11 @@ export function createSound() {
     setTimeout(() => tone(880, 0.22, "sine", 0.05), 90);
   }
 
+  function playBoop() {
+    ensureAudio();
+    tone(180, 0.14, "triangle", 0.05);
+  }
+
   function playFlyWhoosh() {
     ensureAudio();
     if (!soundOn || !audioCtx) return;
@@ -164,6 +169,7 @@ export function createSound() {
     isSoundOn,
     playPop,
     playChime,
+    playBoop,
     playFlyWhoosh,
     setAmbientForMode,
     ensureAudio,

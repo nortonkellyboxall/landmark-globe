@@ -324,12 +324,6 @@ export const SPACE_BODIES = [
 
 export const EARTH_YEAR_SECONDS = 22;
 
-export const SPACE_VIEW_HINTS = {
-  orbits: "Top-down map · distances & year lengths are real (sped up)",
-  sizes: "Scroll to compare real sizes!",
-  spheres: "Drag to look around · scroll/pinch to zoom · tap a planet",
-};
-
 export function getBody(id) {
   return SPACE_BODIES.find((b) => b.id === id) || null;
 }

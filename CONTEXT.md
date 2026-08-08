@@ -8,4 +8,6 @@
 - **CardMedia** — Place detail card: gallery, video/anthem, speech. Selection/fly-to stays outside.
 - **Sound** — Ambient audio, whoosh, mute. WebAudio details stay inside the module.
 - **Content pack** — Shallow `window.*` array file (`LANDMARKS`, `WONDERS`, `CONTINENTS`, `COUNTRIES`). Not deepened.
-- **Continent join** — From a continent Place card, “Landmarks here” filters the landmarks pack to that continent (Americas split N/S by latitude).
+- **Continent join** — From a continent Place card, “Explore here” filters landmarks **and** natural wonders for that continent (Americas split N/S by latitude).
+- **Speak** — Pre-baked Luna MP3 clips in `vendor/tts/clips/` (`speakCard` / `speakName`). MP3 for Safari/phone support. Rebake with `node scripts/bake-speech.mjs`.
+- **Find quiz** — Guided “tap the matching pin” loop (`quiz.js`). Topbar 🔍. Keeps the full current place set on the globe (no decoy thinning).

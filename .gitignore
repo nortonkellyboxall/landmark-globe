@@ -3,4 +3,5 @@
 .DS_Store
 *.log
 node_modules/
+scripts/node_modules/
 graphify-out/

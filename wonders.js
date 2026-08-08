@@ -5,6 +5,7 @@ window.WONDERS = [
     place: "Arizona, USA",
     lat: 36.0544,
     lng: -112.1401,
+    continent: "Americas",
     emoji: "🏜️",
     color: "#c45c26",
     story:
@@ -23,6 +24,7 @@ window.WONDERS = [
     place: "Zambia & Zimbabwe",
     lat: -17.9243,
     lng: 25.8572,
+    continent: "Africa",
     emoji: "💦",
     color: "#3d9aaa",
     story:
@@ -41,6 +43,7 @@ window.WONDERS = [
     place: "Australia",
     lat: -18.2871,
     lng: 147.6992,
+    continent: "Oceania",
     emoji: "🐠",
     color: "#2a9d8f",
     story:
@@ -59,6 +62,7 @@ window.WONDERS = [
     place: "Nepal & China",
     lat: 27.9881,
     lng: 86.925,
+    continent: "Asia",
     emoji: "🏔️",
     color: "#dfe7ee",
     story:
@@ -77,6 +81,7 @@ window.WONDERS = [
     place: "Arctic skies",
     lat: 69.6492,
     lng: 18.9553,
+    continent: "Europe",
     emoji: "🌌",
     color: "#6c8cd5",
     story:
@@ -95,6 +100,7 @@ window.WONDERS = [
     place: "Canada & USA",
     lat: 43.0962,
     lng: -79.0377,
+    continent: "Americas",
     emoji: "🌊",
     color: "#4a90c8",
     story:
@@ -113,6 +119,7 @@ window.WONDERS = [
     place: "Northern Territory, Australia",
     lat: -25.3444,
     lng: 131.0369,
+    continent: "Oceania",
     emoji: "🪨",
     color: "#c65d3b",
     story:
@@ -131,6 +138,7 @@ window.WONDERS = [
     place: "Venezuela",
     lat: 5.9677,
     lng: -62.535,
+    continent: "Americas",
     emoji: "💧",
     color: "#5dade2",
     story:
@@ -149,6 +157,7 @@ window.WONDERS = [
     place: "South America",
     lat: -3.4653,
     lng: -62.2159,
+    continent: "Americas",
     emoji: "🌳",
     color: "#2d6a4f",
     story:
@@ -167,6 +176,7 @@ window.WONDERS = [
     place: "Israel & Jordan",
     lat: 31.559,
     lng: 35.4732,
+    continent: "Asia",
     emoji: "🧂",
     color: "#48a9a6",
     story:
@@ -185,6 +195,7 @@ window.WONDERS = [
     place: "Vietnam",
     lat: 20.9101,
     lng: 107.1839,
+    continent: "Asia",
     emoji: "⛵",
     color: "#1a6b8a",
     story:
@@ -203,6 +214,7 @@ window.WONDERS = [
     place: "Northern Ireland",
     lat: 55.2408,
     lng: -6.5116,
+    continent: "Europe",
     emoji: "🧱",
     color: "#7f8c8d",
     story:
@@ -221,6 +233,7 @@ window.WONDERS = [
     place: "Wyoming, USA",
     lat: 44.428,
     lng: -110.5885,
+    continent: "Americas",
     emoji: "🌋",
     color: "#e67e22",
     story:
@@ -239,6 +252,7 @@ window.WONDERS = [
     place: "North Africa",
     lat: 23.4162,
     lng: 25.6628,
+    continent: "Africa",
     emoji: "🐪",
     color: "#e8c547",
     story:
@@ -257,6 +271,7 @@ window.WONDERS = [
     place: "Ecuador",
     lat: -0.9538,
     lng: -90.9656,
+    continent: "Americas",
     emoji: "🐢",
     color: "#27ae60",
     story:
@@ -275,6 +290,7 @@ window.WONDERS = [
     place: "Switzerland & Italy",
     lat: 45.9763,
     lng: 7.6586,
+    continent: "Europe",
     emoji: "⛰️",
     color: "#a3b4c8",
     story:
@@ -293,6 +309,7 @@ window.WONDERS = [
     place: "Argentina & Brazil",
     lat: -25.6953,
     lng: -54.4367,
+    continent: "Americas",
     emoji: "🌈",
     color: "#3498db",
     story:
@@ -311,6 +328,7 @@ window.WONDERS = [
     place: "China",
     lat: 29.325,
     lng: 110.434,
+    continent: "Asia",
     emoji: "🌫️",
     color: "#5d6d7e",
     story:
@@ -329,6 +347,7 @@ window.WONDERS = [
     place: "New Zealand",
     lat: -44.671,
     lng: 167.925,
+    continent: "Oceania",
     emoji: "🦅",
     color: "#1b4f72",
     story:
@@ -347,6 +366,7 @@ window.WONDERS = [
     place: "Victoria, Australia",
     lat: -38.6657,
     lng: 143.105,
+    continent: "Oceania",
     emoji: "🌊",
     color: "#5dade2",
     story:

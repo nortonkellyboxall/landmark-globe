@@ -1,11 +1,9 @@
-/** Chrome — settings panel / adventures menu helpers. */
+/** Chrome — settings panel helpers. */
 
 /**
  * @param {{
  *   settingsPanel?: HTMLElement|null,
  *   settingsBtn?: HTMLElement|null,
- *   adventureNav?: HTMLElement|null,
- *   adventuresBtn?: HTMLElement|null,
  * }} els
  */
 export function createChrome(els) {
@@ -17,7 +15,6 @@ export function createChrome(els) {
 
   function closeChromeMenus() {
     setPanelOpen(els.settingsPanel, els.settingsBtn, false);
-    setPanelOpen(els.adventureNav, els.adventuresBtn, false);
   }
 
   return {

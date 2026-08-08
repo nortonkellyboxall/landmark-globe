@@ -1,14 +1,17 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { SPACE_BODIES, labelName } from "./space-catalog.js";
+import { SPACE_BODIES, labelName, orbitSpinSeconds } from "./space-catalog.js";
 
 /**
  * Interactive 3D solar system (spheres + orbits + camera controls).
  * Not to true scale — tuned so kids can see and tap every world.
  * Body truth lives in SpaceCatalog; this module only renders.
+ * Orbit periods follow catalog orbitYears (Earth year = EARTH_YEAR_SECONDS).
  */
 function toVisualDef(body) {
   const v = body.visual || {};
+  const years = body.orbitYears;
+  const periodSec = years != null ? orbitSpinSeconds(years) : null;
   return {
     id: body.id,
     kind: body.kind,
@@ -17,7 +20,7 @@ function toVisualDef(body) {
     emissive: v.emissive,
     style: v.style,
     orbit: v.orbit,
-    speed: v.speed,
+    orbitRadPerSec: periodSec != null ? (Math.PI * 2) / periodSec : null,
     parent: v.parent,
     rings: v.rings,
     eccentricity: v.eccentricity,
@@ -305,7 +308,7 @@ function buildBelt(orbit) {
   rootGroup.add(group);
   bodies.set("asteroids", {
     mesh: group,
-    def: { id: "asteroids", kind: "belt", orbit, speed: 0.15 },
+    def: { id: "asteroids", kind: "belt", orbit, orbitRadPerSec: (Math.PI * 2) / orbitSpinSeconds(4.6) },
     angle: 0,
   });
 }
@@ -433,11 +436,12 @@ function animate() {
       mesh.rotation.y += dt * 0.15;
       return;
     }
+    const omega = def.orbitRadPerSec != null ? def.orbitRadPerSec : 0.2;
     if (def.kind === "belt") {
-      mesh.rotation.y += dt * (def.speed || 0.1);
+      mesh.rotation.y += dt * omega;
       return;
     }
-    entry.angle += dt * (def.speed || 0.5) * 0.35;
+    entry.angle += dt * omega;
     if (def.kind === "comet") {
       const e = def.eccentricity || 0.5;
       const a = def.orbit;

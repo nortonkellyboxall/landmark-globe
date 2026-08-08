@@ -1,54 +1,46 @@
 import {
   SPACE_BODIES,
   diameterKm as spaceDiameterKm,
-  orbitRadiusPct,
-  orbitSpinSeconds,
-  SPACE_VIEW_HINTS,
 } from "./space-catalog.js";
 import { createCardMedia } from "./card-media.js";
 import { createGlobe } from "./globe-app.js";
 import { createSound } from "./sound.js";
 import { createChrome } from "./chrome.js";
+import { createFindQuiz } from "./quiz.js";
+import { speakName } from "./speak.js";
 
-const SPACE_SEL =
-  ".ss-body.selected, .ss-sun.selected, .ss-size-item.selected";
-const SPACE_SEL_BY_ID = (id) =>
-  `.ss-body[data-id="${id}"], .ss-sun[data-id="${id}"], .ss-size-item[data-id="${id}"]`;
+const SPACE_SEL = ".ss-size-item.selected";
+const SPACE_SEL_BY_ID = (id) => `.ss-size-item[data-id="${id}"]`;
 
 const DATASETS = {
   landmarks: {
     items: window.LANDMARKS || [],
-    label: "Explore landmarks",
+    label: "🏛️ Landmarks",
     hint: "",
-    coach: "Tap the glowing dots! ✨",
     main: "landmarks",
   },
   wonders: {
     items: window.WONDERS || [],
-    label: "Explore natural wonders",
+    label: "🌋 Natural wonders",
     hint: "Nature’s wow places",
-    coach: "Find waterfalls, mountains & more! 🌋",
     main: "wonders",
   },
   continents: {
     items: window.CONTINENTS || [],
-    label: "Explore continents",
+    label: "🌍 Continents",
     hint: "Earth’s giant pieces",
-    coach: "Tap a continent! 🗺️",
-    main: "geography",
+    main: "continents",
   },
   countries: {
     items: window.COUNTRIES || [],
-    label: "Explore countries",
+    label: "🚩 Countries",
     hint: "Countries around the world",
-    coach: "Pick a country flag! 🏳️",
-    main: "geography",
+    main: "countries",
   },
   space: {
     items: SPACE_BODIES,
-    label: "Explore the solar system",
+    label: "🚀 Space",
     hint: "Meet the planets",
-    coach: "Tap a planet to learn! 🚀",
     main: "space",
   },
 };
@@ -57,7 +49,6 @@ let activeTab = "landmarks";
 let places = DATASETS.landmarks.items;
 let globe = null;
 let selectedId = null;
-let coachHidden = false;
 let nightMode = false;
 let autoNight = true;
 let landmarkFilter = null;
@@ -70,22 +61,25 @@ function isBedtimeHour(date = new Date()) {
   return h >= 19 || h < 6;
 }
 
-function landmarksForContinent(continentId) {
-  const all = DATASETS.landmarks.items;
-  if (continentId === "northamerica") {
-    return all.filter((l) => l.continent === "Americas" && l.lat >= 7);
-  }
-  if (continentId === "southamerica") {
-    return all.filter((l) => l.continent === "Americas" && l.lat < 7);
-  }
-  const label = {
-    africa: "Africa",
-    asia: "Asia",
-    europe: "Europe",
-    oceania: "Oceania",
-  }[continentId];
-  if (!label) return [];
-  return all.filter((l) => l.continent === label);
+function placesForContinent(continentId) {
+  const filterPack = (all) => {
+    if (continentId === "northamerica") {
+      return all.filter((l) => l.continent === "Americas" && l.lat >= 7);
+    }
+    if (continentId === "southamerica") {
+      return all.filter((l) => l.continent === "Americas" && l.lat < 7);
+    }
+    const label = {
+      africa: "Africa",
+      asia: "Asia",
+      europe: "Europe",
+      oceania: "Oceania",
+      antarctica: "Antarctica",
+    }[continentId];
+    if (!label) return [];
+    return all.filter((l) => l.continent === label);
+  };
+  return [...filterPack(DATASETS.landmarks.items), ...filterPack(DATASETS.wonders.items)];
 }
 
 const els = {
@@ -96,36 +90,25 @@ const els = {
   nightBtn: document.getElementById("nightBtn"),
   settingsBtn: document.getElementById("settingsBtn"),
   settingsPanel: document.getElementById("settingsPanel"),
-  adventuresBtn: document.getElementById("adventuresBtn"),
   adventureNav: document.getElementById("adventureNav"),
   videoFallback: document.getElementById("videoFallback"),
   videoFallbackHear: document.getElementById("videoFallbackHear"),
   solarSystem: document.getElementById("solarSystem"),
-  ssScene: document.getElementById("ssScene"),
-  ssViewOrbits: document.getElementById("ssViewOrbits"),
-  ssViewSizes: document.getElementById("ssViewSizes"),
   ssViewIso: document.getElementById("ssViewIso"),
+  ssSizesPanel: document.getElementById("ssSizesPanel"),
+  ssSizesToggle: document.getElementById("ssSizesToggle"),
   ssSizesRow: document.getElementById("ssSizesRow"),
   ss3d: document.getElementById("ss3d"),
-  ssHint: document.getElementById("ssHint"),
-  ssToast: document.getElementById("ssToast"),
-  spaceSubtabs: document.getElementById("spaceSubtabs"),
-  subOrbits: document.getElementById("subOrbits"),
-  subSizes: document.getElementById("subSizes"),
-  subSpheres: document.getElementById("subSpheres"),
   stars: document.getElementById("stars"),
   sparkles: document.getElementById("sparkles"),
-  coach: document.getElementById("coach"),
   strip: document.getElementById("strip"),
   exploreLabel: document.getElementById("exploreLabel"),
   brandHint: document.getElementById("brandHint"),
   tabLandmarks: document.getElementById("tabLandmarks"),
   tabWonders: document.getElementById("tabWonders"),
-  tabGeography: document.getElementById("tabGeography"),
+  tabContinents: document.getElementById("tabContinents"),
+  tabCountries: document.getElementById("tabCountries"),
   tabSpace: document.getElementById("tabSpace"),
-  geoSubtabs: document.getElementById("geoSubtabs"),
-  subContinents: document.getElementById("subContinents"),
-  subCountries: document.getElementById("subCountries"),
   overlay: document.getElementById("overlay"),
   card: document.getElementById("card"),
   cardClose: document.getElementById("cardClose"),
@@ -144,7 +127,7 @@ const els = {
   videoNote: document.getElementById("videoNote"),
   watchBtn: document.getElementById("watchBtn"),
   anthemBtn: document.getElementById("anthemBtn"),
-  showLandmarksBtn: document.getElementById("showLandmarksBtn"),
+  showPlacesBtn: document.getElementById("showPlacesBtn"),
   cardMoreBtn: document.getElementById("cardMoreBtn"),
   cardMore: document.getElementById("cardMore"),
   muteBtn: document.getElementById("muteBtn"),
@@ -153,6 +136,14 @@ const els = {
   autoNightLabel: document.getElementById("autoNightLabel"),
   surpriseBtn: document.getElementById("surpriseBtn"),
   surpriseIcon: document.getElementById("surpriseIcon"),
+  findBtn: document.getElementById("findBtn"),
+  findPrompt: document.getElementById("findPrompt"),
+  findExit: document.getElementById("findExit"),
+  findCue: document.getElementById("findCue"),
+  findEmoji: document.getElementById("findEmoji"),
+  findPhoto: document.getElementById("findPhoto"),
+  findHear: document.getElementById("findHear"),
+  findAgain: document.getElementById("findAgain"),
   speakBtn: document.getElementById("speakBtn"),
 };
 
@@ -190,6 +181,7 @@ function setAmbientForMode() {
 }
 const playPop = () => sound.playPop();
 const playChime = () => sound.playChime();
+const playBoop = () => sound.playBoop();
 const playFlyWhoosh = () => sound.playFlyWhoosh();
 
 /* —— Sparkles —— */
@@ -245,9 +237,9 @@ function scrollStripToId(id) {
 const card = createCardMedia(els, {
   playPop,
   playChime,
-  landmarksForContinent,
-  onShowLandmarks(place) {
-    showLandmarksInContinent(place);
+  placesForContinent,
+  onShowPlaces(place) {
+    showPlacesInContinent(place);
   },
   onClose() {
     selectedId = null;
@@ -258,9 +250,10 @@ const card = createCardMedia(els, {
   },
 });
 
-function showLandmarksInContinent(place) {
-  const hits = landmarksForContinent(place.id);
+function showPlacesInContinent(place) {
+  const hits = placesForContinent(place.id);
   if (!hits.length) return;
+  stopFindQuiz();
   landmarkFilter = place.id;
   card.close();
   const leavingSpace = activeTab === "space";
@@ -270,21 +263,17 @@ function showLandmarksInContinent(place) {
 
   els.tabLandmarks.classList.add("active");
   els.tabWonders.classList.remove("active");
-  els.tabGeography.classList.remove("active");
+  els.tabContinents.classList.remove("active");
+  els.tabCountries.classList.remove("active");
   els.tabSpace.classList.remove("active");
   els.tabLandmarks.setAttribute("aria-selected", "true");
   els.tabWonders.setAttribute("aria-selected", "false");
-  els.tabGeography.setAttribute("aria-selected", "false");
+  els.tabContinents.setAttribute("aria-selected", "false");
+  els.tabCountries.setAttribute("aria-selected", "false");
   els.tabSpace.setAttribute("aria-selected", "false");
-  els.geoSubtabs.classList.remove("show");
-  if (els.spaceSubtabs) els.spaceSubtabs.classList.remove("show");
-  els.exploreLabel.textContent = `Landmarks in ${place.name}`;
+  els.exploreLabel.textContent = `✨ ${place.name}`;
   els.brandHint.textContent = place.name;
-  if (els.adventuresBtn) els.adventuresBtn.classList.remove("active-mode");
-  setPanelOpen(els.adventureNav, els.adventuresBtn, false);
-  if (els.coach && !coachHidden) {
-    els.coach.textContent = `Tap a landmark in ${place.name}! ✨`;
-  }
+  setPanelOpen(els.settingsPanel, els.settingsBtn, false);
   buildStrip();
   if (globe) {
     globe.setPlaces(places);
@@ -298,103 +287,12 @@ function showLandmarksInContinent(place) {
 }
 
 /* —— Solar system —— */
-let spaceView = "spheres";
-
 function bindSpacePick(el, obj) {
   el.addEventListener("click", (e) => {
     e.stopPropagation();
     const rect = el.getBoundingClientRect();
     sparkAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
     openLandmark(obj.id, el);
-  });
-}
-
-function makeOrbitBody(obj, spinSec, phaseSec) {
-  const body = document.createElement("button");
-  body.type = "button";
-  body.className =
-    "ss-body" +
-    (obj.id === "saturn" ? " saturn" : "") +
-    (obj.kind === "comet" ? " comet" : "");
-  body.dataset.id = obj.id;
-  body.setAttribute("aria-label", obj.name);
-  const sizeScale = obj.kind === "belt" ? 0.7 : 0.78;
-  body.style.setProperty("--size", Math.max(16, Math.round(obj.size * sizeScale)) + "px");
-  body.style.setProperty("--color", obj.color);
-  body.style.setProperty("--spin", spinSec + "s");
-  body.style.setProperty("--phase", (phaseSec || 0) + "s");
-  body.innerHTML = `<span aria-hidden="true">${obj.emoji}</span><span class="ss-label">${obj.name.replace(/^The /, "")}</span>`;
-  bindSpacePick(body, obj);
-  return body;
-}
-
-function buildOrbitView() {
-  if (!els.ssScene) return;
-  els.ssScene.innerHTML = "";
-
-  const note = document.createElement("div");
-  note.className = "ss-orbit-note";
-  note.textContent = "Looking straight down · closer = faster year";
-  els.ssScene.appendChild(note);
-
-  const byId = Object.fromEntries(DATASETS.space.items.map((o) => [o.id, o]));
-
-  DATASETS.space.items.forEach((obj, index) => {
-    if (obj.kind === "star") {
-      const sun = document.createElement("button");
-      sun.type = "button";
-      sun.className = "ss-sun";
-      sun.dataset.id = obj.id;
-      sun.setAttribute("aria-label", obj.name);
-      sun.style.setProperty("--size", Math.round(obj.size * 0.75) + "px");
-      sun.innerHTML = `<span aria-hidden="true">${obj.emoji}</span><span class="ss-label">${obj.name}</span>`;
-      bindSpacePick(sun, obj);
-      els.ssScene.appendChild(sun);
-      return;
-    }
-
-    // Moon nests on Earth (not its own solar orbit)
-    if (obj.id === "moon") return;
-
-    const au = obj.au;
-    if (au == null) return;
-
-    const years = obj.orbitYears || 1;
-    const spinSec = orbitSpinSeconds(years);
-    const phaseSec = -((index * 2.7) % spinSec);
-    const rPct = orbitRadiusPct(au);
-
-    const orbit = document.createElement("div");
-    orbit.className = "ss-orbit" + (obj.kind === "belt" ? " belt" : "");
-    orbit.style.setProperty("--r", rPct.toFixed(2) + "%");
-    orbit.style.setProperty("--spin", spinSec + "s");
-    orbit.style.setProperty("--phase", phaseSec + "s");
-
-    const body = makeOrbitBody(obj, spinSec, phaseSec);
-    if (obj.kind === "belt") body.style.setProperty("--size", "22px");
-    orbit.appendChild(body);
-
-    if (obj.id === "earth" && byId.moon) {
-      const moonSpin = orbitSpinSeconds(byId.moon.orbitYears || 0.075);
-      const moonOrbit = document.createElement("div");
-      moonOrbit.className = "ss-moon-orbit";
-      moonOrbit.style.setProperty("--moon-spin", moonSpin + "s");
-      moonOrbit.appendChild(makeOrbitBody(byId.moon, moonSpin, 0));
-      body.appendChild(moonOrbit);
-    }
-
-    if (obj.kind === "comet") {
-      const wrap = document.createElement("div");
-      wrap.className = "ss-comet-wrap";
-      wrap.style.setProperty("--r", rPct.toFixed(2) + "%");
-      // reset orbit to fill the wrap
-      orbit.style.setProperty("--r", "100%");
-      wrap.appendChild(orbit);
-      els.ssScene.appendChild(wrap);
-      return;
-    }
-
-    els.ssScene.appendChild(orbit);
   });
 }
 
@@ -410,8 +308,8 @@ function buildSizesView() {
     o.kind === "star" || o.kind === "planet" || o.kind === "moon"
   );
   const jupKm = spaceDiameterKm("jupiter");
-  const maxPlanetPx = 132;
-  const sunMaxPx = 170;
+  const maxPlanetPx = 54;
+  const sunMaxPx = 70;
 
   items.forEach((obj) => {
     const km = spaceDiameterKm(obj);
@@ -452,6 +350,23 @@ function buildSizesView() {
     bindSpacePick(btn, obj);
     els.ssSizesRow.appendChild(btn);
   });
+}
+
+function setSizesOpen(open) {
+  if (!els.ssSizesPanel) return;
+  els.ssSizesPanel.classList.toggle("open", open);
+  if (els.ssViewIso) els.ssViewIso.classList.toggle("with-sizes", open);
+  if (els.ssSizesToggle) {
+    els.ssSizesToggle.setAttribute("aria-expanded", String(open));
+    els.ssSizesToggle.setAttribute("aria-label", open ? "Hide planet sizes" : "Show planet sizes");
+  }
+  if (Solar3D) requestAnimationFrame(() => Solar3D.resize());
+}
+
+function toggleSizesPanel() {
+  if (!els.ssSizesPanel) return;
+  setSizesOpen(!els.ssSizesPanel.classList.contains("open"));
+  playPop();
 }
 
 let solar3dLoading = null;
@@ -496,54 +411,19 @@ async function ensureSolar3D(opts) {
   els.ss3d.dataset.ready = "1";
 }
 
-function buildSolarSystem() {
-  buildOrbitView();
-  buildSizesView();
-}
-
-function setSpaceView(view, opts) {
-  if (!["orbits", "sizes", "spheres"].includes(view)) return;
-  const changed = spaceView !== view;
-  spaceView = view;
-  const views = [
-    [els.ssViewOrbits, "orbits"],
-    [els.ssViewSizes, "sizes"],
-    [els.ssViewIso, "spheres"],
-  ];
-  views.forEach(([el, key]) => {
-    if (!el) return;
-    const on = key === view;
-    el.classList.toggle("active", on);
-    el.setAttribute("aria-hidden", String(!on));
-  });
-  els.subOrbits.classList.toggle("active", view === "orbits");
-  els.subSizes.classList.toggle("active", view === "sizes");
-  els.subSpheres.classList.toggle("active", view === "spheres");
-  els.subOrbits.setAttribute("aria-selected", String(view === "orbits"));
-  els.subSizes.setAttribute("aria-selected", String(view === "sizes"));
-  els.subSpheres.setAttribute("aria-selected", String(view === "spheres"));
-  if (els.ssHint) els.ssHint.textContent = SPACE_VIEW_HINTS[view] || SPACE_VIEW_HINTS.orbits;
-
-  if (view === "spheres") {
-    requestAnimationFrame(() => ensureSolar3D({ introZoom: !!(opts && opts.introZoom) }));
-  } else if (Solar3D) {
-    Solar3D.setActive(false);
-  }
-
-  if (changed && !(opts && opts.silent)) playPop();
-}
-
 function enterSpaceMode() {
   if (spaceTransitioning) return;
+  stopFindQuiz();
   spaceTransitioning = true;
   document.body.classList.add("space-mode");
   els.solarSystem.hidden = false;
-  if (els.spaceSubtabs) els.spaceSubtabs.classList.add("show");
+  if (els.findBtn) els.findBtn.hidden = true;
   if (els.nightBtn) els.nightBtn.style.display = "none";
   if (els.autoNightBtn) els.autoNightBtn.style.display = "none";
   if (els.spaceHandoff) els.spaceHandoff.classList.add("show");
   playFlyWhoosh();
   setAmbientForMode();
+  setSizesOpen(true);
 
   if (globe) {
     globe.setAutoRotate(false);
@@ -553,7 +433,6 @@ function enterSpaceMode() {
     globe.pointOfView(12, 20, 9.5, 1700);
   }
 
-  // Prefetch 3D module during zoom-out
   loadSolar3DModule().catch(() => {});
 
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -566,31 +445,22 @@ function enterSpaceMode() {
     if (els.globeShadow) els.globeShadow.classList.add("hidden-view");
     if (globe) globe.setActive(false);
     els.solarSystem.classList.add("show");
-    setSpaceView(spaceView || "spheres", { silent: true, introZoom: !reduce });
+    requestAnimationFrame(() => {
+      ensureSolar3D({ introZoom: !reduce }).then(() => {
+        if (Solar3D) Solar3D.resize();
+      });
+    });
     if (els.spaceHandoff) {
       window.setTimeout(() => els.spaceHandoff.classList.remove("show"), reduce ? 0 : 500);
     }
     spaceTransitioning = false;
-    showSpaceToast();
   }, zoomMs);
-}
-
-function showSpaceToast() {
-  if (!els.ssToast) return;
-  els.ssToast.hidden = false;
-  requestAnimationFrame(() => els.ssToast.classList.add("show"));
-  window.setTimeout(() => {
-    els.ssToast.classList.remove("show");
-    window.setTimeout(() => {
-      els.ssToast.hidden = true;
-    }, 400);
-  }, 3400);
 }
 
 function leaveSpaceMode() {
   document.body.classList.remove("space-mode");
   els.solarSystem.classList.remove("show");
-  if (els.spaceSubtabs) els.spaceSubtabs.classList.remove("show");
+  if (els.findBtn) els.findBtn.hidden = false;
   if (els.spaceHandoff) els.spaceHandoff.classList.remove("show");
   if (Solar3D) Solar3D.setActive(false);
   els.globeViz.classList.remove("hidden-view");
@@ -607,19 +477,115 @@ function leaveSpaceMode() {
   }, 750);
 }
 
-/* —— Globe helpers —— */
-function hideCoach() {
-  if (coachHidden) return;
-  coachHidden = true;
-  els.coach.classList.add("hide");
-  setTimeout(() => els.coach.remove(), 450);
+/* —— Find quiz —— */
+let findTargetPlace = null;
+
+function hideFindPrompt() {
+  if (!els.findPrompt) return;
+  els.findPrompt.hidden = true;
+  els.findPrompt.classList.remove("found");
+  document.body.classList.remove("find-mode");
+  if (els.findAgain) els.findAgain.hidden = true;
+  if (els.findCue) els.findCue.textContent = "Find this!";
+  findTargetPlace = null;
 }
 
+function showFindPrompt(target) {
+  if (!els.findPrompt || !target) return;
+  findTargetPlace = target;
+  els.findPrompt.hidden = false;
+  els.findPrompt.classList.remove("found");
+  document.body.classList.add("find-mode");
+  if (els.findCue) els.findCue.textContent = "Find this!";
+  if (els.findEmoji) els.findEmoji.textContent = target.emoji || "📍";
+  if (els.findAgain) els.findAgain.hidden = true;
+  if (els.findPhoto) {
+    const src = target.photos && target.photos[0];
+    if (src) {
+      els.findPhoto.hidden = false;
+      els.findPhoto.src = src;
+      els.findPhoto.alt = target.name || "";
+    } else {
+      els.findPhoto.hidden = true;
+      els.findPhoto.removeAttribute("src");
+    }
+  }
+}
+
+function markFindFound() {
+  if (!els.findPrompt) return;
+  els.findPrompt.classList.add("found");
+  if (els.findCue) els.findCue.textContent = "You found it!";
+  if (els.findAgain) els.findAgain.hidden = false;
+}
+
+function speakFindTarget(e) {
+  if (e) e.stopPropagation();
+  const lm = findTargetPlace || findQuiz.getTarget();
+  if (!lm || !lm.name) return;
+  sound.ensureAudio();
+  speakName(lm);
+}
+
+const findQuiz = createFindQuiz({
+  onPrompt(target) {
+    showFindPrompt(target);
+  },
+  onCorrect() {
+    playChime();
+    markFindFound();
+  },
+  onWrong(_tapped, _target) {
+    playBoop();
+  },
+  onCancel() {
+    hideFindPrompt();
+  },
+});
+
+function startFindQuiz() {
+  if (activeTab === "space") return;
+  const pool = places.filter((p) => p && p.lat != null && p.lng != null);
+  if (pool.length < 2) return;
+  card.close();
+  findQuiz.cancel();
+  const round = findQuiz.start(pool);
+  if (!round) return;
+  playPop();
+  if (globe) globe.setAutoRotate(true);
+}
+
+function stopFindQuiz() {
+  if (!findQuiz.isActive() && (!els.findPrompt || els.findPrompt.hidden)) return;
+  findQuiz.cancel();
+  hideFindPrompt();
+}
+
+/* —— Globe helpers —— */
 function openLandmark(id, sourceEl) {
+  let skipFly = false;
+  if (findQuiz.isActive()) {
+    const result = findQuiz.handlePinTap(id);
+    if (result.handled && !result.correct) {
+      const pin = document.querySelector(`.pin[data-id="${id}"]`);
+      if (pin) {
+        pin.classList.remove("pin-wrong");
+        void pin.offsetWidth;
+        pin.classList.add("pin-wrong");
+        pin.addEventListener(
+          "animationend",
+          () => pin.classList.remove("pin-wrong"),
+          { once: true }
+        );
+      }
+      return;
+    }
+    if (result.handled && result.correct) skipFly = true;
+  }
+
   const lm = places.find((l) => l.id === id);
   if (!lm) return;
 
-  hideCoach();
   selectedId = id;
   document.querySelectorAll(".pin.selected").forEach((p) => p.classList.remove("selected"));
   document.querySelectorAll(SPACE_SEL).forEach((p) => p.classList.remove("selected"));
@@ -630,7 +596,7 @@ function openLandmark(id, sourceEl) {
   syncStrip();
 
   playPop();
-  playFlyWhoosh();
+  if (!skipFly) playFlyWhoosh();
   if (sound.isSoundOn()) setAmbientForMode();
 
   if (activeTab === "space") {
@@ -641,9 +607,13 @@ function openLandmark(id, sourceEl) {
 
   if (!globe) return;
   globe.setAutoRotate(false);
-  const alt = activeTab === "countries" ? 1.35 : activeTab === "continents" ? 1.9 : 1.55;
-  globe.pointOfView(lm.lat, lm.lng, alt, 1400);
-  setTimeout(() => card.openPlaceCard(lm), 900);
+  if (skipFly) {
+    setTimeout(() => card.openPlaceCard(lm), 220);
+  } else {
+    const alt = activeTab === "countries" ? 1.35 : activeTab === "continents" ? 1.9 : 1.55;
+    globe.pointOfView(lm.lat, lm.lng, alt, 1400);
+    setTimeout(() => card.openPlaceCard(lm), 900);
+  }
 
   scrollStripToId(id);
 }
@@ -688,41 +658,28 @@ function staggerPinPlaces(items) {
 
 function switchTab(tab) {
   if (!DATASETS[tab] || (tab === activeTab && !(tab === "landmarks" && landmarkFilter))) return;
+  stopFindQuiz();
   card.close();
   if (tab === "landmarks") landmarkFilter = null;
   const leavingSpace = activeTab === "space";
   const enteringSpace = tab === "space";
   activeTab = tab;
   places = DATASETS[tab].items;
-  const main = DATASETS[tab].main;
 
-  els.tabLandmarks.classList.toggle("active", main === "landmarks");
-  els.tabWonders.classList.toggle("active", main === "wonders");
-  els.tabGeography.classList.toggle("active", main === "geography");
-  els.tabSpace.classList.toggle("active", main === "space");
-  els.tabLandmarks.setAttribute("aria-selected", String(main === "landmarks"));
-  els.tabWonders.setAttribute("aria-selected", String(main === "wonders"));
-  els.tabGeography.setAttribute("aria-selected", String(main === "geography"));
-  els.tabSpace.setAttribute("aria-selected", String(main === "space"));
-
-  els.geoSubtabs.classList.toggle("show", main === "geography");
-  if (els.spaceSubtabs) els.spaceSubtabs.classList.toggle("show", main === "space");
-  els.subContinents.classList.toggle("active", tab === "continents");
-  els.subCountries.classList.toggle("active", tab === "countries");
-  els.subContinents.setAttribute("aria-selected", String(tab === "continents"));
-  els.subCountries.setAttribute("aria-selected", String(tab === "countries"));
+  els.tabLandmarks.classList.toggle("active", tab === "landmarks");
+  els.tabWonders.classList.toggle("active", tab === "wonders");
+  els.tabContinents.classList.toggle("active", tab === "continents");
+  els.tabCountries.classList.toggle("active", tab === "countries");
+  els.tabSpace.classList.toggle("active", tab === "space");
+  els.tabLandmarks.setAttribute("aria-selected", String(tab === "landmarks"));
+  els.tabWonders.setAttribute("aria-selected", String(tab === "wonders"));
+  els.tabContinents.setAttribute("aria-selected", String(tab === "continents"));
+  els.tabCountries.setAttribute("aria-selected", String(tab === "countries"));
+  els.tabSpace.setAttribute("aria-selected", String(tab === "space"));
 
   els.exploreLabel.textContent = DATASETS[tab].label;
   els.brandHint.textContent = DATASETS[tab].hint;
-  if (els.adventuresBtn) {
-    els.adventuresBtn.classList.toggle("active-mode", main !== "landmarks");
-  }
-  setPanelOpen(els.adventureNav, els.adventuresBtn, false);
   setPanelOpen(els.settingsPanel, els.settingsBtn, false);
-
-  if (els.coach && !coachHidden) {
-    els.coach.textContent = DATASETS[tab].coach;
-  }
 
   buildStrip();
 
@@ -730,7 +687,6 @@ function switchTab(tab) {
     enterSpaceMode();
   } else {
     if (leavingSpace) leaveSpaceMode();
-    if (els.spaceSubtabs) els.spaceSubtabs.classList.remove("show");
     if (globe) {
       const pinData =
         tab === "countries" || tab === "continents" ? staggerPinPlaces(places) : places;
@@ -803,19 +759,21 @@ function initGlobe() {
 
 /* —— Events —— */
 els.surpriseBtn.addEventListener("click", surprise);
+if (els.findBtn) {
+  els.findBtn.addEventListener("click", () => {
+    if (activeTab === "space") return;
+    startFindQuiz();
+  });
+}
+if (els.findExit) els.findExit.addEventListener("click", stopFindQuiz);
+if (els.findAgain) els.findAgain.addEventListener("click", startFindQuiz);
+if (els.findHear) els.findHear.addEventListener("click", speakFindTarget);
 if (els.nightBtn) els.nightBtn.addEventListener("click", toggleNightMode);
 
 els.settingsBtn.addEventListener("click", (e) => {
   e.stopPropagation();
   const open = !els.settingsPanel.classList.contains("open");
-  setPanelOpen(els.adventureNav, els.adventuresBtn, false);
   setPanelOpen(els.settingsPanel, els.settingsBtn, open);
-});
-els.adventuresBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-  const open = !els.adventureNav.classList.contains("open");
-  setPanelOpen(els.settingsPanel, els.settingsBtn, false);
-  setPanelOpen(els.adventureNav, els.adventuresBtn, open);
 });
 document.addEventListener("click", (e) => {
   if (
@@ -825,31 +783,14 @@ document.addEventListener("click", (e) => {
   ) {
     setPanelOpen(els.settingsPanel, els.settingsBtn, false);
   }
-  if (
-    els.adventureNav.classList.contains("open") &&
-    !els.adventureNav.contains(e.target) &&
-    !els.adventuresBtn.contains(e.target)
-  ) {
-    setPanelOpen(els.adventureNav, els.adventuresBtn, false);
-  }
 });
 
 els.tabLandmarks.addEventListener("click", () => switchTab("landmarks"));
 els.tabWonders.addEventListener("click", () => switchTab("wonders"));
+els.tabContinents.addEventListener("click", () => switchTab("continents"));
+els.tabCountries.addEventListener("click", () => switchTab("countries"));
 els.tabSpace.addEventListener("click", () => switchTab("space"));
-els.subOrbits.addEventListener("click", () => setSpaceView("orbits"));
-els.subSizes.addEventListener("click", () => setSpaceView("sizes"));
-els.subSpheres.addEventListener("click", () => setSpaceView("spheres"));
-els.tabGeography.addEventListener("click", () => {
-  // Keep current geo mode if already in geography, else start on continents
-  if (DATASETS[activeTab].main === "geography") {
-    setPanelOpen(els.adventureNav, els.adventuresBtn, false);
-    return;
-  }
-  switchTab("continents");
-});
-els.subContinents.addEventListener("click", () => switchTab("continents"));
-els.subCountries.addEventListener("click", () => switchTab("countries"));
+if (els.ssSizesToggle) els.ssSizesToggle.addEventListener("click", toggleSizesPanel);
 
 els.muteBtn.addEventListener("click", () => {
   const nextOn = !sound.isSoundOn();
@@ -878,7 +819,11 @@ if (els.autoNightBtn) {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    if (els.settingsPanel.classList.contains("open") || els.adventureNav.classList.contains("open")) {
+    if (els.findPrompt && !els.findPrompt.hidden) {
+      stopFindQuiz();
+      return;
+    }
+    if (els.settingsPanel.classList.contains("open")) {
       closeChromeMenus();
       return;
     }
@@ -892,15 +837,10 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-// Warm speech voices
-if (window.speechSynthesis) {
-  window.speechSynthesis.getVoices();
-  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-}
-
 makeStars();
 buildStrip();
-buildSolarSystem();
+buildSizesView();
+setSizesOpen(true);
 initGlobe();
 setInterval(shootingStar, 28000);
 setTimeout(shootingStar, 8000);
