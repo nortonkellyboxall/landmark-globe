@@ -1,0 +1,3590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="An interactive globe of famous landmarks for curious kids." />
+  <title>World Adventures!</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🌍%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --sky-deep: #0a2f4a;
+      --sky-mid: #1a5f7a;
+      --sky-glow: #3d9aaa;
+      --sand: #fff8ef;
+      --coral: #ff6b4a;
+      --sun: #ffc857;
+      --leaf: #2a9d8f;
+      --ink: #1a2b34;
+      --muted: #5a6f7a;
+      --white: #ffffff;
+      --panel: rgba(255, 248, 239, 0.92);
+      --line: rgba(255, 255, 255, 0.18);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      overflow-x: hidden;
+      overscroll-behavior: none;
+      font-family: "Nunito", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--sky-deep);
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* —— Atmosphere —— */
+    .sky {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 90% 60% at 50% 110%, rgba(26, 95, 122, 0.55), transparent 55%),
+        radial-gradient(circle at 15% 20%, rgba(255, 200, 87, 0.12), transparent 28%),
+        radial-gradient(circle at 85% 15%, rgba(61, 154, 170, 0.2), transparent 30%),
+        linear-gradient(180deg, #061828 0%, var(--sky-deep) 35%, #0d3d55 70%, #1a5f7a 100%);
+      pointer-events: none;
+    }
+
+    #stars {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: #fff;
+      border-radius: 50%;
+      opacity: 0.55;
+      animation: twinkle var(--dur, 3s) ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+    }
+
+    .star.big {
+      width: 3px;
+      height: 3px;
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.25; transform: scale(0.85); }
+      50% { opacity: 0.95; transform: scale(1.15); }
+    }
+
+    .shooting-star {
+      position: absolute;
+      width: 90px;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.9), transparent);
+      border-radius: 2px;
+      opacity: 0;
+      transform: rotate(-35deg);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .shooting-star.go {
+      animation: shoot 1.1s ease-out forwards;
+    }
+
+    @keyframes shoot {
+      0% { opacity: 0; transform: rotate(-35deg) translateX(0); }
+      10% { opacity: 1; }
+      100% { opacity: 0; transform: rotate(-35deg) translateX(280px); }
+    }
+
+    /* —— Chrome —— */
+    .topbar {
+      position: relative;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem 0.5rem;
+      pointer-events: none;
+    }
+
+    .topbar > * { pointer-events: auto; }
+
+    .tabs {
+      position: relative;
+      z-index: 20;
+      display: none;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      padding: 0.15rem 0.75rem 0.55rem;
+      pointer-events: none;
+    }
+
+    .tabs.open {
+      display: flex;
+      pointer-events: none;
+    }
+
+    .tabs > * { pointer-events: auto; }
+
+    .tab {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: rgba(255, 248, 239, 0.12);
+      color: rgba(255, 248, 239, 0.75);
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 0.78rem;
+      padding: 0.5rem 0.85rem;
+      border-radius: 999px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      min-height: 40px;
+      transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease;
+    }
+
+    @media (max-width: 520px) {
+      .tab .tab-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+      .tab { padding: 0.5rem 0.7rem; }
+      .tab .tab-emoji { margin-right: 0; font-size: 1.15rem; }
+      .btn-label-more { display: none; }
+    }
+
+    .tab:active { transform: scale(0.96); }
+
+    .tab.active {
+      background: var(--sand);
+      color: var(--sky-deep);
+      border-color: transparent;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    }
+
+    .tab .tab-emoji { margin-right: 0.3rem; }
+
+    .subtabs {
+      position: relative;
+      z-index: 20;
+      display: none;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0 1rem 0.45rem;
+      pointer-events: none;
+    }
+
+    .subtabs.show { display: flex; }
+    .subtabs > * { pointer-events: auto; }
+
+    .subtab {
+      appearance: none;
+      border: 1px solid rgba(255, 248, 239, 0.22);
+      background: rgba(6, 24, 40, 0.35);
+      color: rgba(255, 248, 239, 0.8);
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 0.78rem;
+      padding: 0.4rem 0.85rem;
+      border-radius: 999px;
+      cursor: pointer;
+      min-height: 34px;
+      transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    }
+
+    .subtab:active { transform: scale(0.96); }
+
+    .subtab.active {
+      background: rgba(255, 200, 87, 0.95);
+      color: #1a2b34;
+      border-color: transparent;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .brand h1 {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(1.35rem, 3.5vw, 1.85rem);
+      font-weight: 700;
+      color: var(--sand);
+      letter-spacing: -0.02em;
+      text-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+      background: linear-gradient(110deg, #fff8ef 30%, #ffc857 50%, #fff8ef 70%);
+      background-size: 200% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 14s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0%, 82%, 100% { background-position: 100% 0; }
+      88%, 94% { background-position: 0% 0; }
+    }
+
+    .brand span {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: rgba(255, 248, 239, 0.7);
+      min-height: 1.1em;
+    }
+
+    .brand span:empty { display: none; }
+
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: rgba(255, 248, 239, 0.14);
+      color: var(--sand);
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 0.85rem;
+      padding: 0.65rem 0.9rem;
+      border-radius: 999px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: transform 0.15s ease, background 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-height: 44px;
+    }
+
+    .btn:hover { background: rgba(255, 248, 239, 0.22); }
+    .btn:active { transform: scale(0.94); }
+    .btn:focus-visible,
+    .tab:focus-visible,
+    .subtab:focus-visible,
+    .thumb:focus-visible,
+    .card-close:focus-visible,
+    .photo-nav:focus-visible,
+    .photo-dot:focus-visible {
+      outline: 2px solid var(--sun);
+      outline-offset: 2px;
+    }
+    .btn.primary {
+      background: var(--coral);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 6px 20px rgba(255, 107, 74, 0.35);
+    }
+    .btn.primary:hover { background: #ff7d60; }
+
+    .btn .icon { font-size: 1.05rem; line-height: 1; }
+    .btn.icon-only {
+      padding: 0.65rem 0.75rem;
+      min-width: 44px;
+      justify-content: center;
+    }
+    .btn.active-mode {
+      background: rgba(255, 200, 87, 0.28);
+      border-color: rgba(255, 200, 87, 0.5);
+    }
+
+    .settings-panel {
+      position: absolute;
+      top: calc(100% - 0.15rem);
+      right: 1rem;
+      z-index: 30;
+      display: none;
+      flex-direction: column;
+      gap: 0.4rem;
+      padding: 0.55rem;
+      background: rgba(6, 24, 40, 0.92);
+      border: 1px solid var(--line);
+      border-radius: 1rem;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+      min-width: 160px;
+    }
+
+    .settings-panel.open { display: flex; }
+
+    .settings-panel .btn {
+      width: 100%;
+      justify-content: flex-start;
+      background: rgba(255, 248, 239, 0.1);
+    }
+
+    /* —— Globe stage —— */
+    .stage {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      z-index: 5;
+    }
+
+    #globeViz {
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+      transition: opacity 0.7s ease, transform 1.1s cubic-bezier(0.22, 1, 0.36, 1), filter 0.7s ease;
+    }
+
+    #globeViz:active { cursor: grabbing; }
+
+    #globeViz.hidden-view {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.35);
+      filter: blur(6px);
+    }
+
+    .globe-shadow {
+      position: absolute;
+      left: 50%;
+      bottom: 8%;
+      width: min(55vw, 420px);
+      height: 28px;
+      transform: translateX(-50%);
+      background: radial-gradient(ellipse, rgba(0, 0, 0, 0.35), transparent 70%);
+      pointer-events: none;
+      z-index: 4;
+      opacity: 0.7;
+      transition: opacity 0.5s ease;
+    }
+
+    .globe-shadow.hidden-view { opacity: 0; }
+
+    /* —— Solar system —— */
+    body.space-mode .sky {
+      background:
+        radial-gradient(ellipse 70% 50% at 50% 45%, rgba(40, 20, 80, 0.35), transparent 55%),
+        radial-gradient(circle at 20% 25%, rgba(255, 200, 87, 0.08), transparent 22%),
+        radial-gradient(circle at 80% 20%, rgba(100, 140, 255, 0.12), transparent 28%),
+        linear-gradient(180deg, #020617 0%, #0b1224 40%, #101828 100%);
+    }
+
+    #solarSystem {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(1.35);
+      transition: opacity 0.75s ease, transform 1s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    #solarSystem.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+
+    .ss-scene {
+      position: relative;
+      width: min(94vw, 86vh, 680px);
+      height: min(94vw, 86vh, 680px);
+      max-height: calc(100% - 0.5rem);
+      /* True top-down chart: flat, no tilt */
+      background:
+        radial-gradient(circle at 50% 50%, rgba(80, 120, 200, 0.12), transparent 55%),
+        repeating-radial-gradient(
+          circle at 50% 50%,
+          transparent 0,
+          transparent 11.5%,
+          rgba(255, 255, 255, 0.03) 11.5%,
+          rgba(255, 255, 255, 0.03) 12%
+        );
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    .ss-orbit-note {
+      position: absolute;
+      left: 50%;
+      top: 2.5%;
+      transform: translateX(-50%);
+      z-index: 8;
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: rgba(255, 248, 239, 0.72);
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .ss-orbit {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      border: 1px solid rgba(168, 196, 255, 0.28);
+      border-radius: 50%;
+      width: var(--r);
+      height: var(--r);
+      margin-left: calc(var(--r) / -2);
+      margin-top: calc(var(--r) / -2);
+      animation: ssSpin var(--spin, 40s) linear infinite;
+      animation-delay: var(--phase, 0s);
+      pointer-events: none;
+      transform-origin: 50% 50%;
+    }
+
+    .ss-orbit.belt {
+      border-style: dashed;
+      border-color: rgba(173, 181, 189, 0.4);
+      border-width: 2px;
+      background:
+        radial-gradient(circle at 18% 40%, rgba(200, 200, 200, 0.55) 0 1.5px, transparent 2px),
+        radial-gradient(circle at 72% 28%, rgba(180, 180, 180, 0.45) 0 1px, transparent 2px),
+        radial-gradient(circle at 55% 78%, rgba(220, 220, 220, 0.5) 0 1.2px, transparent 2px),
+        radial-gradient(circle at 30% 70%, rgba(160, 160, 160, 0.4) 0 1px, transparent 2px),
+        radial-gradient(circle at 88% 62%, rgba(190, 190, 190, 0.4) 0 1px, transparent 2px);
+    }
+
+    /* Comet: outer squash so a circular orbit reads as an eccentric ellipse */
+    .ss-comet-wrap {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: var(--r);
+      height: var(--r);
+      margin-left: calc(var(--r) / -2);
+      margin-top: calc(var(--r) / -2);
+      transform: scaleY(0.55);
+      pointer-events: none;
+    }
+
+    .ss-comet-wrap .ss-orbit {
+      left: 0;
+      top: 0;
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      border-color: rgba(189, 224, 254, 0.5);
+      border-style: dotted;
+    }
+
+    .ss-orbit.paused,
+    .ss-orbit:has(.ss-body.selected),
+    .ss-orbit:has(.ss-body.selected) .ss-moon-orbit,
+    .ss-comet-wrap:has(.ss-body.selected) .ss-orbit,
+    .ss-comet-wrap:has(.ss-body.selected) .ss-body {
+      animation-play-state: paused;
+    }
+
+    @keyframes ssSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .ss-body {
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      width: var(--size, 28px);
+      height: var(--size, 28px);
+      margin-left: calc(var(--size, 28px) / -2);
+      margin-top: calc(var(--size, 28px) / -2);
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #fff8, transparent 45%), var(--color, #88a);
+      box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--color, #88a) 35%, transparent),
+        0 0 18px color-mix(in srgb, var(--color, #88a) 55%, transparent);
+      cursor: pointer;
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: calc(var(--size, 28px) * 0.45);
+      line-height: 1;
+      padding: 0;
+      animation: ssCounter var(--spin, 40s) linear infinite;
+      animation-delay: var(--phase, 0s);
+      transition: box-shadow 0.2s ease;
+      z-index: 2;
+      touch-action: manipulation;
+      transform-origin: 50% 50%;
+    }
+
+    .ss-body::before {
+      content: "";
+      position: absolute;
+      inset: -14px;
+      border-radius: 50%;
+    }
+
+    .ss-orbit:has(.ss-body.selected) .ss-body,
+    .ss-orbit.paused .ss-body,
+    .ss-moon-orbit:has(.ss-body.selected) .ss-body {
+      animation-play-state: paused;
+    }
+
+    @keyframes ssCounter {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(-360deg); }
+    }
+
+    .ss-body:hover,
+    .ss-body:focus-visible {
+      outline: none;
+      z-index: 5;
+      box-shadow:
+        0 0 0 4px rgba(255, 248, 239, 0.75),
+        0 0 22px color-mix(in srgb, var(--color, #88a) 65%, transparent);
+    }
+
+    .ss-body.selected {
+      box-shadow:
+        0 0 0 4px rgba(255, 248, 239, 0.85),
+        0 0 28px color-mix(in srgb, var(--color, #88a) 70%, transparent);
+      z-index: 6;
+    }
+
+    /* Moon rides with Earth, then orbits Earth */
+    .ss-moon-orbit {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 230%;
+      height: 230%;
+      margin-left: -115%;
+      margin-top: -115%;
+      border: 1px dashed rgba(255, 255, 255, 0.28);
+      border-radius: 50%;
+      animation: ssSpin var(--moon-spin, 8s) linear infinite;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .ss-moon-orbit .ss-body {
+      --size: 14px;
+      font-size: 0.55rem;
+    }
+
+    .ss-sun {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: var(--size, 72px);
+      height: var(--size, 72px);
+      margin-left: calc(var(--size, 72px) / -2);
+      margin-top: calc(var(--size, 72px) / -2);
+      border: none;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 35% 30%, #fff7e0, #ffb703 45%, #ff6b00 80%, #c43c00);
+      box-shadow:
+        0 0 30px rgba(255, 183, 3, 0.75),
+        0 0 70px rgba(255, 107, 0, 0.35);
+      cursor: pointer;
+      pointer-events: auto;
+      touch-action: manipulation;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      z-index: 3;
+      animation: ssPulse 3.2s ease-in-out infinite;
+      transition: transform 0.2s ease;
+    }
+
+    .ss-sun:hover,
+    .ss-sun:focus-visible,
+    .ss-sun.selected {
+      transform: scale(1.08);
+      outline: none;
+    }
+
+    .ss-sun.selected {
+      box-shadow:
+        0 0 0 4px rgba(255, 248, 239, 0.9),
+        0 0 40px rgba(255, 183, 3, 0.9);
+    }
+
+    @keyframes ssPulse {
+      0%, 100% { box-shadow: 0 0 28px rgba(255, 183, 3, 0.7), 0 0 60px rgba(255, 107, 0, 0.3); }
+      50% { box-shadow: 0 0 40px rgba(255, 183, 3, 0.95), 0 0 90px rgba(255, 107, 0, 0.45); }
+    }
+
+    .ss-body.saturn::after {
+      content: "";
+      position: absolute;
+      width: 160%;
+      height: 28%;
+      border: 2px solid rgba(233, 196, 106, 0.75);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .ss-body.comet {
+      border-radius: 50% 40% 50% 40%;
+      background: linear-gradient(120deg, #fff, #bde0fe 60%, transparent);
+    }
+
+    .ss-body.comet::before {
+      content: "";
+      position: absolute;
+      left: 70%;
+      top: 35%;
+      width: 220%;
+      height: 35%;
+      background: linear-gradient(90deg, rgba(189, 224, 254, 0.7), transparent);
+      border-radius: 40%;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .ss-label {
+      position: absolute;
+      bottom: -1.35rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: rgba(255, 248, 239, 0.85);
+      white-space: nowrap;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+      pointer-events: none;
+    }
+
+    .ss-hint {
+      position: absolute;
+      bottom: 4%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 248, 239, 0.7);
+      font-size: 0.78rem;
+      font-weight: 700;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 8;
+    }
+
+    .ss-views {
+      position: absolute;
+      inset: 0;
+    }
+
+    .ss-view {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+
+    .ss-view.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    /* —— Size comparison —— */
+    .ss-sizes {
+      width: min(96vw, 900px);
+      height: min(70vh, 420px);
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      padding: 0.5rem 0.75rem 1.5rem;
+    }
+
+    .ss-sizes-note {
+      text-align: center;
+      color: rgba(255, 248, 239, 0.78);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .ss-sizes-row {
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-start;
+      gap: 0.85rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 1.5rem 1rem 2.4rem;
+      scroll-snap-type: x proximity;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .ss-size-item {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.45rem;
+      scroll-snap-align: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.25rem;
+      color: #fff8ef;
+      font-family: inherit;
+      min-width: 52px;
+    }
+
+    .ss-size-item:focus-visible {
+      outline: 2px solid #ffc857;
+      outline-offset: 4px;
+      border-radius: 12px;
+    }
+
+    .ss-size-ball {
+      flex: 0 0 auto;
+      display: block;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.55), transparent 42%),
+        radial-gradient(circle at 70% 75%, rgba(0, 0, 0, 0.28), transparent 50%),
+        var(--ball, #888);
+      box-shadow:
+        inset -6px -8px 14px rgba(0, 0, 0, 0.28),
+        0 8px 18px rgba(0, 0, 0, 0.35);
+      position: relative;
+      transition: transform 0.2s ease;
+    }
+
+    .ss-size-item.sun .ss-size-ball {
+      background:
+        radial-gradient(circle at 35% 30%, #fff7e0, #ffb703 45%, #ff6b00 80%);
+      box-shadow:
+        0 0 28px rgba(255, 183, 3, 0.7),
+        0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .ss-size-item.saturn .ss-size-ball::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 165%;
+      height: 34%;
+      transform: translate(-50%, -50%) rotate(-18deg);
+      border: 2px solid rgba(233, 196, 106, 0.8);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .ss-size-item:hover .ss-size-ball,
+    .ss-size-item.selected .ss-size-ball {
+      transform: translateY(-6px) scale(1.06);
+    }
+
+    .ss-size-item.selected .ss-size-ball {
+      box-shadow:
+        0 0 0 3px #fff8ef,
+        0 10px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .ss-size-name {
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+    }
+
+    .ss-size-meta {
+      font-size: 0.62rem;
+      font-weight: 700;
+      opacity: 0.7;
+    }
+
+    .ss-3d {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      overflow: hidden;
+      background: #050816;
+    }
+
+    .ss-3d canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+      touch-action: none;
+    }
+
+    /* —— HTML pins —— */
+    .pin {
+      width: 48px;
+      height: 48px;
+      margin-left: -24px;
+      margin-top: -48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      pointer-events: auto;
+      transform-origin: 50% 100%;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.35));
+      transition: transform 0.2s ease;
+      will-change: transform;
+    }
+
+    .pin.pin-bounce {
+      animation: pinBounce 2.8s ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+    }
+
+    .pin:hover,
+    .pin:focus-visible {
+      transform: scale(1.28);
+      outline: none;
+      z-index: 10;
+    }
+
+    .pin.selected {
+      animation: none;
+      transform: scale(1.35);
+      z-index: 12;
+    }
+
+    .pin-inner {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      background: var(--pin-color, var(--coral));
+      border: 3px solid #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 0 rgba(255, 200, 87, 0.5);
+    }
+
+    .pin.selected .pin-inner {
+      animation: ringPulse 1.4s ease-out infinite;
+      background: var(--sun);
+    }
+
+    .pin-emoji {
+      transform: rotate(45deg);
+      font-size: 1.15rem;
+      line-height: 1;
+    }
+
+    .pin-glow {
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.45), transparent 70%);
+      transform: rotate(45deg);
+      pointer-events: none;
+      opacity: 0.45;
+    }
+
+    .pin.pin-bounce .pin-glow {
+      animation: glowPulse 2.6s ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+    }
+
+    @keyframes pinBounce {
+      0%, 100% { translate: 0 0; }
+      50% { translate: 0 -6px; }
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.35; transform: rotate(45deg) scale(0.9); }
+      50% { opacity: 0.85; transform: rotate(45deg) scale(1.15); }
+    }
+
+    @keyframes ringPulse {
+      0% { box-shadow: 0 0 0 0 rgba(255, 200, 87, 0.7); }
+      70% { box-shadow: 0 0 0 14px rgba(255, 200, 87, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 200, 87, 0); }
+    }
+
+    /* Sparkles */
+    .sparkle-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 40;
+      overflow: hidden;
+    }
+
+    .spark {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--sun);
+      animation: sparkOut 0.7s ease-out forwards;
+    }
+
+    @keyframes sparkOut {
+      0% { opacity: 1; transform: translate(0, 0) scale(1); }
+      100% { opacity: 0; transform: translate(var(--sx), var(--sy)) scale(0.2); }
+    }
+
+    /* Coach mark */
+    .coach {
+      position: absolute;
+      left: 50%;
+      top: 12%;
+      transform: translateX(-50%);
+      z-index: 25;
+      background: var(--panel);
+      color: var(--ink);
+      font-weight: 800;
+      font-size: 1.15rem;
+      padding: 0.95rem 1.4rem;
+      border-radius: 999px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      animation: coachIn 0.6s ease-out, coachBob 2.5s ease-in-out 0.6s infinite;
+      max-width: min(90vw, 320px);
+      text-align: center;
+    }
+
+    .coach.hide {
+      animation: coachOut 0.4s ease-in forwards;
+      pointer-events: none;
+    }
+
+    @keyframes coachIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(-12px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    @keyframes coachOut {
+      to { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(0.96); }
+    }
+
+    @keyframes coachBob {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(5px); }
+    }
+
+    /* —— Explore strip —— */
+    .explore {
+      position: relative;
+      z-index: 20;
+      padding: 0.35rem 0 calc(0.65rem + var(--safe-bottom));
+      background: linear-gradient(180deg, transparent, rgba(6, 24, 40, 0.75) 30%);
+    }
+
+    .explore-label {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: rgba(255, 248, 239, 0.65);
+      padding: 0 1rem 0.35rem;
+    }
+
+    .strip {
+      display: flex;
+      gap: 0.55rem;
+      overflow-x: auto;
+      padding: 0.15rem 1rem 0.4rem;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .strip::-webkit-scrollbar { display: none; }
+
+    .thumb {
+      flex: 0 0 auto;
+      scroll-snap-align: start;
+      width: 56px;
+      border: none;
+      background: rgba(255, 248, 239, 0.12);
+      border-radius: 1rem;
+      padding: 0.5rem 0.25rem;
+      cursor: pointer;
+      color: var(--sand);
+      transition: transform 0.15s ease, background 0.2s ease;
+      backdrop-filter: blur(8px);
+      border: 1px solid transparent;
+    }
+
+    .thumb:hover { background: rgba(255, 248, 239, 0.2); }
+    .thumb:active { transform: scale(0.94); }
+    .thumb.active {
+      background: rgba(255, 200, 87, 0.25);
+      border-color: rgba(255, 200, 87, 0.55);
+    }
+
+    .thumb .te {
+      font-size: 1.75rem;
+      display: block;
+      line-height: 1.15;
+    }
+
+    .thumb .tn {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    /* —— Fact card —— */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(6, 24, 40, 0.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+
+    .overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .card {
+      --card-vh: 100vh;
+      --card-vh: 100dvh;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      top: auto;
+      z-index: 60;
+      width: 100%;
+      max-width: none;
+      height: calc(var(--card-vh) * 0.62);
+      max-height: calc(var(--card-vh) * 0.68);
+      transform: translateY(105%);
+      background: var(--sand);
+      border-radius: 1.35rem 1.35rem 0 0;
+      box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.3);
+      padding: 0;
+      padding-bottom: calc(0.65rem + var(--safe-bottom));
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.45s cubic-bezier(0.34, 1.45, 0.64, 1);
+      /* Closed desktop card is opacity:0 but still centered — must not steal globe touches */
+      pointer-events: none;
+    }
+
+    .card[hidden] {
+      display: none !important;
+    }
+
+    .card.open {
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .card-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    @media (min-width: 800px) {
+      .card {
+        left: 50%;
+        right: auto;
+        bottom: auto;
+        top: 50%;
+        width: min(560px, 92vw);
+        height: auto;
+        max-height: min(92dvh, 92vh, 820px);
+        border-radius: 1.5rem;
+        transform: translate(-50%, -46%) scale(0.94);
+        opacity: 0;
+        padding-bottom: 0.85rem;
+        transition:
+          transform 0.45s cubic-bezier(0.34, 1.45, 0.64, 1),
+          opacity 0.3s ease;
+      }
+      .card.open {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Short landscape / small height: bottom sheet, leave globe peeking */
+    @media (max-height: 640px) {
+      .card {
+        left: 0;
+        right: 0;
+        top: auto;
+        bottom: 0;
+        width: 100%;
+        height: min(70%, calc(var(--card-vh) * 0.7));
+        max-height: calc(var(--card-vh) * 0.72);
+        border-radius: 1.15rem 1.15rem 0 0;
+        transform: translateY(105%);
+        opacity: 1;
+      }
+      .card.open {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .card-handle {
+      width: 44px;
+      height: 5px;
+      background: rgba(26, 43, 52, 0.15);
+      border-radius: 999px;
+      margin: 0.55rem auto 0.2rem;
+      flex: 0 0 auto;
+    }
+
+    @media (min-width: 800px) {
+      .card-handle { display: none; }
+    }
+
+    .card-close {
+      position: absolute;
+      top: 0.65rem;
+      right: 0.65rem;
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 248, 239, 0.92);
+      font-size: 1.25rem;
+      font-weight: 800;
+      cursor: pointer;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s ease, background 0.2s;
+      z-index: 12;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+    }
+
+    .card-close:hover { background: #fff; }
+    .card-close:active { transform: scale(0.92); }
+
+    .card-hero {
+      margin: 0;
+      border-radius: 0;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 10;
+      max-height: min(32dvh, 280px);
+      min-height: 160px;
+      flex: 0 0 auto;
+      background: #142433;
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      transform: scale(0.94);
+      transition: opacity 0.4s ease 0.12s, transform 0.4s ease 0.12s;
+    }
+
+    @media (min-width: 800px) {
+      .card-hero {
+        border-radius: 1.5rem 1.5rem 0 0;
+        max-height: min(36dvh, 300px);
+      }
+    }
+
+    .card.open .card-hero {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .photo-track {
+      display: flex;
+      height: 100%;
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      touch-action: pan-x;
+    }
+
+    .photo-track::-webkit-scrollbar { display: none; }
+
+    .photo-slide {
+      flex: 0 0 100%;
+      scroll-snap-align: center;
+      scroll-snap-stop: always;
+      position: relative;
+      height: 100%;
+      background: #1a2b34;
+    }
+
+    .photo-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+      background: #142433;
+    }
+
+    .photo-fallback {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 4.5rem;
+      background: linear-gradient(145deg, var(--accent, var(--coral)), color-mix(in srgb, var(--accent, var(--coral)) 55%, #fff));
+    }
+
+    .photo-slide.broken .photo-fallback { display: flex; }
+    .photo-slide.broken img { display: none; }
+
+    .photo-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 248, 239, 0.92);
+      color: var(--ink);
+      font-size: 1.35rem;
+      font-weight: 800;
+      cursor: pointer;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+      transition: transform 0.15s ease, opacity 0.2s;
+    }
+
+    .photo-nav:active { transform: translateY(-50%) scale(0.92); }
+    .photo-nav.prev { left: 0.55rem; }
+    .photo-nav.next { right: 0.55rem; }
+    .photo-nav[disabled] { opacity: 0.35; pointer-events: none; }
+
+    .photo-dots {
+      position: absolute;
+      left: 50%;
+      bottom: 0.55rem;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.4rem;
+      z-index: 3;
+      padding: 0.3rem 0.55rem;
+      background: rgba(6, 24, 40, 0.35);
+      border-radius: 999px;
+      backdrop-filter: blur(6px);
+    }
+
+    .photo-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: none;
+      padding: 0;
+      background: rgba(255, 255, 255, 0.45);
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .photo-dot.active {
+      background: var(--sun);
+      transform: scale(1.35);
+    }
+
+    .photo-hint {
+      position: absolute;
+      top: 0.55rem;
+      left: 0.65rem;
+      z-index: 3;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #fff;
+      background: rgba(6, 24, 40, 0.4);
+      padding: 0.28rem 0.55rem;
+      border-radius: 999px;
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+    }
+
+    .photo-credit {
+      font-size: 0.62rem;
+      color: rgba(90, 111, 122, 0.65);
+      margin: 0.35rem 1.25rem 0;
+      font-weight: 600;
+    }
+
+    .card-body {
+      padding: 0.85rem 1.25rem 0.5rem;
+    }
+
+    .card-body h2 {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(1.35rem, 4vw, 1.65rem);
+      line-height: 1.15;
+      color: var(--sky-deep);
+      padding-right: 2.5rem;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.35s ease 0.18s, transform 0.35s ease 0.18s;
+    }
+
+    .card-place {
+      font-family: "Nunito", system-ui, sans-serif;
+      font-weight: 800;
+      color: var(--sky-mid);
+      font-size: 1rem;
+      margin-top: 0.2rem;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.35s ease 0.26s, transform 0.35s ease 0.26s;
+    }
+
+    .card-story {
+      margin-top: 0.65rem;
+      font-size: 1.02rem;
+      line-height: 1.45;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.35s ease 0.34s, transform 0.35s ease 0.34s;
+    }
+
+    .wow {
+      margin-top: 0.75rem;
+      margin-bottom: 0.25rem;
+      background: linear-gradient(135deg, #fff3cc, #ffe8a3);
+      border: 1px solid rgba(255, 200, 87, 0.55);
+      border-radius: 1rem;
+      padding: 0.75rem 0.9rem;
+      font-family: "Nunito", system-ui, sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      color: #7a5600;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.35s ease 0.42s, transform 0.35s ease 0.42s;
+    }
+
+    .wow strong {
+      display: block;
+      font-family: "Nunito", system-ui, sans-serif;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.2rem;
+      color: #9a6b00;
+    }
+
+    .card.open .card-body h2,
+    .card.open .card-place,
+    .card.open .card-story,
+    .card.open .wow {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .card-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 0.5rem;
+      padding: 0.65rem 1.25rem 0.35rem;
+      flex: 0 0 auto;
+      background: var(--sand);
+      align-items: stretch;
+    }
+
+    .card-actions .btn {
+      justify-content: center;
+      min-width: 0;
+      min-height: 48px;
+      width: 100%;
+      color: var(--ink);
+      background: rgba(26, 43, 52, 0.06);
+      border-color: rgba(26, 43, 52, 0.08);
+    }
+
+    .card-actions .btn.primary {
+      color: #fff;
+      background: var(--coral);
+      border-color: transparent;
+    }
+
+    .btn.watch {
+      background: #1a2b34;
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .btn.watch[aria-pressed="true"] {
+      background: var(--leaf);
+    }
+
+    .btn.anthem {
+      background: var(--sky-mid);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .btn.anthem[aria-pressed="true"] {
+      background: var(--leaf);
+    }
+
+    .card-actions .btn.hear {
+      font-size: 1.02rem;
+      background: var(--leaf);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .card-actions .btn.watch {
+      font-size: 1.02rem;
+      min-height: 48px;
+    }
+
+    .card-actions .btn.ghost {
+      width: auto;
+      min-width: 52px;
+      padding-left: 0.85rem;
+      padding-right: 0.85rem;
+      background: rgba(26, 43, 52, 0.08);
+      color: var(--ink);
+      border-color: rgba(26, 43, 52, 0.08);
+    }
+
+    .card-actions .btn.ghost[aria-expanded="true"] {
+      background: rgba(26, 95, 122, 0.12);
+      color: var(--sky-deep);
+    }
+
+    .card-actions .btn[hidden] {
+      display: none !important;
+    }
+
+    .card-actions:not(:has(#watchBtn:not([hidden]))):not(:has(#cardMoreBtn:not([hidden]))) {
+      grid-template-columns: 1fr;
+    }
+
+    .card-actions:has(#watchBtn:not([hidden])):not(:has(#cardMoreBtn:not([hidden]))) {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .card-actions:not(:has(#watchBtn:not([hidden]))):has(#cardMoreBtn:not([hidden])) {
+      grid-template-columns: 1fr auto;
+    }
+
+    .card-more {
+      display: none;
+      gap: 0.5rem;
+      padding: 0 1.25rem 0.55rem;
+      flex-wrap: wrap;
+      flex: 0 0 auto;
+      background: var(--sand);
+    }
+
+    .card-more.open { display: flex; }
+
+    .card-more .btn {
+      flex: 1;
+      justify-content: center;
+      min-width: 120px;
+      min-height: 48px;
+    }
+
+    .video-fallback {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      background: rgba(10, 22, 32, 0.92);
+      color: #fff8ef;
+      padding: 1.1rem;
+      text-align: center;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .video-fallback.open {
+      display: flex;
+    }
+
+    .video-fallback p {
+      font-weight: 700;
+      line-height: 1.35;
+      max-width: 16rem;
+    }
+
+    .night-btn[aria-pressed="true"] {
+      background: #1a2b34;
+      color: #ffc857;
+      border-color: transparent;
+    }
+
+    .space-handoff {
+      position: absolute;
+      inset: 0;
+      z-index: 18;
+      pointer-events: none;
+      opacity: 0;
+      background:
+        radial-gradient(circle at 50% 48%, rgba(255, 200, 120, 0.35), transparent 28%),
+        radial-gradient(circle at 50% 50%, rgba(10, 20, 40, 0.15), rgba(5, 8, 22, 0.92) 70%);
+      transition: opacity 0.7s ease;
+    }
+
+    .space-handoff.show {
+      opacity: 1;
+    }
+
+    .video-panel {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      margin: 0;
+      border-radius: inherit;
+      overflow: hidden;
+      background: #0a1620;
+      box-shadow: none;
+    }
+
+    .video-panel.open {
+      display: block;
+      animation: videoExpand 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .video-panel.audio-mode {
+      inset: auto 1.25rem 4.5rem;
+      top: auto;
+      bottom: 4.5rem;
+      left: 1.25rem;
+      right: 1.25rem;
+      height: auto;
+      min-height: 120px;
+      border-radius: 1rem;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(255, 200, 87, 0.18), transparent 45%),
+        radial-gradient(circle at 80% 70%, rgba(76, 201, 240, 0.15), transparent 40%),
+        #122433;
+      padding: 1rem 1.1rem 1.15rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    @keyframes videoExpand {
+      from { opacity: 0; transform: scale(0.92); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .video-panel iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
+    .video-panel audio {
+      width: 100%;
+      margin-top: 0.65rem;
+      height: 40px;
+    }
+
+    .video-panel .video-note {
+      position: absolute;
+      left: 0.85rem;
+      right: 3.5rem;
+      bottom: 0.65rem;
+      margin: 0;
+      z-index: 4;
+      color: rgba(255, 248, 239, 0.7);
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+    }
+
+    .video-panel.audio-mode .video-note {
+      position: static;
+      color: rgba(90, 111, 122, 0.7);
+      text-shadow: none;
+      margin-top: 0.45rem;
+    }
+
+    .card.video-open .card-actions,
+    .card.video-open .card-more {
+      visibility: hidden;
+    }
+
+    .anthem-now {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      color: #fff8ef;
+      font-weight: 800;
+      font-size: 0.95rem;
+    }
+
+    .anthem-now .pulse {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(255, 200, 87, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      animation: anthemPulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes anthemPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 200, 87, 0.35); }
+      50% { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(255, 200, 87, 0); }
+    }
+
+    .video-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      background:
+        linear-gradient(160deg, rgba(10, 22, 32, 0.35), rgba(10, 22, 32, 0.7)),
+        center / cover no-repeat var(--poster, #1a2b34);
+      cursor: pointer;
+      border: none;
+      width: 100%;
+      height: 100%;
+      color: #fff;
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 1rem;
+      z-index: 2;
+    }
+
+    .video-placeholder .play {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--coral);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      box-shadow: 0 8px 24px rgba(255, 107, 74, 0.45);
+      transition: transform 0.15s ease;
+      padding-left: 4px;
+    }
+
+    .video-placeholder:active .play { transform: scale(0.94); }
+
+    .video-note {
+      display: none;
+      font-size: 0.65rem;
+      font-weight: 600;
+    }
+
+    .video-note.open { display: block; }
+
+    /* Loading */
+    .loader {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      background: var(--sky-deep);
+      color: var(--sand);
+      transition: opacity 0.5s ease, visibility 0.5s;
+    }
+
+    .loader.hide {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .loader-orb {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 30% 30%, #7eb6d9, #1a5f7a 55%, #0a2f4a);
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15), 0 0 40px rgba(61, 154, 170, 0.4);
+      animation: spinGlobe 2.2s linear infinite;
+      position: relative;
+    }
+
+    .loader-orb::after {
+      content: "🌍";
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+    }
+
+    @keyframes spinGlobe {
+      to { transform: rotate(360deg); }
+    }
+
+    .loader p {
+      font-weight: 800;
+      font-size: 1rem;
+      opacity: 0.85;
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .star, .pin, .pin-glow, .pin.selected .pin-inner,
+      .brand h1, .coach, .shooting-star, .spark, .loader-orb,
+      .ss-orbit, .ss-body, .ss-sun, .anthem-now .pulse, .ss-sphere,
+      .ss-iso-stage, .ss-iso-item, .ss-sphere::before {
+        animation: none !important;
+      }
+      .card, .overlay, .card-hero, .card-body h2,
+      .card-place, .card-story, .wow,
+      .space-handoff { transition: none !important; }
+      #globeViz, #solarSystem {
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="sky" aria-hidden="true"></div>
+  <div id="stars" aria-hidden="true"></div>
+  <div class="sparkle-layer" id="sparkles" aria-hidden="true"></div>
+
+  <div class="loader" id="loader">
+    <div class="loader-orb" aria-hidden="true"></div>
+    <p>Spinning up your world…</p>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <h1>World Adventures!</h1>
+      <span id="brandHint"></span>
+    </div>
+    <div class="controls">
+      <button type="button" class="btn icon-only" id="settingsBtn" aria-expanded="false" aria-controls="settingsPanel" title="Settings" aria-label="Settings">
+        <span class="icon" aria-hidden="true">⚙️</span>
+      </button>
+      <button type="button" class="btn" id="adventuresBtn" aria-expanded="false" aria-controls="adventureNav" title="More adventures">
+        <span class="icon" aria-hidden="true">🗺️</span>
+        <span class="btn-label-more">More</span>
+      </button>
+      <button type="button" class="btn primary" id="surpriseBtn">
+        <span class="icon" id="surpriseIcon">🎲</span>
+        Surprise!
+      </button>
+    </div>
+    <div class="settings-panel" id="settingsPanel" role="dialog" aria-label="Settings">
+      <button type="button" class="btn night-btn" id="nightBtn" aria-pressed="false" title="Night lights">
+        <span class="icon" id="nightIcon">🌙</span>
+        <span>Night lights</span>
+      </button>
+      <button type="button" class="btn" id="muteBtn" aria-pressed="true" title="Sound">
+        <span class="icon" id="muteIcon">🔇</span>
+        <span id="muteLabel">Sound off</span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="adventureNav" role="tablist" aria-label="Adventure type">
+    <button type="button" class="tab active" role="tab" id="tabLandmarks" aria-selected="true" data-tab="landmarks">
+      <span class="tab-emoji">🏛️</span><span class="tab-text">Landmarks</span>
+    </button>
+    <button type="button" class="tab" role="tab" id="tabWonders" aria-selected="false" data-tab="wonders">
+      <span class="tab-emoji">🌋</span><span class="tab-text">Natural wonders</span>
+    </button>
+    <button type="button" class="tab" role="tab" id="tabGeography" aria-selected="false" data-tab="geography">
+      <span class="tab-emoji">🗺️</span><span class="tab-text">Geography</span>
+    </button>
+    <button type="button" class="tab" role="tab" id="tabSpace" aria-selected="false" data-tab="space">
+      <span class="tab-emoji">🚀</span><span class="tab-text">Space</span>
+    </button>
+  </nav>
+
+  <div class="subtabs" id="geoSubtabs" role="tablist" aria-label="Geography mode">
+    <button type="button" class="subtab active" id="subContinents" aria-selected="true" data-geo="continents">
+      Continents
+    </button>
+    <button type="button" class="subtab" id="subCountries" aria-selected="false" data-geo="countries">
+      Countries
+    </button>
+  </div>
+
+  <div class="subtabs" id="spaceSubtabs" role="tablist" aria-label="Space view">
+    <button type="button" class="subtab active" id="subSpheres" aria-selected="true" data-space-view="spheres">
+      3D
+    </button>
+    <button type="button" class="subtab" id="subSizes" aria-selected="false" data-space-view="sizes">
+      Sizes
+    </button>
+    <button type="button" class="subtab" id="subOrbits" aria-selected="false" data-space-view="orbits">
+      Orbits
+    </button>
+  </div>
+
+  <div class="stage">
+    <div class="coach" id="coach">Tap the glowing dots! ✨</div>
+    <div id="globeViz" role="application" aria-label="Interactive Earth"></div>
+    <div class="globe-shadow" id="globeShadow" aria-hidden="true"></div>
+    <div class="space-handoff" id="spaceHandoff" aria-hidden="true"></div>
+    <div id="solarSystem" aria-label="Interactive solar system" hidden>
+      <div class="ss-views">
+        <div class="ss-view" id="ssViewOrbits" data-view="orbits" aria-hidden="true">
+          <div class="ss-scene" id="ssScene"></div>
+        </div>
+        <div class="ss-view" id="ssViewSizes" data-view="sizes" aria-hidden="true">
+          <div class="ss-sizes">
+            <p class="ss-sizes-note" id="ssSizesNote">Planet sizes next to each other · Sun shown smaller than real</p>
+            <div class="ss-sizes-row" id="ssSizesRow"></div>
+          </div>
+        </div>
+        <div class="ss-view active" id="ssViewIso" data-view="spheres">
+          <div id="ss3d" class="ss-3d" role="application" aria-label="3D solar system"></div>
+        </div>
+      </div>
+      <p class="ss-hint" id="ssHint">Tap the Sun, planets &amp; more!</p>
+    </div>
+  </div>
+
+  <section class="explore" aria-label="Place shortcuts">
+    <div class="explore-label" id="exploreLabel">Explore landmarks</div>
+    <div class="strip" id="strip"></div>
+  </section>
+
+  <div class="overlay" id="overlay" hidden></div>
+  <article class="card" id="card" role="dialog" aria-modal="true" aria-labelledby="cardTitle" hidden>
+    <div class="card-handle" aria-hidden="true"></div>
+    <button type="button" class="card-close" id="cardClose" aria-label="Close">×</button>
+    <div class="card-scroll" id="cardScroll">
+      <div class="card-hero" id="cardHero">
+        <span class="photo-hint" id="photoHint">Swipe photos</span>
+        <div class="photo-track" id="photoTrack" aria-label="Landmark photos"></div>
+        <button type="button" class="photo-nav prev" id="photoPrev" aria-label="Previous photo">‹</button>
+        <button type="button" class="photo-nav next" id="photoNext" aria-label="Next photo">›</button>
+        <div class="photo-dots" id="photoDots" role="tablist" aria-label="Photo pages"></div>
+      </div>
+      <p class="photo-credit" id="photoCredit">Photos: Wikimedia Commons</p>
+      <div class="card-body">
+        <h2 id="cardTitle">Landmark</h2>
+        <p class="card-place" id="cardPlace">Place</p>
+        <p class="card-story" id="cardStory">Story</p>
+        <div class="wow">
+          <strong>Wow fact</strong>
+          <span id="cardWow">Fun detail</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-actions">
+      <button type="button" class="btn hear" id="speakBtn">
+        <span class="icon">🔊</span> Hear it
+      </button>
+      <button type="button" class="btn watch" id="watchBtn" aria-pressed="false" hidden>
+        <span class="icon">🎬</span> Watch
+      </button>
+      <button type="button" class="btn ghost" id="cardMoreBtn" aria-expanded="false" aria-controls="cardMore" hidden>
+        More
+      </button>
+    </div>
+    <div class="card-more" id="cardMore">
+      <button type="button" class="btn anthem" id="anthemBtn" aria-pressed="false" hidden>
+        <span class="icon">🎵</span> National Anthem
+      </button>
+    </div>
+    <div class="video-panel" id="videoPanel" hidden>
+      <button type="button" class="video-placeholder" id="videoStart" aria-label="Play video">
+        <span class="play">▶</span>
+        <span>Tap to watch</span>
+      </button>
+      <div class="video-fallback" id="videoFallback">
+        <p>Video can’t play right now (needs internet).</p>
+        <button type="button" class="btn hear" id="videoFallbackHear">
+          <span class="icon">🔊</span> Hear the story instead
+        </button>
+      </div>
+      <p class="video-note" id="videoNote">Video needs internet · YouTube</p>
+    </div>
+  </article>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three/three.module.js",
+      "three/addons/": "./vendor/three/addons/"
+    }
+  }
+  </script>
+  <script src="vendor/globe.gl.min.js"></script>
+  <script src="landmarks.js"></script>
+  <script src="wonders.js"></script>
+  <script src="geography.js"></script>
+  <script src="space.js"></script>
+  <script>
+    (function () {
+      const DATASETS = {
+        landmarks: {
+          items: window.LANDMARKS || [],
+          label: "Explore landmarks",
+          hint: "",
+          coach: "Tap the glowing dots! ✨",
+          main: "landmarks",
+        },
+        wonders: {
+          items: window.WONDERS || [],
+          label: "Explore natural wonders",
+          hint: "Nature’s wow places",
+          coach: "Find waterfalls, mountains & more! 🌋",
+          main: "wonders",
+        },
+        continents: {
+          items: window.CONTINENTS || [],
+          label: "Explore continents",
+          hint: "Earth’s giant pieces",
+          coach: "Tap a continent! 🗺️",
+          main: "geography",
+        },
+        countries: {
+          items: window.COUNTRIES || [],
+          label: "Explore countries",
+          hint: "Countries around the world",
+          coach: "Pick a country flag! 🏳️",
+          main: "geography",
+        },
+        space: {
+          items: window.SPACE || [],
+          label: "Explore the solar system",
+          hint: "Meet the planets",
+          coach: "Tap a planet to learn! 🚀",
+          main: "space",
+        },
+      };
+
+      let activeTab = "landmarks";
+      let places = DATASETS.landmarks.items;
+      let globe = null;
+      let selectedId = null;
+      let soundOn = false;
+      let autoRotate = true;
+      let resumeTimer = null;
+      let coachHidden = false;
+      let audioCtx = null;
+      let ambientNodes = null;
+      let nightMode = false;
+      let sunDirLight = null;
+      let cloudsMesh = null;
+      let cloudsRaf = 0;
+      let globeReady = false;
+      let videoFailTimer = null;
+      let spaceTransitioning = false;
+
+      const EARTH_DAY = "textures/earth/earth-blue-marble.jpg";
+      const EARTH_BUMP = "textures/earth/earth-topology.png";
+      const EARTH_CLOUDS = "https://cdn.jsdelivr.net/gh/vasturiano/three-globe/example/img/earth-clouds.png";
+      const EARTH_NIGHT = "https://cdn.jsdelivr.net/gh/vasturiano/three-globe/example/img/earth-night.jpg";
+
+      let photoIndex = 0;
+      let photoCount = 0;
+      let currentVideoId = null;
+      let videoOpen = false;
+
+      const els = {
+        loader: document.getElementById("loader"),
+        globeViz: document.getElementById("globeViz"),
+        globeShadow: document.getElementById("globeShadow"),
+        spaceHandoff: document.getElementById("spaceHandoff"),
+        nightBtn: document.getElementById("nightBtn"),
+        settingsBtn: document.getElementById("settingsBtn"),
+        settingsPanel: document.getElementById("settingsPanel"),
+        adventuresBtn: document.getElementById("adventuresBtn"),
+        adventureNav: document.getElementById("adventureNav"),
+        videoFallback: document.getElementById("videoFallback"),
+        videoFallbackHear: document.getElementById("videoFallbackHear"),
+        solarSystem: document.getElementById("solarSystem"),
+        ssScene: document.getElementById("ssScene"),
+        ssViewOrbits: document.getElementById("ssViewOrbits"),
+        ssViewSizes: document.getElementById("ssViewSizes"),
+        ssViewIso: document.getElementById("ssViewIso"),
+        ssSizesRow: document.getElementById("ssSizesRow"),
+        ss3d: document.getElementById("ss3d"),
+        ssHint: document.getElementById("ssHint"),
+        spaceSubtabs: document.getElementById("spaceSubtabs"),
+        subOrbits: document.getElementById("subOrbits"),
+        subSizes: document.getElementById("subSizes"),
+        subSpheres: document.getElementById("subSpheres"),
+        stars: document.getElementById("stars"),
+        sparkles: document.getElementById("sparkles"),
+        coach: document.getElementById("coach"),
+        strip: document.getElementById("strip"),
+        exploreLabel: document.getElementById("exploreLabel"),
+        brandHint: document.getElementById("brandHint"),
+        tabLandmarks: document.getElementById("tabLandmarks"),
+        tabWonders: document.getElementById("tabWonders"),
+        tabGeography: document.getElementById("tabGeography"),
+        tabSpace: document.getElementById("tabSpace"),
+        geoSubtabs: document.getElementById("geoSubtabs"),
+        subContinents: document.getElementById("subContinents"),
+        subCountries: document.getElementById("subCountries"),
+        overlay: document.getElementById("overlay"),
+        card: document.getElementById("card"),
+        cardScroll: document.getElementById("cardScroll"),
+        cardClose: document.getElementById("cardClose"),
+        cardHero: document.getElementById("cardHero"),
+        photoTrack: document.getElementById("photoTrack"),
+        photoPrev: document.getElementById("photoPrev"),
+        photoNext: document.getElementById("photoNext"),
+        photoDots: document.getElementById("photoDots"),
+        photoHint: document.getElementById("photoHint"),
+        photoCredit: document.getElementById("photoCredit"),
+        cardTitle: document.getElementById("cardTitle"),
+        cardPlace: document.getElementById("cardPlace"),
+        cardStory: document.getElementById("cardStory"),
+        cardWow: document.getElementById("cardWow"),
+        videoPanel: document.getElementById("videoPanel"),
+        videoStart: document.getElementById("videoStart"),
+        videoNote: document.getElementById("videoNote"),
+        watchBtn: document.getElementById("watchBtn"),
+        anthemBtn: document.getElementById("anthemBtn"),
+        cardMoreBtn: document.getElementById("cardMoreBtn"),
+        cardMore: document.getElementById("cardMore"),
+        muteBtn: document.getElementById("muteBtn"),
+        muteIcon: document.getElementById("muteIcon"),
+        muteLabel: document.getElementById("muteLabel"),
+        surpriseBtn: document.getElementById("surpriseBtn"),
+        surpriseIcon: document.getElementById("surpriseIcon"),
+        speakBtn: document.getElementById("speakBtn"),
+      };
+
+      function setPanelOpen(panel, btn, open) {
+        if (!panel || !btn) return;
+        panel.classList.toggle("open", open);
+        btn.setAttribute("aria-expanded", String(open));
+      }
+
+      function closeChromeMenus() {
+        setPanelOpen(els.settingsPanel, els.settingsBtn, false);
+        setPanelOpen(els.adventureNav, els.adventuresBtn, false);
+      }
+
+      function setCardMoreOpen(open) {
+        if (!els.cardMore || !els.cardMoreBtn) return;
+        els.cardMore.classList.toggle("open", open);
+        els.cardMoreBtn.setAttribute("aria-expanded", String(open));
+      }
+
+      /* —— Stars —— */
+      function makeStars() {
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i < 70; i++) {
+          const s = document.createElement("span");
+          s.className = "star" + (i % 7 === 0 ? " big" : "");
+          s.style.left = Math.random() * 100 + "%";
+          s.style.top = Math.random() * 70 + "%";
+          s.style.setProperty("--dur", 2.2 + Math.random() * 3.5 + "s");
+          s.style.setProperty("--delay", Math.random() * 4 + "s");
+          frag.appendChild(s);
+        }
+        els.stars.appendChild(frag);
+      }
+
+      function shootingStar() {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        const star = document.createElement("div");
+        star.className = "shooting-star";
+        star.style.left = 10 + Math.random() * 60 + "%";
+        star.style.top = 5 + Math.random() * 35 + "%";
+        els.stars.appendChild(star);
+        requestAnimationFrame(() => star.classList.add("go"));
+        setTimeout(() => star.remove(), 1200);
+      }
+
+      /* —— Sound —— */
+      function ensureAudio() {
+        if (!audioCtx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) audioCtx = new AC();
+        }
+        if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      }
+
+      function tone(freq, dur, type, gainVal) {
+        if (!soundOn || !audioCtx) return;
+        const t0 = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type || "sine";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(gainVal || 0.08, t0);
+        gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t0);
+        osc.stop(t0 + dur);
+      }
+
+      function playPop() {
+        ensureAudio();
+        tone(520, 0.12, "triangle", 0.07);
+        setTimeout(() => tone(780, 0.1, "sine", 0.05), 40);
+      }
+
+      function playWhoosh() {
+        ensureAudio();
+        if (!soundOn || !audioCtx) return;
+        const t0 = audioCtx.currentTime;
+        const bufferSize = audioCtx.sampleRate * 0.35;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime(400, t0);
+        filter.frequency.exponentialRampToValueAtTime(1800, t0 + 0.3);
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.04, t0);
+        gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.35);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        noise.start(t0);
+      }
+
+      function playChime() {
+        ensureAudio();
+        tone(659, 0.18, "sine", 0.06);
+        setTimeout(() => tone(880, 0.22, "sine", 0.05), 90);
+      }
+
+      function playFlyWhoosh() {
+        ensureAudio();
+        if (!soundOn || !audioCtx) return;
+        const t0 = audioCtx.currentTime;
+        const dur = 0.55;
+        const bufferSize = Math.floor(audioCtx.sampleRate * dur);
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          const env = Math.pow(1 - i / bufferSize, 1.6);
+          data[i] = (Math.random() * 2 - 1) * env;
+        }
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(280, t0);
+        filter.frequency.exponentialRampToValueAtTime(2200, t0 + 0.35);
+        filter.frequency.exponentialRampToValueAtTime(500, t0 + dur);
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.001, t0);
+        gain.gain.exponentialRampToValueAtTime(0.07, t0 + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        noise.start(t0);
+        // soft tone sweep under whoosh
+        const osc = audioCtx.createOscillator();
+        const og = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(180, t0);
+        osc.frequency.exponentialRampToValueAtTime(420, t0 + 0.4);
+        og.gain.setValueAtTime(0.03, t0);
+        og.gain.exponentialRampToValueAtTime(0.001, t0 + 0.5);
+        osc.connect(og);
+        og.connect(audioCtx.destination);
+        osc.start(t0);
+        osc.stop(t0 + 0.55);
+      }
+
+      function startAmbient() {
+        ensureAudio();
+        if (!soundOn || !audioCtx || ambientNodes) return;
+        const master = audioCtx.createGain();
+        master.gain.value = 0.0001;
+        master.connect(audioCtx.destination);
+        const makePad = (freq, type, gainVal) => {
+          const osc = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          const lfo = audioCtx.createOscillator();
+          const lfoG = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.value = freq;
+          lfo.frequency.value = 0.07 + Math.random() * 0.05;
+          lfoG.gain.value = freq * 0.012;
+          lfo.connect(lfoG);
+          lfoG.connect(osc.frequency);
+          g.gain.value = gainVal;
+          osc.connect(g);
+          g.connect(master);
+          osc.start();
+          lfo.start();
+          return { osc, lfo, g };
+        };
+        ambientNodes = {
+          master,
+          pads: [
+            makePad(110, "sine", 0.045),
+            makePad(164.81, "triangle", 0.02),
+            makePad(220, "sine", 0.018),
+          ],
+        };
+        const t0 = audioCtx.currentTime;
+        master.gain.exponentialRampToValueAtTime(0.045, t0 + 2.2);
+      }
+
+      function stopAmbient() {
+        if (!ambientNodes || !audioCtx) return;
+        const { master, pads } = ambientNodes;
+        const t0 = audioCtx.currentTime;
+        master.gain.cancelScheduledValues(t0);
+        master.gain.setValueAtTime(Math.max(master.gain.value, 0.0001), t0);
+        master.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.8);
+        setTimeout(() => {
+          pads.forEach((p) => {
+            try { p.osc.stop(); p.lfo.stop(); } catch (_) {}
+          });
+          try { master.disconnect(); } catch (_) {}
+          ambientNodes = null;
+        }, 900);
+      }
+
+      function setAmbientForMode() {
+        if (!soundOn) {
+          stopAmbient();
+          return;
+        }
+        if (activeTab === "space" || selectedId) startAmbient();
+        else if (ambientNodes && ambientNodes.master) {
+          // keep a quieter bed on globe
+          ambientNodes.master.gain.setTargetAtTime(0.028, audioCtx.currentTime, 0.4);
+        } else {
+          startAmbient();
+        }
+      }
+
+      /* —— Sparkles —— */
+      function sparkAt(x, y) {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        for (let i = 0; i < 12; i++) {
+          const sp = document.createElement("span");
+          sp.className = "spark";
+          const angle = (Math.PI * 2 * i) / 12;
+          const dist = 28 + Math.random() * 36;
+          sp.style.left = x + "px";
+          sp.style.top = y + "px";
+          sp.style.setProperty("--sx", Math.cos(angle) * dist + "px");
+          sp.style.setProperty("--sy", Math.sin(angle) * dist + "px");
+          sp.style.background = i % 2 ? "#ffc857" : "#fff";
+          els.sparkles.appendChild(sp);
+          setTimeout(() => sp.remove(), 750);
+        }
+      }
+
+      /* —— Strip —— */
+      function buildStrip() {
+        els.strip.innerHTML = "";
+        places.forEach((lm) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "thumb";
+          btn.dataset.id = lm.id;
+          btn.title = lm.name;
+          btn.innerHTML = `<span class="te">${lm.emoji}</span><span class="tn">${lm.name}</span>`;
+          btn.addEventListener("click", () => openLandmark(lm.id, btn));
+          els.strip.appendChild(btn);
+        });
+      }
+
+      function syncStrip() {
+        els.strip.querySelectorAll(".thumb").forEach((t) => {
+          t.classList.toggle("active", t.dataset.id === selectedId);
+        });
+      }
+
+      /* scrollIntoView on thumbs also scrolls the page sideways — keep it in the strip */
+      function scrollStripToId(id) {
+        const thumb = els.strip.querySelector(`[data-id="${id}"]`);
+        if (!thumb) return;
+        const strip = els.strip;
+        const left = thumb.offsetLeft - (strip.clientWidth - thumb.clientWidth) / 2;
+        strip.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+        window.scrollTo(0, 0);
+      }
+
+      /* —— Photo gallery —— */
+      function updatePhotoChrome() {
+        els.photoDots.querySelectorAll(".photo-dot").forEach((dot, i) => {
+          dot.classList.toggle("active", i === photoIndex);
+        });
+        els.photoPrev.disabled = photoIndex <= 0;
+        els.photoNext.disabled = photoIndex >= photoCount - 1;
+        if (els.photoHint) {
+          els.photoHint.textContent =
+            photoCount > 1 ? `Photo ${photoIndex + 1} / ${photoCount}` : "Photo";
+        }
+      }
+
+      function goToPhoto(index, smooth) {
+        if (!photoCount) return;
+        photoIndex = Math.max(0, Math.min(photoCount - 1, index));
+        const slide = els.photoTrack.children[photoIndex];
+        if (slide) {
+          els.photoTrack.scrollTo({
+            left: slide.offsetLeft,
+            behavior: smooth === false ? "auto" : "smooth",
+          });
+        }
+        updatePhotoChrome();
+      }
+
+      function buildGallery(lm) {
+        const photos = (lm.photos && lm.photos.length ? lm.photos : []).slice(0, 6);
+        photoCount = photos.length || 1;
+        photoIndex = 0;
+        els.cardHero.style.setProperty("--accent", lm.color === "#ffffff" ? "#c8d6e0" : lm.color);
+        els.photoTrack.innerHTML = "";
+        els.photoDots.innerHTML = "";
+
+        if (!photos.length) {
+          const slide = document.createElement("div");
+          slide.className = "photo-slide broken";
+          slide.innerHTML = `<div class="photo-fallback">${lm.emoji}</div>`;
+          els.photoTrack.appendChild(slide);
+        } else {
+          photos.forEach((src, i) => {
+            const slide = document.createElement("div");
+            slide.className = "photo-slide";
+            const img = document.createElement("img");
+            img.src = src;
+            img.alt = `${lm.name} photo ${i + 1}`;
+            img.loading = i === 0 ? "eager" : "lazy";
+            img.decoding = "async";
+            img.addEventListener("error", () => slide.classList.add("broken"));
+            const fallback = document.createElement("div");
+            fallback.className = "photo-fallback";
+            fallback.textContent = lm.emoji;
+            slide.appendChild(img);
+            slide.appendChild(fallback);
+            els.photoTrack.appendChild(slide);
+
+            const dot = document.createElement("button");
+            dot.type = "button";
+            dot.className = "photo-dot" + (i === 0 ? " active" : "");
+            dot.setAttribute("aria-label", `Photo ${i + 1}`);
+            dot.addEventListener("click", (e) => {
+              e.stopPropagation();
+              goToPhoto(i);
+              playPop();
+            });
+            els.photoDots.appendChild(dot);
+          });
+        }
+
+        const showNav = photoCount > 1;
+        els.photoPrev.style.display = showNav ? "flex" : "none";
+        els.photoNext.style.display = showNav ? "flex" : "none";
+        els.photoDots.style.display = showNav ? "flex" : "none";
+        els.photoTrack.scrollLeft = 0;
+        updatePhotoChrome();
+      }
+
+      /* —— Card —— */
+      let mediaMode = null; // "video" | "anthem" | null
+      let currentAnthemUrl = null; // YouTube id OR audio url/path
+      let anthemAudio = null;
+
+      function isAnthemAudioSrc(src) {
+        if (!src || typeof src !== "string") return false;
+        return (
+          src.startsWith("http://") ||
+          src.startsWith("https://") ||
+          src.startsWith("anthems/") ||
+          /\.(mp3|ogg|oga|wav|m4a|flac)(\?|$)/i.test(src)
+        );
+      }
+
+      function isYouTubeId(src) {
+        return typeof src === "string" && /^[\w-]{11}$/.test(src);
+      }
+
+      function stopAnthemAudio() {
+        if (anthemAudio) {
+          anthemAudio.pause();
+          anthemAudio.removeAttribute("src");
+          anthemAudio.load();
+          anthemAudio = null;
+        }
+        const wrap = els.videoPanel.querySelector(".anthem-player");
+        if (wrap) wrap.remove();
+        els.videoPanel.classList.remove("audio-mode");
+      }
+
+      function playAnthemAudio(src) {
+        els.videoStart.style.display = "none";
+        if (els.videoFallback) els.videoFallback.classList.remove("open");
+        els.videoPanel.hidden = false;
+        els.videoPanel.classList.add("open", "audio-mode");
+        els.card.classList.remove("video-open");
+        els.videoNote.classList.add("open");
+        const spain =
+          /marcha_real|spain/i.test(src) || currentAnthemUrl === "irb89p66kUs";
+        els.videoNote.textContent = spain
+          ? "Spain’s anthem has no official words — music only"
+          : "National anthem · audio player";
+        const wrap = document.createElement("div");
+        wrap.className = "anthem-player";
+        wrap.innerHTML = `
+          <div class="anthem-now">
+            <span class="pulse" aria-hidden="true">🎵</span>
+            <span>Playing the national anthem</span>
+          </div>
+        `;
+        const audio = document.createElement("audio");
+        audio.controls = true;
+        audio.autoplay = true;
+        audio.playsInline = true;
+        audio.preload = "auto";
+        audio.src = src;
+        audio.setAttribute("aria-label", "National anthem");
+        wrap.appendChild(audio);
+        els.videoPanel.appendChild(wrap);
+        anthemAudio = audio;
+        audio.play().catch(() => {});
+      }
+
+      function stopVideo() {
+        clearTimeout(videoFailTimer);
+        videoFailTimer = null;
+        const iframe = els.videoPanel.querySelector("iframe");
+        if (iframe) iframe.remove();
+        stopAnthemAudio();
+        if (els.videoFallback) els.videoFallback.classList.remove("open");
+        els.videoStart.style.display = "flex";
+        els.videoPanel.classList.remove("open", "audio-mode");
+        els.videoPanel.hidden = true;
+        els.videoNote.classList.remove("open");
+        els.card.classList.remove("video-open");
+        els.watchBtn.setAttribute("aria-pressed", "false");
+        els.watchBtn.innerHTML = '<span class="icon">🎬</span> Watch';
+        els.anthemBtn.setAttribute("aria-pressed", "false");
+        els.anthemBtn.innerHTML = '<span class="icon">🎵</span> National Anthem';
+        videoOpen = false;
+        mediaMode = null;
+      }
+
+      function showMediaPanel(mode) {
+        if (mode === "anthem") {
+          if (!currentAnthemUrl) return;
+          if (window.speechSynthesis) window.speechSynthesis.cancel();
+
+          const iframe = els.videoPanel.querySelector("iframe");
+          if (iframe) iframe.remove();
+          stopAnthemAudio();
+
+          mediaMode = "anthem";
+          videoOpen = true;
+          els.watchBtn.setAttribute("aria-pressed", "false");
+          els.watchBtn.innerHTML = '<span class="icon">🎬</span> Watch';
+          els.anthemBtn.setAttribute("aria-pressed", "true");
+          els.anthemBtn.innerHTML = '<span class="icon">🎵</span> Stop anthem';
+
+          // Prefer direct audio (reliable). YouTube IDs used only when no audio URL.
+          if (isAnthemAudioSrc(currentAnthemUrl)) {
+            playAnthemAudio(currentAnthemUrl);
+          } else if (isYouTubeId(currentAnthemUrl)) {
+            els.videoPanel.classList.remove("audio-mode");
+            els.videoPanel.hidden = false;
+            els.videoPanel.classList.add("open");
+            els.card.classList.add("video-open");
+            els.videoNote.classList.add("open");
+            els.videoNote.textContent =
+              currentAnthemUrl === "irb89p66kUs"
+                ? "Spain’s anthem has no official words — music only"
+                : "National anthem · tap play · needs internet";
+            els.videoStart.style.setProperty(
+              "--poster",
+              `url("https://i.ytimg.com/vi/${currentAnthemUrl}/hqdefault.jpg")`
+            );
+            els.videoStart.querySelector("span:last-child").textContent = "Tap to play anthem";
+            els.videoStart.style.display = "flex";
+          } else {
+            return;
+          }
+
+          playPop();
+          return;
+        }
+
+        const id = currentVideoId;
+        if (!id) return;
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+
+        const iframe = els.videoPanel.querySelector("iframe");
+        if (iframe) iframe.remove();
+        stopAnthemAudio();
+
+        mediaMode = "video";
+        videoOpen = true;
+        els.videoPanel.hidden = false;
+        els.videoPanel.classList.add("open");
+        els.videoPanel.classList.remove("audio-mode");
+        els.card.classList.add("video-open");
+        els.videoNote.classList.add("open");
+        els.videoNote.textContent = "Needs internet · YouTube";
+
+        els.watchBtn.setAttribute("aria-pressed", "true");
+        els.watchBtn.innerHTML = '<span class="icon">🎬</span> Hide video';
+        els.anthemBtn.setAttribute("aria-pressed", "false");
+        els.anthemBtn.innerHTML = '<span class="icon">🎵</span> National Anthem';
+
+        els.videoStart.style.setProperty(
+          "--poster",
+          `url("https://i.ytimg.com/vi/${id}/hqdefault.jpg")`
+        );
+        els.videoStart.querySelector("span:last-child").textContent = "Tap to watch";
+        els.videoStart.style.display = "none";
+        playPop();
+        playVideoEmbed();
+      }
+
+      function toggleVideo() {
+        if (videoOpen && mediaMode === "video") {
+          stopVideo();
+        } else {
+          showMediaPanel("video");
+        }
+      }
+
+      function toggleAnthem() {
+        if (videoOpen && mediaMode === "anthem") {
+          stopVideo();
+        } else {
+          showMediaPanel("anthem");
+        }
+      }
+
+      function showVideoFallback() {
+        if (!els.videoFallback) return;
+        els.videoFallback.classList.add("open");
+        els.videoNote.textContent =
+          mediaMode === "anthem"
+            ? "Anthem video blocked here · tap Hear it for the story"
+            : "Video blocked or offline · hear the story instead";
+        els.videoNote.classList.add("open");
+      }
+
+      function playVideoEmbed() {
+        const id = mediaMode === "anthem" ? currentAnthemUrl : currentVideoId;
+        if (!isYouTubeId(id)) return;
+        if (!navigator.onLine) {
+          els.videoStart.style.display = "none";
+          showVideoFallback();
+          return;
+        }
+        els.videoStart.style.display = "none";
+        if (els.videoFallback) els.videoFallback.classList.remove("open");
+        const iframe = document.createElement("iframe");
+        const origin = encodeURIComponent(window.location.origin || "http://127.0.0.1:8765");
+        // youtube.com (not nocookie) embeds more reliably for anthems
+        iframe.src =
+          "https://www.youtube.com/embed/" +
+          id +
+          "?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&origin=" +
+          origin;
+        iframe.title = mediaMode === "anthem" ? "National anthem" : "Learning video";
+        iframe.allow =
+          "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+        iframe.allowFullscreen = true;
+        iframe.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+        iframe.addEventListener("error", showVideoFallback);
+        els.videoPanel.appendChild(iframe);
+        clearTimeout(videoFailTimer);
+        videoFailTimer = setTimeout(() => {
+          if (!els.videoPanel.classList.contains("open")) return;
+          if (!iframe.isConnected) return;
+          if (!navigator.onLine) {
+            showVideoFallback();
+            return;
+          }
+          if (els.videoNote && mediaMode === "anthem") {
+            els.videoNote.textContent =
+              "If you see “Video unavailable”, that clip blocks embedding — try another country or Hear it";
+            els.videoNote.classList.add("open");
+          } else if (els.videoNote) {
+            els.videoNote.textContent = "If the video won’t play, tap Hear it";
+            els.videoNote.classList.add("open");
+          }
+        }, 4500);
+      }
+
+      function openCard(lm) {
+        stopVideo();
+        buildGallery(lm);
+        currentVideoId = lm.video || null;
+        currentAnthemUrl = lm.anthem || null;
+        els.watchBtn.hidden = !currentVideoId;
+        els.anthemBtn.hidden = !currentAnthemUrl;
+        els.anthemBtn.style.display = currentAnthemUrl ? "inline-flex" : "none";
+        els.cardMoreBtn.hidden = !currentAnthemUrl;
+        setCardMoreOpen(false);
+        els.cardTitle.textContent = lm.name;
+        els.cardPlace.textContent = lm.place;
+        els.cardStory.textContent = lm.story;
+        els.cardWow.textContent = lm.wow;
+        els.overlay.hidden = false;
+        els.card.hidden = false;
+        requestAnimationFrame(() => {
+          els.overlay.classList.add("open");
+          els.card.classList.add("open");
+        });
+        playChime();
+      }
+
+      function closeCard() {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        stopVideo();
+        setCardMoreOpen(false);
+        els.overlay.classList.remove("open");
+        els.card.classList.remove("open");
+        setTimeout(() => {
+          if (!els.card.classList.contains("open")) {
+            els.overlay.hidden = true;
+            els.card.hidden = true;
+          }
+        }, 400);
+        selectedId = null;
+        currentVideoId = null;
+        currentAnthemUrl = null;
+        document.querySelectorAll(".pin.selected").forEach((p) => p.classList.remove("selected"));
+        document.querySelectorAll(".ss-body.selected, .ss-sun.selected, .ss-size-item.selected, .ss-iso-item.selected").forEach((p) => p.classList.remove("selected"));
+        syncStrip();
+        if (activeTab !== "space") setAutoRotate(true);
+      }
+
+      /* —— Solar system —— */
+      let spaceView = "spheres";
+
+      // Real-ish top-down map: AU distances (sqrt-compressed) + orbital years
+      const ORBIT_AU = {
+        mercury: 0.39,
+        venus: 0.72,
+        earth: 1.0,
+        mars: 1.52,
+        asteroids: 2.7,
+        jupiter: 5.2,
+        saturn: 9.58,
+        uranus: 19.2,
+        neptune: 30.05,
+        comet: 17.0, // long eccentric path (visual)
+      };
+
+      const ORBIT_YEARS = {
+        mercury: 0.241,
+        venus: 0.615,
+        earth: 1,
+        mars: 1.881,
+        asteroids: 4.6,
+        jupiter: 11.86,
+        saturn: 29.46,
+        uranus: 84.0,
+        neptune: 164.8,
+        comet: 75, // Halley-ish
+        moon: 0.075, // ~27 days vs Earth year
+      };
+
+      const EARTH_YEAR_SECONDS = 22; // sped-up so kids see motion
+
+      function orbitRadiusPct(au) {
+        // sqrt compression keeps outer planets on-screen while preserving gaps
+        const s = Math.sqrt(au);
+        const min = Math.sqrt(0.39);
+        const max = Math.sqrt(30.05);
+        const t = (s - min) / (max - min);
+        return 16 + t * 80; // 16% … 96% of scene
+      }
+
+      function orbitSpinSeconds(years) {
+        return Math.max(3.5, EARTH_YEAR_SECONDS * years);
+      }
+
+      const SPACE_VIEW_HINTS = {
+        orbits: "Top-down map · distances & year lengths are real (sped up)",
+        sizes: "Scroll to compare real sizes!",
+        spheres: "Drag to look around · scroll/pinch to zoom · tap a planet",
+      };
+
+      function bindSpacePick(el, obj) {
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const rect = el.getBoundingClientRect();
+          sparkAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
+          openLandmark(obj.id, el);
+        });
+      }
+
+      function makeOrbitBody(obj, spinSec, phaseSec) {
+        const body = document.createElement("button");
+        body.type = "button";
+        body.className =
+          "ss-body" +
+          (obj.id === "saturn" ? " saturn" : "") +
+          (obj.kind === "comet" ? " comet" : "");
+        body.dataset.id = obj.id;
+        body.setAttribute("aria-label", obj.name);
+        const sizeScale = obj.kind === "belt" ? 0.7 : 0.78;
+        body.style.setProperty("--size", Math.max(16, Math.round(obj.size * sizeScale)) + "px");
+        body.style.setProperty("--color", obj.color);
+        body.style.setProperty("--spin", spinSec + "s");
+        body.style.setProperty("--phase", (phaseSec || 0) + "s");
+        body.innerHTML = `<span aria-hidden="true">${obj.emoji}</span><span class="ss-label">${obj.name.replace(/^The /, "")}</span>`;
+        bindSpacePick(body, obj);
+        return body;
+      }
+
+      function buildOrbitView() {
+        if (!els.ssScene) return;
+        els.ssScene.innerHTML = "";
+
+        const note = document.createElement("div");
+        note.className = "ss-orbit-note";
+        note.textContent = "Looking straight down · closer = faster year";
+        els.ssScene.appendChild(note);
+
+        const byId = Object.fromEntries(DATASETS.space.items.map((o) => [o.id, o]));
+
+        DATASETS.space.items.forEach((obj, index) => {
+          if (obj.kind === "star") {
+            const sun = document.createElement("button");
+            sun.type = "button";
+            sun.className = "ss-sun";
+            sun.dataset.id = obj.id;
+            sun.setAttribute("aria-label", obj.name);
+            sun.style.setProperty("--size", Math.round(obj.size * 0.75) + "px");
+            sun.innerHTML = `<span aria-hidden="true">${obj.emoji}</span><span class="ss-label">${obj.name}</span>`;
+            bindSpacePick(sun, obj);
+            els.ssScene.appendChild(sun);
+            return;
+          }
+
+          // Moon nests on Earth (not its own solar orbit)
+          if (obj.id === "moon") return;
+
+          const au = ORBIT_AU[obj.id];
+          if (au == null) return;
+
+          const years = ORBIT_YEARS[obj.id] || 1;
+          const spinSec = orbitSpinSeconds(years);
+          const phaseSec = -((index * 2.7) % spinSec);
+          const rPct = orbitRadiusPct(au);
+
+          const orbit = document.createElement("div");
+          orbit.className = "ss-orbit" + (obj.kind === "belt" ? " belt" : "");
+          orbit.style.setProperty("--r", rPct.toFixed(2) + "%");
+          orbit.style.setProperty("--spin", spinSec + "s");
+          orbit.style.setProperty("--phase", phaseSec + "s");
+
+          const body = makeOrbitBody(obj, spinSec, phaseSec);
+          if (obj.kind === "belt") body.style.setProperty("--size", "22px");
+          orbit.appendChild(body);
+
+          if (obj.id === "earth" && byId.moon) {
+            const moonSpin = orbitSpinSeconds(ORBIT_YEARS.moon);
+            const moonOrbit = document.createElement("div");
+            moonOrbit.className = "ss-moon-orbit";
+            moonOrbit.style.setProperty("--moon-spin", moonSpin + "s");
+            moonOrbit.appendChild(makeOrbitBody(byId.moon, moonSpin, 0));
+            body.appendChild(moonOrbit);
+          }
+
+          if (obj.kind === "comet") {
+            const wrap = document.createElement("div");
+            wrap.className = "ss-comet-wrap";
+            wrap.style.setProperty("--r", rPct.toFixed(2) + "%");
+            // reset orbit to fill the wrap
+            orbit.style.setProperty("--r", "100%");
+            wrap.appendChild(orbit);
+            els.ssScene.appendChild(wrap);
+            return;
+          }
+
+          els.ssScene.appendChild(orbit);
+        });
+      }
+
+      // True diameters (km) — kept here so size views never depend on missing data
+      const SPACE_DIAMETERS = {
+        sun: 1392700,
+        mercury: 4879,
+        venus: 12104,
+        earth: 12742,
+        moon: 3475,
+        mars: 6779,
+        jupiter: 139820,
+        saturn: 116460,
+        uranus: 50724,
+        neptune: 49244,
+      };
+
+      function spaceDiameterKm(obj) {
+        return (obj && (obj.diameterKm || SPACE_DIAMETERS[obj.id])) || 1000;
+      }
+
+      function planetDisplayPx(km, jupKm, maxPx) {
+        // Linear vs Jupiter, with a tiny floor so Mercury stays visible
+        return Math.max(8, Math.round((km / jupKm) * maxPx));
+      }
+
+      function buildSizesView() {
+        if (!els.ssSizesRow) return;
+        els.ssSizesRow.innerHTML = "";
+        const items = DATASETS.space.items.filter((o) =>
+          o.kind === "star" || o.kind === "planet" || o.kind === "moon"
+        );
+        const jupKm = SPACE_DIAMETERS.jupiter;
+        const maxPlanetPx = 132;
+        const sunMaxPx = 170;
+
+        items.forEach((obj) => {
+          const km = spaceDiameterKm(obj);
+          const px = obj.kind === "star" ? sunMaxPx : planetDisplayPx(km, jupKm, maxPlanetPx);
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "ss-size-item" + (obj.kind === "star" ? " sun" : "") + (obj.id === "saturn" ? " saturn" : "");
+          btn.dataset.id = obj.id;
+          btn.setAttribute("aria-label", obj.name + " size comparison");
+
+          const ball = document.createElement("span");
+          ball.className = "ss-size-ball";
+          ball.style.width = px + "px";
+          ball.style.height = px + "px";
+          ball.style.setProperty("--ball", obj.color);
+
+          const name = document.createElement("span");
+          name.className = "ss-size-name";
+          name.textContent = obj.name.replace(/^The /, "");
+
+          const meta = document.createElement("span");
+          meta.className = "ss-size-meta";
+          if (obj.kind === "star") {
+            meta.textContent = "Much bigger!";
+          } else if (obj.id === "earth") {
+            meta.textContent = "Our home";
+          } else {
+            const ratio = km / SPACE_DIAMETERS.earth;
+            meta.textContent = ratio >= 1
+              ? (Math.round(ratio * 10) / 10) + "× Earth"
+              : Math.round(ratio * 100) + "% Earth";
+          }
+
+          btn.appendChild(ball);
+          btn.appendChild(name);
+          btn.appendChild(meta);
+          bindSpacePick(btn, obj);
+          els.ssSizesRow.appendChild(btn);
+        });
+      }
+
+      let solar3dLoading = null;
+
+      function loadSolar3DModule() {
+        if (window.Solar3D) return Promise.resolve(window.Solar3D);
+        if (solar3dLoading) return solar3dLoading;
+        solar3dLoading = import("./solar3d.js").then(() => window.Solar3D);
+        return solar3dLoading;
+      }
+
+      async function ensureSolar3D(opts) {
+        if (!els.ss3d) return;
+        const introZoom = !!(opts && opts.introZoom);
+        try {
+          await loadSolar3DModule();
+        } catch (err) {
+          console.warn("Solar3D failed to load", err);
+          return;
+        }
+        if (!window.Solar3D) return;
+        if (els.ss3d.dataset.ready === "1") {
+          window.Solar3D.resize();
+          window.Solar3D.setActive(true);
+          if (introZoom && window.Solar3D.playIntroZoom) window.Solar3D.playIntroZoom();
+          return;
+        }
+        window.Solar3D.init(els.ss3d, {
+          introZoom,
+          onSelect: (id) => {
+            const obj = DATASETS.space.items.find((p) => p.id === id);
+            if (!obj) return;
+            const rect = els.ss3d.getBoundingClientRect();
+            sparkAt(rect.left + rect.width / 2, rect.top + rect.height * 0.4);
+            openLandmark(id);
+          },
+        });
+        els.ss3d.dataset.ready = "1";
+      }
+
+      function buildIsoView() {
+        // 3D view is created lazily via ensureSolar3D()
+      }
+
+      function buildSolarSystem() {
+        buildOrbitView();
+        buildSizesView();
+      }
+
+      function setSpaceView(view, opts) {
+        if (!["orbits", "sizes", "spheres"].includes(view)) return;
+        const changed = spaceView !== view;
+        spaceView = view;
+        const views = [
+          [els.ssViewOrbits, "orbits"],
+          [els.ssViewSizes, "sizes"],
+          [els.ssViewIso, "spheres"],
+        ];
+        views.forEach(([el, key]) => {
+          if (!el) return;
+          const on = key === view;
+          el.classList.toggle("active", on);
+          el.setAttribute("aria-hidden", String(!on));
+        });
+        els.subOrbits.classList.toggle("active", view === "orbits");
+        els.subSizes.classList.toggle("active", view === "sizes");
+        els.subSpheres.classList.toggle("active", view === "spheres");
+        els.subOrbits.setAttribute("aria-selected", String(view === "orbits"));
+        els.subSizes.setAttribute("aria-selected", String(view === "sizes"));
+        els.subSpheres.setAttribute("aria-selected", String(view === "spheres"));
+        if (els.ssHint) els.ssHint.textContent = SPACE_VIEW_HINTS[view] || SPACE_VIEW_HINTS.orbits;
+
+        if (view === "spheres") {
+          requestAnimationFrame(() => ensureSolar3D({ introZoom: !!(opts && opts.introZoom) }));
+        } else if (window.Solar3D) {
+          window.Solar3D.setActive(false);
+        }
+
+        if (changed && !(opts && opts.silent)) playPop();
+      }
+
+      function setGlobeEngineActive(active) {
+        if (!globe) return;
+        if (active) {
+          if (typeof globe.resumeAnimation === "function") globe.resumeAnimation();
+          globe.controls().enabled = true;
+          if (cloudsMesh && !cloudsRaf) {
+            (function rotateClouds() {
+              if (!cloudsMesh || activeTab === "space") {
+                cloudsRaf = 0;
+                return;
+              }
+              cloudsMesh.rotation.y += 0.0004;
+              cloudsRaf = requestAnimationFrame(rotateClouds);
+            })();
+          }
+        } else {
+          if (typeof globe.pauseAnimation === "function") globe.pauseAnimation();
+          globe.controls().enabled = false;
+          if (cloudsRaf) {
+            cancelAnimationFrame(cloudsRaf);
+            cloudsRaf = 0;
+          }
+        }
+      }
+
+      function enterSpaceMode() {
+        if (spaceTransitioning) return;
+        spaceTransitioning = true;
+        document.body.classList.add("space-mode");
+        els.solarSystem.hidden = false;
+        if (els.spaceSubtabs) els.spaceSubtabs.classList.add("show");
+        if (els.nightBtn) els.nightBtn.style.display = "none";
+        if (els.spaceHandoff) els.spaceHandoff.classList.add("show");
+        playFlyWhoosh();
+        setAmbientForMode();
+
+        if (globe) {
+          setAutoRotate(false);
+          globe.htmlElementsData([]);
+          const pov = globe.pointOfView();
+          globe.pointOfView({ lat: pov.lat || 15, lng: pov.lng || 10, altitude: 2.4 }, 0);
+          globe.pointOfView({ lat: 12, lng: 20, altitude: 9.5 }, 1700);
+        }
+
+        // Prefetch 3D module during zoom-out
+        loadSolar3DModule().catch(() => {});
+
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const zoomMs = reduce ? 200 : 1600;
+        if (reduce && globe) {
+          globe.pointOfView({ lat: 12, lng: 20, altitude: 9.5 }, 0);
+        }
+        window.setTimeout(() => {
+          els.globeViz.classList.add("hidden-view");
+          if (els.globeShadow) els.globeShadow.classList.add("hidden-view");
+          setGlobeEngineActive(false);
+          els.solarSystem.classList.add("show");
+          setSpaceView(spaceView || "spheres", { silent: true, introZoom: !reduce });
+          if (els.spaceHandoff) {
+            window.setTimeout(() => els.spaceHandoff.classList.remove("show"), reduce ? 0 : 500);
+          }
+          spaceTransitioning = false;
+        }, zoomMs);
+      }
+
+      function leaveSpaceMode() {
+        document.body.classList.remove("space-mode");
+        els.solarSystem.classList.remove("show");
+        if (els.spaceSubtabs) els.spaceSubtabs.classList.remove("show");
+        if (els.spaceHandoff) els.spaceHandoff.classList.remove("show");
+        if (window.Solar3D) window.Solar3D.setActive(false);
+        els.globeViz.classList.remove("hidden-view");
+        if (els.globeShadow) els.globeShadow.classList.remove("hidden-view");
+        if (els.nightBtn) els.nightBtn.style.display = "";
+        setGlobeEngineActive(true);
+        applyNightMode(nightMode);
+        playFlyWhoosh();
+        window.setTimeout(() => {
+          if (activeTab !== "space") els.solarSystem.hidden = true;
+        }, 750);
+      }
+
+      /* —— Globe helpers —— */
+      function setAutoRotate(on) {
+        autoRotate = on;
+        if (globe) {
+          globe.controls().autoRotate = on;
+          globe.controls().autoRotateSpeed = 0.45;
+        }
+      }
+
+      function pauseAutoRotateTemporarily() {
+        setAutoRotate(false);
+        clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(() => {
+          if (!selectedId) setAutoRotate(true);
+        }, 4000);
+      }
+
+      function hideCoach() {
+        if (coachHidden) return;
+        coachHidden = true;
+        els.coach.classList.add("hide");
+        setTimeout(() => els.coach.remove(), 450);
+      }
+
+      function createPin(lm, index) {
+        const el = document.createElement("button");
+        el.type = "button";
+        el.className = "pin" + (index < 4 ? " pin-bounce" : "");
+        el.dataset.id = lm.id;
+        el.setAttribute("aria-label", lm.name);
+        el.style.setProperty("--pin-color", lm.color === "#ffffff" ? "#dfe7ee" : lm.color);
+        el.style.setProperty("--delay", (index % 8) * 0.18 + "s");
+        el.innerHTML = `
+          <span class="pin-inner">
+            <span class="pin-glow"></span>
+            <span class="pin-emoji">${lm.emoji}</span>
+          </span>
+        `;
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const rect = el.getBoundingClientRect();
+          sparkAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
+          openLandmark(lm.id, el);
+        });
+        return el;
+      }
+
+      function openLandmark(id, sourceEl) {
+        const lm = places.find((l) => l.id === id);
+        if (!lm) return;
+
+        hideCoach();
+        selectedId = id;
+        document.querySelectorAll(".pin.selected").forEach((p) => p.classList.remove("selected"));
+        document.querySelectorAll(".ss-body.selected, .ss-sun.selected, .ss-size-item.selected, .ss-iso-item.selected").forEach((p) => p.classList.remove("selected"));
+        const pin = document.querySelector(`.pin[data-id="${id}"]`);
+        if (pin) pin.classList.add("selected");
+        document.querySelectorAll(
+          `.ss-body[data-id="${id}"], .ss-sun[data-id="${id}"], .ss-size-item[data-id="${id}"], .ss-iso-item[data-id="${id}"]`
+        ).forEach((el) => el.classList.add("selected"));
+        if (window.Solar3D) window.Solar3D.highlight(id);
+        syncStrip();
+
+        playPop();
+        playFlyWhoosh();
+        if (soundOn) setAmbientForMode();
+
+        if (activeTab === "space") {
+          setTimeout(() => openCard(lm), 220);
+          scrollStripToId(id);
+          return;
+        }
+
+        if (!globe) return;
+        setAutoRotate(false);
+        const alt = activeTab === "countries" ? 1.35 : activeTab === "continents" ? 1.9 : 1.55;
+        globe.pointOfView({ lat: lm.lat, lng: lm.lng, altitude: alt }, 1400);
+        setTimeout(() => openCard(lm), 900);
+
+        scrollStripToId(id);
+      }
+
+      function randomLandmark(excludeId) {
+        const pool = places.filter((l) => l.id !== excludeId);
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+
+      function surprise() {
+        els.surpriseIcon.style.display = "inline-block";
+        els.surpriseIcon.animate(
+          [{ transform: "rotate(0deg)" }, { transform: "rotate(360deg)" }],
+          { duration: 450, easing: "ease-out" }
+        );
+        const next = randomLandmark(selectedId);
+        if (next) openLandmark(next.id);
+      }
+
+      function speakCurrent() {
+        const lm = places.find((l) => l.id === selectedId);
+        if (!lm || !window.speechSynthesis) return;
+        window.speechSynthesis.cancel();
+        const text = `${lm.name}. ${lm.place}. ${lm.story} ${lm.wow}`;
+        const utt = new SpeechSynthesisUtterance(text);
+        utt.rate = 0.95;
+        utt.pitch = 1.05;
+        const voices = window.speechSynthesis.getVoices();
+        const preferred = voices.find((v) => /en(-|_)?(GB|AU|NZ|US)/i.test(v.lang) && /female|samantha|karen|moira|google/i.test(v.name))
+          || voices.find((v) => /^en/i.test(v.lang));
+        if (preferred) utt.voice = preferred;
+        window.speechSynthesis.speak(utt);
+      }
+
+
+      function staggerPinPlaces(items) {
+        if (!items || items.length < 2) return items;
+        // Nudge overlapping country/continent pins so taps are easier
+        const out = items.map((it) => Object.assign({}, it));
+        for (let i = 0; i < out.length; i++) {
+          for (let j = i + 1; j < out.length; j++) {
+            const a = out[i];
+            const b = out[j];
+            if (a.lat == null || b.lat == null) continue;
+            const dLat = a.lat - b.lat;
+            const dLng = a.lng - b.lng;
+            const dist = Math.hypot(dLat, dLng * Math.cos((a.lat * Math.PI) / 180));
+            if (dist < 9) {
+              const nudge = (10 - dist) * 0.35;
+              const ang = Math.atan2(dLng || 0.01, dLat || 0.01) + i * 0.4;
+              b.lat = Math.max(-80, Math.min(80, b.lat - Math.cos(ang) * nudge));
+              b.lng = ((b.lng - Math.sin(ang) * nudge + 540) % 360) - 180;
+            }
+          }
+        }
+        return out;
+      }
+
+      function switchTab(tab) {
+        if (!DATASETS[tab] || tab === activeTab) return;
+        closeCard();
+        const leavingSpace = activeTab === "space";
+        const enteringSpace = tab === "space";
+        activeTab = tab;
+        places = DATASETS[tab].items;
+        const main = DATASETS[tab].main;
+
+        els.tabLandmarks.classList.toggle("active", main === "landmarks");
+        els.tabWonders.classList.toggle("active", main === "wonders");
+        els.tabGeography.classList.toggle("active", main === "geography");
+        els.tabSpace.classList.toggle("active", main === "space");
+        els.tabLandmarks.setAttribute("aria-selected", String(main === "landmarks"));
+        els.tabWonders.setAttribute("aria-selected", String(main === "wonders"));
+        els.tabGeography.setAttribute("aria-selected", String(main === "geography"));
+        els.tabSpace.setAttribute("aria-selected", String(main === "space"));
+
+        els.geoSubtabs.classList.toggle("show", main === "geography");
+        if (els.spaceSubtabs) els.spaceSubtabs.classList.toggle("show", main === "space");
+        els.subContinents.classList.toggle("active", tab === "continents");
+        els.subCountries.classList.toggle("active", tab === "countries");
+        els.subContinents.setAttribute("aria-selected", String(tab === "continents"));
+        els.subCountries.setAttribute("aria-selected", String(tab === "countries"));
+
+        els.exploreLabel.textContent = DATASETS[tab].label;
+        els.brandHint.textContent = DATASETS[tab].hint;
+        if (els.adventuresBtn) {
+          els.adventuresBtn.classList.toggle("active-mode", main !== "landmarks");
+        }
+        setPanelOpen(els.adventureNav, els.adventuresBtn, false);
+        setPanelOpen(els.settingsPanel, els.settingsBtn, false);
+
+        if (els.coach && !coachHidden) {
+          els.coach.textContent = DATASETS[tab].coach;
+        }
+
+        buildStrip();
+
+        if (enteringSpace) {
+          enterSpaceMode();
+        } else {
+          if (leavingSpace) leaveSpaceMode();
+          if (els.spaceSubtabs) els.spaceSubtabs.classList.remove("show");
+          if (globe) {
+            globe.htmlElementsData([]);
+            const pinData = (tab === "countries" || tab === "continents")
+              ? staggerPinPlaces(places)
+              : places;
+            globe
+              .htmlElementsData(pinData)
+              .htmlElement((d) => createPin(d, pinData.findIndex((p) => p.id === d.id)));
+            const views = {
+              landmarks: { lat: 20, lng: 20, altitude: 2.2 },
+              wonders: { lat: 10, lng: 30, altitude: 2.25 },
+              continents: { lat: 15, lng: 20, altitude: 2.35 },
+              countries: { lat: 18, lng: 12, altitude: 1.85 },
+            };
+            globe.pointOfView(views[tab] || views.landmarks, leavingSpace ? 1100 : 900);
+          }
+          setAutoRotate(true);
+          setAmbientForMode();
+        }
+        playPop();
+      }
+
+      /* —— Night lights / terminator —— */
+      function applyNightMode(on) {
+        nightMode = !!on;
+        if (els.nightBtn) {
+          els.nightBtn.setAttribute("aria-pressed", String(nightMode));
+          const icon = document.getElementById("nightIcon");
+          if (icon) icon.textContent = nightMode ? "☀️" : "🌙";
+        }
+        if (!globe) return;
+        globe.globeImageUrl(nightMode ? EARTH_NIGHT : EARTH_DAY);
+        globe.atmosphereColor(nightMode ? "#1b3a6b" : "#7ec8e3");
+        globe.atmosphereAltitude(nightMode ? 0.22 : 0.18);
+        if (sunDirLight) {
+          sunDirLight.intensity = nightMode ? 0.55 : 1.35;
+          sunDirLight.color.set(nightMode ? 0x9eb7ff : 0xfff2d6);
+        }
+        if (cloudsMesh && cloudsMesh.material) {
+          cloudsMesh.material.opacity = nightMode ? 0.18 : 0.45;
+          cloudsMesh.visible = !nightMode;
+        }
+        try {
+          const mat = globe.globeMaterial();
+          const T = window.THREE;
+          if (mat && T) {
+            if (!mat.emissive) mat.emissive = new T.Color(0x000000);
+            mat.emissiveIntensity = nightMode ? 0.25 : 0.05;
+          }
+        } catch (_) {}
+      }
+
+      function toggleNightMode() {
+        applyNightMode(!nightMode);
+        playPop();
+      }
+
+      /* —— Init globe —— */
+      function markGlobeReady() {
+        if (globeReady) return;
+        globeReady = true;
+        els.loader.classList.add("hide");
+      }
+
+      function initGlobe() {
+        const world = Globe()(els.globeViz)
+          .globeImageUrl(EARTH_DAY)
+          .bumpImageUrl(EARTH_BUMP)
+          .backgroundColor("rgba(0,0,0,0)")
+          .showAtmosphere(true)
+          .atmosphereColor("#7ec8e3")
+          .atmosphereAltitude(0.18)
+          .htmlElementsData(places)
+          .htmlElement((d) => createPin(d, places.indexOf(d)))
+          .htmlAltitude(0.02)
+          .htmlElementVisibilityModifier((el, isVisible) => {
+            el.style.opacity = isVisible ? 1 : 0;
+            el.style.pointerEvents = isVisible ? "auto" : "none";
+          });
+
+        world.controls().enableDamping = true;
+        world.controls().dampingFactor = 0.08;
+        world.controls().minDistance = 140;
+        world.controls().maxDistance = 520;
+        world.controls().autoRotate = true;
+        world.controls().autoRotateSpeed = 0.45;
+
+        world.pointOfView({ lat: 20, lng: 20, altitude: 2.2 }, 0);
+
+        const controls = world.controls();
+        controls.addEventListener("start", pauseAutoRotateTemporarily);
+
+        function resize() {
+          world.width(els.globeViz.clientWidth);
+          world.height(els.globeViz.clientHeight);
+        }
+        resize();
+        window.addEventListener("resize", resize);
+
+        const THREE = window.THREE;
+        if (THREE) {
+          // Day/night terminator via a sun-like directional light
+          sunDirLight = new THREE.DirectionalLight(0xfff2d6, 1.35);
+          sunDirLight.position.set(-4, 1.2, 2.5);
+          world.scene().add(sunDirLight);
+          // Soft fill so the dark side isn’t pure black
+          const fill = new THREE.AmbientLight(0x334455, 0.35);
+          world.scene().add(fill);
+
+          try {
+            const mat = world.globeMaterial();
+            if (mat) {
+              mat.emissive = new THREE.Color(0x112233);
+              mat.emissiveIntensity = 0.05;
+            }
+          } catch (_) {}
+
+          new THREE.TextureLoader().load(
+            EARTH_CLOUDS,
+            (cloudsTexture) => {
+              cloudsMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(world.getGlobeRadius() * 1.01, 64, 64),
+                new THREE.MeshPhongMaterial({ map: cloudsTexture, transparent: true, opacity: 0.45 })
+              );
+              world.scene().add(cloudsMesh);
+              (function rotateClouds() {
+                if (!cloudsMesh || activeTab === "space") {
+                  cloudsRaf = 0;
+                  return;
+                }
+                cloudsMesh.rotation.y += 0.0004;
+                cloudsRaf = requestAnimationFrame(rotateClouds);
+              })();
+            },
+            undefined,
+            () => {}
+          );
+        }
+
+        // Ready when day texture paints (with hard fallback)
+        let pending = 2;
+        const bumpDone = () => {
+          pending -= 1;
+          if (pending <= 0) markGlobeReady();
+        };
+        try {
+          const loader = window.THREE && new THREE.TextureLoader();
+          if (loader) {
+            loader.load(EARTH_DAY, () => bumpDone(), undefined, () => bumpDone());
+            loader.load(EARTH_BUMP, () => bumpDone(), undefined, () => bumpDone());
+          } else {
+            setTimeout(markGlobeReady, 800);
+          }
+        } catch (_) {
+          setTimeout(markGlobeReady, 800);
+        }
+        // Safety: never leave kids on the loader forever
+        setTimeout(markGlobeReady, 5000);
+
+        globe = world;
+        applyNightMode(false);
+      }
+
+      /* —— Events —— */
+      els.overlay.addEventListener("click", closeCard);
+      els.cardClose.addEventListener("click", () => {
+        if (videoOpen) {
+          stopVideo();
+          return;
+        }
+        closeCard();
+      });
+      els.surpriseBtn.addEventListener("click", surprise);
+      els.speakBtn.addEventListener("click", speakCurrent);
+      els.watchBtn.addEventListener("click", toggleVideo);
+      els.anthemBtn.addEventListener("click", toggleAnthem);
+      els.cardMoreBtn.addEventListener("click", () => {
+        setCardMoreOpen(!els.cardMore.classList.contains("open"));
+      });
+      els.videoStart.addEventListener("click", playVideoEmbed);
+      if (els.videoFallbackHear) {
+        els.videoFallbackHear.addEventListener("click", () => {
+          stopVideo();
+          speakCurrent();
+        });
+      }
+      if (els.nightBtn) els.nightBtn.addEventListener("click", toggleNightMode);
+
+      els.settingsBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const open = !els.settingsPanel.classList.contains("open");
+        setPanelOpen(els.adventureNav, els.adventuresBtn, false);
+        setPanelOpen(els.settingsPanel, els.settingsBtn, open);
+      });
+      els.adventuresBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const open = !els.adventureNav.classList.contains("open");
+        setPanelOpen(els.settingsPanel, els.settingsBtn, false);
+        setPanelOpen(els.adventureNav, els.adventuresBtn, open);
+      });
+      document.addEventListener("click", (e) => {
+        if (
+          els.settingsPanel.classList.contains("open") &&
+          !els.settingsPanel.contains(e.target) &&
+          !els.settingsBtn.contains(e.target)
+        ) {
+          setPanelOpen(els.settingsPanel, els.settingsBtn, false);
+        }
+        if (
+          els.adventureNav.classList.contains("open") &&
+          !els.adventureNav.contains(e.target) &&
+          !els.adventuresBtn.contains(e.target)
+        ) {
+          setPanelOpen(els.adventureNav, els.adventuresBtn, false);
+        }
+      });
+
+      els.tabLandmarks.addEventListener("click", () => switchTab("landmarks"));
+      els.tabWonders.addEventListener("click", () => switchTab("wonders"));
+      els.tabSpace.addEventListener("click", () => switchTab("space"));
+      els.subOrbits.addEventListener("click", () => setSpaceView("orbits"));
+      els.subSizes.addEventListener("click", () => setSpaceView("sizes"));
+      els.subSpheres.addEventListener("click", () => setSpaceView("spheres"));
+      els.tabGeography.addEventListener("click", () => {
+        // Keep current geo mode if already in geography, else start on continents
+        if (DATASETS[activeTab].main === "geography") {
+          setPanelOpen(els.adventureNav, els.adventuresBtn, false);
+          return;
+        }
+        switchTab("continents");
+      });
+      els.subContinents.addEventListener("click", () => switchTab("continents"));
+      els.subCountries.addEventListener("click", () => switchTab("countries"));
+
+      els.photoPrev.addEventListener("click", (e) => {
+        e.stopPropagation();
+        goToPhoto(photoIndex - 1);
+        playPop();
+      });
+      els.photoNext.addEventListener("click", (e) => {
+        e.stopPropagation();
+        goToPhoto(photoIndex + 1);
+        playPop();
+      });
+
+      let scrollSyncTimer = null;
+      els.photoTrack.addEventListener("scroll", () => {
+        clearTimeout(scrollSyncTimer);
+        scrollSyncTimer = setTimeout(() => {
+          const w = els.photoTrack.clientWidth || 1;
+          const idx = Math.round(els.photoTrack.scrollLeft / w);
+          if (idx !== photoIndex) {
+            photoIndex = Math.max(0, Math.min(photoCount - 1, idx));
+            updatePhotoChrome();
+          }
+        }, 60);
+      }, { passive: true });
+
+      // Keep swipe gestures on the gallery from bubbling oddly on touch devices
+      els.cardHero.addEventListener("click", (e) => e.stopPropagation());
+
+      els.muteBtn.addEventListener("click", () => {
+        soundOn = !soundOn;
+        if (soundOn) {
+          ensureAudio();
+          setAmbientForMode();
+          playPop();
+        } else {
+          stopAmbient();
+        }
+        els.muteBtn.setAttribute("aria-pressed", String(!soundOn));
+        els.muteIcon.textContent = soundOn ? "🔊" : "🔇";
+        if (els.muteLabel) els.muteLabel.textContent = soundOn ? "Sound on" : "Sound off";
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if (els.settingsPanel.classList.contains("open") || els.adventureNav.classList.contains("open")) {
+            closeChromeMenus();
+            return;
+          }
+          if (videoOpen) {
+            stopVideo();
+            return;
+          }
+          closeCard();
+        }
+        const cardOpen = els.card.classList.contains("open");
+        if (cardOpen && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+          e.preventDefault();
+          goToPhoto(photoIndex + (e.key === "ArrowRight" ? 1 : -1));
+          return;
+        }
+        if (e.key === " " && !e.repeat && !cardOpen) {
+          e.preventDefault();
+          surprise();
+        }
+      });
+
+      // Warm speech voices
+      if (window.speechSynthesis) {
+        window.speechSynthesis.getVoices();
+        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+      }
+
+      makeStars();
+      buildStrip();
+      buildSolarSystem();
+      initGlobe();
+      setInterval(shootingStar, 28000);
+      setTimeout(shootingStar, 8000);
+
+      // Warm a few photos in the background after load
+      setTimeout(() => {
+        places.slice(0, 6).forEach((lm) => {
+          (lm.photos || []).slice(0, 1).forEach((src) => {
+            const img = new Image();
+            img.src = src;
+          });
+        });
+      }, 2000);
+    })();
+  </script>
+</body>
+</html>
