@@ -1,4 +1,6 @@
-window.SPACE = [
+/** SpaceCatalog — single source of truth for solar-system bodies. */
+
+export const SPACE_BODIES = [
   {
     "id": "sun",
     "name": "The Sun",
@@ -16,7 +18,13 @@ window.SPACE = [
       "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Full_disk_of_the_Sun_%28eso1703e-comparisona%29.jpg/960px-Full_disk_of_the_Sun_%28eso1703e-comparisona%29.jpg",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/The_Sun_in_white_light.jpg/960px-The_Sun_in_white_light.jpg"
     ],
-    "diameterKm": 1392700
+    "diameterKm": 1392700,
+    "visual": {
+      "size": 7.5,
+      "colorHex": 16758531,
+      "emissive": 16747520,
+      "style": "sun"
+    }
   },
   {
     "id": "mercury",
@@ -35,7 +43,16 @@ window.SPACE = [
       "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Mercury_in_true_color.jpg/960px-Mercury_in_true_color.jpg",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Mercury_Globe-MESSENGER_mosaic_centered_at_180degE-0degN.jpg/960px-Mercury_Globe-MESSENGER_mosaic_centered_at_180degE-0degN.jpg"
     ],
-    "diameterKm": 4879
+    "diameterKm": 4879,
+    "visual": {
+      "size": 1.35,
+      "colorHex": 13682878,
+      "orbit": 12,
+      "speed": 1.6,
+      "style": "rocky"
+    },
+    "au": 0.39,
+    "orbitYears": 0.241
   },
   {
     "id": "venus",
@@ -54,7 +71,16 @@ window.SPACE = [
       "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Venus2.jpg/960px-Venus2.jpg",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Venus-real_color.jpg/960px-Venus-real_color.jpg"
     ],
-    "diameterKm": 12104
+    "diameterKm": 12104,
+    "visual": {
+      "size": 1.85,
+      "colorHex": 16044894,
+      "orbit": 16,
+      "speed": 1.15,
+      "style": "cloudy"
+    },
+    "au": 0.72,
+    "orbitYears": 0.615
   },
   {
     "id": "earth",
@@ -73,7 +99,16 @@ window.SPACE = [
       "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Blue_Marble_2002.png/960px-Blue_Marble_2002.png",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Earth_Eastern_Hemisphere.jpg/960px-Earth_Eastern_Hemisphere.jpg"
     ],
-    "diameterKm": 12742
+    "diameterKm": 12742,
+    "visual": {
+      "size": 2,
+      "colorHex": 5032432,
+      "orbit": 20.5,
+      "speed": 1,
+      "style": "earth"
+    },
+    "au": 1,
+    "orbitYears": 1
   },
   {
     "id": "moon",
@@ -92,7 +127,16 @@ window.SPACE = [
       "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Full_Moon_Luc_Viatour.jpg/960px-Full_Moon_Luc_Viatour.jpg",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/AS11-44-6551.jpg/960px-AS11-44-6551.jpg"
     ],
-    "diameterKm": 3475
+    "diameterKm": 3475,
+    "visual": {
+      "size": 0.85,
+      "colorHex": 15658734,
+      "parent": "earth",
+      "orbit": 3.4,
+      "speed": 3.2,
+      "style": "rocky"
+    },
+    "orbitYears": 0.075
   },
   {
     "id": "mars",
@@ -111,7 +155,16 @@ window.SPACE = [
       "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Tharsis_and_Valles_Marineris_-_Mars_Orbiter_Mission_%2830055660701%29.png/960px-Tharsis_and_Valles_Marineris_-_Mars_Orbiter_Mission_%2830055660701%29.png",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Mars_23_aug_2003_hubble.jpg/960px-Mars_23_aug_2003_hubble.jpg"
     ],
-    "diameterKm": 6779
+    "diameterKm": 6779,
+    "visual": {
+      "size": 1.55,
+      "colorHex": 15893596,
+      "orbit": 25,
+      "speed": 0.8,
+      "style": "rocky"
+    },
+    "au": 1.52,
+    "orbitYears": 1.881
   },
   {
     "id": "asteroids",
@@ -130,7 +183,12 @@ window.SPACE = [
       "https://upload.wikimedia.org/wikipedia/commons/e/e5/Eros_-_PIA02923_%28color%29.jpg",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/Vesta_Full_MOC_mosaic.jpg/960px-Vesta_Full_MOC_mosaic.jpg"
     ],
-    "diameterKm": 940
+    "diameterKm": 940,
+    "visual": {
+      "orbit": 29
+    },
+    "au": 2.7,
+    "orbitYears": 4.6
   },
   {
     "id": "jupiter",
@@ -149,7 +207,16 @@ window.SPACE = [
       "https://upload.wikimedia.org/wikipedia/commons/c/c1/Jupiter_New_Horizons.jpg",
       "https://upload.wikimedia.org/wikipedia/commons/d/dc/Hubble_Optical_Image_of_Jupiter_%282007-jupiter-more-2%29.jpg"
     ],
-    "diameterKm": 139820
+    "diameterKm": 139820,
+    "visual": {
+      "size": 4.6,
+      "colorHex": 16032353,
+      "orbit": 35,
+      "speed": 0.42,
+      "style": "gas"
+    },
+    "au": 5.2,
+    "orbitYears": 11.86
   },
   {
     "id": "saturn",
@@ -168,7 +235,17 @@ window.SPACE = [
       "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Saturn_from_Cassini_Orbiter_%282004-10-06%29.jpg/960px-Saturn_from_Cassini_Orbiter_%282004-10-06%29.jpg",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/PIA17218_%E2%80%93_A_Farewell_to_Saturn%2C_Brightened_Version.jpg/960px-PIA17218_%E2%80%93_A_Farewell_to_Saturn%2C_Brightened_Version.jpg"
     ],
-    "diameterKm": 116460
+    "diameterKm": 116460,
+    "visual": {
+      "size": 4,
+      "colorHex": 15847531,
+      "orbit": 43,
+      "speed": 0.32,
+      "rings": true,
+      "style": "gas"
+    },
+    "au": 9.58,
+    "orbitYears": 29.46
   },
   {
     "id": "uranus",
@@ -187,7 +264,16 @@ window.SPACE = [
       "https://upload.wikimedia.org/wikipedia/commons/6/69/Uranus_Voyager2_color_calibrated.png",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Uranus_Voyager2_false_color.jpg/960px-Uranus_Voyager2_false_color.jpg"
     ],
-    "diameterKm": 50724
+    "diameterKm": 50724,
+    "visual": {
+      "size": 2.8,
+      "colorHex": 9494767,
+      "orbit": 50,
+      "speed": 0.22,
+      "style": "ice"
+    },
+    "au": 19.2,
+    "orbitYears": 84
   },
   {
     "id": "neptune",
@@ -206,7 +292,16 @@ window.SPACE = [
       "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Neptune_Voyager2_color_calibrated.png/960px-Neptune_Voyager2_color_calibrated.png",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Neptune_-_Voyager_2_%2829347980845%29.png/960px-Neptune_-_Voyager_2_%2829347980845%29.png"
     ],
-    "diameterKm": 49244
+    "diameterKm": 49244,
+    "visual": {
+      "size": 2.7,
+      "colorHex": 5999871,
+      "orbit": 56,
+      "speed": 0.18,
+      "style": "ice"
+    },
+    "au": 30.05,
+    "orbitYears": 164.8
   },
   {
     "id": "comet",
@@ -225,6 +320,50 @@ window.SPACE = [
       "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Comet_Halley.jpg/960px-Comet_Halley.jpg",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Comet_67P_on_19_September_2014_NavCam_mosaic.jpg/960px-Comet_67P_on_19_September_2014_NavCam_mosaic.jpg"
     ],
-    "diameterKm": 10
+    "diameterKm": 10,
+    "visual": {
+      "size": 1.1,
+      "colorHex": 14218239,
+      "orbit": 62,
+      "speed": 0.12,
+      "eccentricity": 0.55,
+      "style": "ice"
+    },
+    "au": 17,
+    "orbitYears": 75
   }
 ];
+
+export const EARTH_YEAR_SECONDS = 22;
+
+export const SPACE_VIEW_HINTS = {
+  orbits: "Top-down map · distances & year lengths are real (sped up)",
+  sizes: "Scroll to compare real sizes!",
+  spheres: "Drag to look around · scroll/pinch to zoom · tap a planet",
+};
+
+export function getBody(id) {
+  return SPACE_BODIES.find((b) => b.id === id) || null;
+}
+
+export function diameterKm(bodyOrId) {
+  const body = typeof bodyOrId === "string" ? getBody(bodyOrId) : bodyOrId;
+  return (body && body.diameterKm) || 1000;
+}
+
+export function orbitRadiusPct(au) {
+  const s = Math.sqrt(au);
+  const min = Math.sqrt(0.39);
+  const max = Math.sqrt(30.05);
+  const t = (s - min) / (max - min);
+  return 16 + t * 80;
+}
+
+export function orbitSpinSeconds(years) {
+  return Math.max(3.5, EARTH_YEAR_SECONDS * years);
+}
+
+export function labelName(body) {
+  if (!body || !body.name) return "";
+  return body.name.replace(/^The /, "");
+}

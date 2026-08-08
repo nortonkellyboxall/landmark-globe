@@ -1954,8 +1954,15 @@
   <script src="landmarks.js"></script>
   <script src="wonders.js"></script>
   <script src="geography.js"></script>
-  <script src="space.js"></script>
-  <script>
+  <script type="module">
+    import {
+      SPACE_BODIES,
+      diameterKm as spaceDiameterKm,
+      orbitRadiusPct,
+      orbitSpinSeconds,
+      SPACE_VIEW_HINTS,
+    } from "./space-catalog.js";
+
     (function () {
       const DATASETS = {
         landmarks: {
@@ -1987,7 +1994,7 @@
           main: "geography",
         },
         space: {
-          items: window.SPACE || [],
+          items: SPACE_BODIES,
           label: "Explore the solar system",
           hint: "Meet the planets",
           coach: "Tap a planet to learn! 🚀",
@@ -2701,55 +2708,6 @@
       /* —— Solar system —— */
       let spaceView = "spheres";
 
-      // Real-ish top-down map: AU distances (sqrt-compressed) + orbital years
-      const ORBIT_AU = {
-        mercury: 0.39,
-        venus: 0.72,
-        earth: 1.0,
-        mars: 1.52,
-        asteroids: 2.7,
-        jupiter: 5.2,
-        saturn: 9.58,
-        uranus: 19.2,
-        neptune: 30.05,
-        comet: 17.0, // long eccentric path (visual)
-      };
-
-      const ORBIT_YEARS = {
-        mercury: 0.241,
-        venus: 0.615,
-        earth: 1,
-        mars: 1.881,
-        asteroids: 4.6,
-        jupiter: 11.86,
-        saturn: 29.46,
-        uranus: 84.0,
-        neptune: 164.8,
-        comet: 75, // Halley-ish
-        moon: 0.075, // ~27 days vs Earth year
-      };
-
-      const EARTH_YEAR_SECONDS = 22; // sped-up so kids see motion
-
-      function orbitRadiusPct(au) {
-        // sqrt compression keeps outer planets on-screen while preserving gaps
-        const s = Math.sqrt(au);
-        const min = Math.sqrt(0.39);
-        const max = Math.sqrt(30.05);
-        const t = (s - min) / (max - min);
-        return 16 + t * 80; // 16% … 96% of scene
-      }
-
-      function orbitSpinSeconds(years) {
-        return Math.max(3.5, EARTH_YEAR_SECONDS * years);
-      }
-
-      const SPACE_VIEW_HINTS = {
-        orbits: "Top-down map · distances & year lengths are real (sped up)",
-        sizes: "Scroll to compare real sizes!",
-        spheres: "Drag to look around · scroll/pinch to zoom · tap a planet",
-      };
-
       function bindSpacePick(el, obj) {
         el.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -2806,10 +2764,10 @@
           // Moon nests on Earth (not its own solar orbit)
           if (obj.id === "moon") return;
 
-          const au = ORBIT_AU[obj.id];
+          const au = obj.au;
           if (au == null) return;
 
-          const years = ORBIT_YEARS[obj.id] || 1;
+          const years = obj.orbitYears || 1;
           const spinSec = orbitSpinSeconds(years);
           const phaseSec = -((index * 2.7) % spinSec);
           const rPct = orbitRadiusPct(au);
@@ -2825,7 +2783,7 @@
           orbit.appendChild(body);
 
           if (obj.id === "earth" && byId.moon) {
-            const moonSpin = orbitSpinSeconds(ORBIT_YEARS.moon);
+            const moonSpin = orbitSpinSeconds(byId.moon.orbitYears || 0.075);
             const moonOrbit = document.createElement("div");
             moonOrbit.className = "ss-moon-orbit";
             moonOrbit.style.setProperty("--moon-spin", moonSpin + "s");
@@ -2848,24 +2806,6 @@
         });
       }
 
-      // True diameters (km) — kept here so size views never depend on missing data
-      const SPACE_DIAMETERS = {
-        sun: 1392700,
-        mercury: 4879,
-        venus: 12104,
-        earth: 12742,
-        moon: 3475,
-        mars: 6779,
-        jupiter: 139820,
-        saturn: 116460,
-        uranus: 50724,
-        neptune: 49244,
-      };
-
-      function spaceDiameterKm(obj) {
-        return (obj && (obj.diameterKm || SPACE_DIAMETERS[obj.id])) || 1000;
-      }
-
       function planetDisplayPx(km, jupKm, maxPx) {
         // Linear vs Jupiter, with a tiny floor so Mercury stays visible
         return Math.max(8, Math.round((km / jupKm) * maxPx));
@@ -2877,7 +2817,7 @@
         const items = DATASETS.space.items.filter((o) =>
           o.kind === "star" || o.kind === "planet" || o.kind === "moon"
         );
-        const jupKm = SPACE_DIAMETERS.jupiter;
+        const jupKm = spaceDiameterKm("jupiter");
         const maxPlanetPx = 132;
         const sunMaxPx = 170;
 
@@ -2908,7 +2848,7 @@
           } else if (obj.id === "earth") {
             meta.textContent = "Our home";
           } else {
-            const ratio = km / SPACE_DIAMETERS.earth;
+            const ratio = km / spaceDiameterKm("earth");
             meta.textContent = ratio >= 1
               ? (Math.round(ratio * 10) / 10) + "× Earth"
               : Math.round(ratio * 100) + "% Earth";

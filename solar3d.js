@@ -1,39 +1,29 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { SPACE_BODIES, labelName } from "./space-catalog.js";
 
 /**
  * Interactive 3D solar system (spheres + orbits + camera controls).
  * Not to true scale — tuned so kids can see and tap every world.
+ * Body truth lives in SpaceCatalog; this module only renders.
  */
-const BODY_DEFS = [
-  { id: "sun", kind: "star", size: 7.5, color: 0xffb703, emissive: 0xff8c00, style: "sun" },
-  { id: "mercury", kind: "planet", size: 1.35, color: 0xd0c8be, orbit: 12, speed: 1.6, style: "rocky" },
-  { id: "venus", kind: "planet", size: 1.85, color: 0xf4d35e, orbit: 16, speed: 1.15, style: "cloudy" },
-  { id: "earth", kind: "planet", size: 2.0, color: 0x4cc9f0, orbit: 20.5, speed: 1.0, style: "earth" },
-  { id: "moon", kind: "moon", size: 0.85, color: 0xeeeeee, parent: "earth", orbit: 3.4, speed: 3.2, style: "rocky" },
-  { id: "mars", kind: "planet", size: 1.55, color: 0xf2845c, orbit: 25, speed: 0.8, style: "rocky" },
-  { id: "asteroids", kind: "belt", orbit: 29 },
-  { id: "jupiter", kind: "planet", size: 4.6, color: 0xf4a261, orbit: 35, speed: 0.42, style: "gas" },
-  { id: "saturn", kind: "planet", size: 4.0, color: 0xf1d06b, orbit: 43, speed: 0.32, rings: true, style: "gas" },
-  { id: "uranus", kind: "planet", size: 2.8, color: 0x90e0ef, orbit: 50, speed: 0.22, style: "ice" },
-  { id: "neptune", kind: "planet", size: 2.7, color: 0x5b8cff, orbit: 56, speed: 0.18, style: "ice" },
-  { id: "comet", kind: "comet", size: 1.1, color: 0xd8f3ff, orbit: 62, speed: 0.12, eccentricity: 0.55, style: "ice" },
-];
-
-const LABELS = {
-  sun: "Sun",
-  mercury: "Mercury",
-  venus: "Venus",
-  earth: "Earth",
-  moon: "Moon",
-  mars: "Mars",
-  jupiter: "Jupiter",
-  saturn: "Saturn",
-  uranus: "Uranus",
-  neptune: "Neptune",
-  comet: "Comet",
-  asteroids: "Asteroids",
-};
+function toVisualDef(body) {
+  const v = body.visual || {};
+  return {
+    id: body.id,
+    kind: body.kind,
+    size: v.size,
+    color: v.colorHex,
+    emissive: v.emissive,
+    style: v.style,
+    orbit: v.orbit,
+    speed: v.speed,
+    parent: v.parent,
+    rings: v.rings,
+    eccentricity: v.eccentricity,
+    label: labelName(body),
+  };
+}
 
 let renderer = null;
 let scene = null;
@@ -283,9 +273,8 @@ function makePlanetMesh(def) {
     mesh.add(ring);
   }
 
-  const labelText = LABELS[def.id];
-  if (labelText) {
-    const label = makeLabelSprite(labelText);
+  if (def.label) {
+    const label = makeLabelSprite(def.label);
     label.position.y = def.size + 1.8;
     mesh.add(label);
   }
@@ -355,7 +344,8 @@ function buildScene() {
 
   bodies.clear();
 
-  BODY_DEFS.forEach((def) => {
+  const defs = SPACE_BODIES.map(toVisualDef);
+  defs.forEach((def) => {
     if (def.kind === "belt") {
       buildBelt(def.orbit);
       return;
@@ -413,7 +403,8 @@ function buildScene() {
     });
 
     if (def.id === "earth") {
-      const moonDef = BODY_DEFS.find((d) => d.id === "moon");
+      const moonBody = SPACE_BODIES.find((d) => d.id === "moon");
+      const moonDef = toVisualDef(moonBody);
       const moonPivot = new THREE.Object3D();
       const moon = makePlanetMesh(moonDef);
       moon.position.x = moonDef.orbit;
