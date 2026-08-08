@@ -365,5 +365,7 @@ export function orbitSpinSeconds(years) {
 
 export function labelName(body) {
   if (!body || !body.name) return "";
+  if (body.id === "asteroids") return "Asteroids";
+  if (body.id === "comet") return "Comet";
   return body.name.replace(/^The /, "");
 }

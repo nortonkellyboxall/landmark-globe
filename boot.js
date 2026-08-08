@@ -767,7 +767,7 @@ document.addEventListener("keydown", (e) => {
       closeChromeMenus();
       return;
     }
-    card.tryDismiss();
+    if (!card.tryDismiss()) card.close();
     return;
   }
   const cardOpen = els.card.classList.contains("open");
