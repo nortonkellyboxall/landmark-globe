@@ -136,11 +136,10 @@ export function createCardMedia(els, deps) {
     els.videoPanel.classList.add("open", "audio-mode");
     els.card.classList.remove("video-open");
     els.videoNote.classList.add("open");
-    const spain =
-      /marcha_real|spain/i.test(src) || currentAnthemUrl === "irb89p66kUs";
-    els.videoNote.textContent = spain
-      ? "Spain’s anthem has no official words — music only"
-      : "National anthem · audio player";
+  const spain = /marcha_real|spain/i.test(src);
+  els.videoNote.textContent = spain
+    ? "Spain’s anthem has no official words — music only"
+    : "National anthem · audio player";
     const wrap = document.createElement("div");
     wrap.className = "anthem-player";
     wrap.innerHTML = `
@@ -236,14 +235,17 @@ export function createCardMedia(els, deps) {
     }, 4500);
   }
 
+  function clearMediaSurface() {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    const iframe = els.videoPanel.querySelector("iframe");
+    if (iframe) iframe.remove();
+    stopAnthemAudio();
+  }
+
   function showMediaPanel(mode) {
     if (mode === "anthem") {
       if (!currentAnthemUrl) return;
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-
-      const iframe = els.videoPanel.querySelector("iframe");
-      if (iframe) iframe.remove();
-      stopAnthemAudio();
+      clearMediaSurface();
 
       mediaMode = "anthem";
       videoOpen = true;
@@ -252,7 +254,6 @@ export function createCardMedia(els, deps) {
       els.anthemBtn.setAttribute("aria-pressed", "true");
       els.anthemBtn.innerHTML = '<span class="icon">🎵</span> Stop anthem';
 
-      // Prefer direct audio (reliable). YouTube IDs used only when no audio URL.
       if (isAnthemAudioSrc(currentAnthemUrl)) {
         playAnthemAudio(currentAnthemUrl);
       } else if (isYouTubeId(currentAnthemUrl)) {
@@ -261,10 +262,7 @@ export function createCardMedia(els, deps) {
         els.videoPanel.classList.add("open");
         els.card.classList.add("video-open");
         els.videoNote.classList.add("open");
-        els.videoNote.textContent =
-          currentAnthemUrl === "irb89p66kUs"
-            ? "Spain’s anthem has no official words — music only"
-            : "National anthem · tap play · needs internet";
+        els.videoNote.textContent = "National anthem · tap play · needs internet";
         els.videoStart.style.setProperty(
           "--poster",
           `url("https://i.ytimg.com/vi/${currentAnthemUrl}/hqdefault.jpg")`
@@ -281,11 +279,7 @@ export function createCardMedia(els, deps) {
 
     const id = currentVideoId;
     if (!id) return;
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-
-    const iframe = els.videoPanel.querySelector("iframe");
-    if (iframe) iframe.remove();
-    stopAnthemAudio();
+    clearMediaSurface();
 
     mediaMode = "video";
     videoOpen = true;

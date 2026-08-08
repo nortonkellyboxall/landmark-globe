@@ -15,7 +15,6 @@ const DEFAULT_TEXTURES = {
  *   sparkAt?: (x: number, y: number) => void,
  *   onReady?: () => void,
  *   hasSelection?: () => boolean,
- *   textures?: Partial<typeof DEFAULT_TEXTURES>,
  *   places?: object[],
  * }} opts
  */
@@ -24,7 +23,7 @@ export function createGlobe(el, opts = {}) {
   const sparkAt = opts.sparkAt || (() => {});
   const onReady = opts.onReady || (() => {});
   const hasSelection = opts.hasSelection || (() => false);
-  const textures = Object.assign({}, DEFAULT_TEXTURES, opts.textures || {});
+  const textures = DEFAULT_TEXTURES;
 
   const GlobeCtor = typeof Globe !== "undefined" ? Globe : globalThis.Globe;
   if (!GlobeCtor) {
@@ -38,11 +37,10 @@ export function createGlobe(el, opts = {}) {
   let engineActive = true;
   let resumeTimer = null;
   let ready = false;
-  let destroyed = false;
   let places = opts.places || [];
 
   function markReady() {
-    if (ready || destroyed) return;
+    if (ready) return;
     ready = true;
     onReady();
   }
@@ -80,7 +78,7 @@ export function createGlobe(el, opts = {}) {
   function startClouds() {
     if (!cloudsMesh || !engineActive || cloudsRaf) return;
     (function rotateClouds() {
-      if (!cloudsMesh || !engineActive || destroyed) {
+      if (!cloudsMesh || !engineActive) {
         cloudsRaf = 0;
         return;
       }
@@ -145,7 +143,6 @@ export function createGlobe(el, opts = {}) {
   world.controls().addEventListener("start", pauseAutoRotateTemporarily);
 
   function resize() {
-    if (destroyed) return;
     world.width(el.clientWidth);
     world.height(el.clientHeight);
   }
@@ -171,7 +168,6 @@ export function createGlobe(el, opts = {}) {
     new THREE.TextureLoader().load(
       textures.clouds,
       (cloudsTexture) => {
-        if (destroyed) return;
         cloudsMesh = new THREE.Mesh(
           new THREE.SphereGeometry(world.getGlobeRadius() * 1.01, 64, 64),
           new THREE.MeshPhongMaterial({ map: cloudsTexture, transparent: true, opacity: 0.45 })
@@ -188,22 +184,7 @@ export function createGlobe(el, opts = {}) {
     );
   }
 
-  let pending = 2;
-  const bumpDone = () => {
-    pending -= 1;
-    if (pending <= 0) markReady();
-  };
-  try {
-    const loader = THREE && new THREE.TextureLoader();
-    if (loader) {
-      loader.load(textures.day, () => bumpDone(), undefined, () => bumpDone());
-      loader.load(textures.bump, () => bumpDone(), undefined, () => bumpDone());
-    } else {
-      setTimeout(markReady, 800);
-    }
-  } catch (_) {
-    setTimeout(markReady, 800);
-  }
+  setTimeout(markReady, 1200);
   setTimeout(markReady, 5000);
 
   function setPlaces(nextPlaces) {
@@ -245,20 +226,6 @@ export function createGlobe(el, opts = {}) {
     return world.pointOfView({ lat, lng, altitude }, ms);
   }
 
-  function destroy() {
-    if (destroyed) return;
-    destroyed = true;
-    stopClouds();
-    clearTimeout(resumeTimer);
-    window.removeEventListener("resize", resize);
-    try {
-      world.controls().removeEventListener("start", pauseAutoRotateTemporarily);
-    } catch (_) {}
-    try {
-      if (typeof world._destructor === "function") world._destructor();
-    } catch (_) {}
-  }
-
   applyNightVisuals();
 
   return {
@@ -267,6 +234,5 @@ export function createGlobe(el, opts = {}) {
     setActive,
     setAutoRotate,
     pointOfView,
-    destroy,
   };
 }

@@ -469,7 +469,6 @@ body.space-mode .sky {
   border-style: dotted;
 }
 
-.ss-orbit.paused,
 .ss-orbit:has(.ss-body.selected),
 .ss-orbit:has(.ss-body.selected) .ss-moon-orbit,
 .ss-comet-wrap:has(.ss-body.selected) .ss-orbit,
@@ -520,7 +519,6 @@ body.space-mode .sky {
 }
 
 .ss-orbit:has(.ss-body.selected) .ss-body,
-.ss-orbit.paused .ss-body,
 .ss-moon-orbit:has(.ss-body.selected) .ss-body {
   animation-play-state: paused;
 }
@@ -1758,8 +1756,7 @@ body.space-mode .sky {
 @media (prefers-reduced-motion: reduce) {
   .star, .pin, .pin-glow, .pin.selected .pin-inner,
   .brand h1, .coach, .shooting-star, .spark, .loader-orb,
-  .ss-orbit, .ss-body, .ss-sun, .anthem-now .pulse, .ss-sphere,
-  .ss-iso-stage, .ss-iso-item, .ss-sphere::before {
+  .ss-orbit, .ss-body, .ss-sun, .anthem-now .pulse {
     animation: none !important;
   }
   .card, .overlay, .card-hero, .card-body h2,

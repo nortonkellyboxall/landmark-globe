@@ -34,29 +34,6 @@ export function createSound() {
     setTimeout(() => tone(780, 0.1, "sine", 0.05), 40);
   }
 
-  function playWhoosh() {
-    ensureAudio();
-    if (!soundOn || !audioCtx) return;
-    const t0 = audioCtx.currentTime;
-    const bufferSize = audioCtx.sampleRate * 0.35;
-    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
-    const noise = audioCtx.createBufferSource();
-    noise.buffer = buffer;
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = "bandpass";
-    filter.frequency.setValueAtTime(400, t0);
-    filter.frequency.exponentialRampToValueAtTime(1800, t0 + 0.3);
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.04, t0);
-    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.35);
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(audioCtx.destination);
-    noise.start(t0);
-  }
-
   function playChime() {
     ensureAudio();
     tone(659, 0.18, "sine", 0.06);
@@ -177,25 +154,17 @@ export function createSound() {
     soundOn = !!on;
   }
 
-  function setMuted(muted) {
-    soundOn = !muted;
-  }
-
   function isSoundOn() {
     return soundOn;
   }
 
   return {
-    startAmbient,
     stopAmbient,
-    setMuted,
     setSoundOn,
     isSoundOn,
-    playWhoosh,
     playPop,
     playChime,
     playFlyWhoosh,
-    tone,
     setAmbientForMode,
     ensureAudio,
   };

@@ -10,6 +10,11 @@ import { createGlobe } from "./globe-app.js";
 import { createSound } from "./sound.js";
 import { createChrome } from "./chrome.js";
 
+const SPACE_SEL =
+  ".ss-body.selected, .ss-sun.selected, .ss-size-item.selected";
+const SPACE_SEL_BY_ID = (id) =>
+  `.ss-body[data-id="${id}"], .ss-sun[data-id="${id}"], .ss-size-item[data-id="${id}"]`;
+
 const DATASETS = {
   landmarks: {
     items: window.LANDMARKS || [],
@@ -97,7 +102,6 @@ const els = {
   subCountries: document.getElementById("subCountries"),
   overlay: document.getElementById("overlay"),
   card: document.getElementById("card"),
-  cardScroll: document.getElementById("cardScroll"),
   cardClose: document.getElementById("cardClose"),
   cardHero: document.getElementById("cardHero"),
   photoTrack: document.getElementById("photoTrack"),
@@ -105,7 +109,6 @@ const els = {
   photoNext: document.getElementById("photoNext"),
   photoDots: document.getElementById("photoDots"),
   photoHint: document.getElementById("photoHint"),
-  photoCredit: document.getElementById("photoCredit"),
   cardTitle: document.getElementById("cardTitle"),
   cardPlace: document.getElementById("cardPlace"),
   cardStory: document.getElementById("cardStory"),
@@ -217,11 +220,7 @@ const card = createCardMedia(els, {
   onClose() {
     selectedId = null;
     document.querySelectorAll(".pin.selected").forEach((p) => p.classList.remove("selected"));
-    document
-      .querySelectorAll(
-        ".ss-body.selected, .ss-sun.selected, .ss-size-item.selected, .ss-iso-item.selected"
-      )
-      .forEach((p) => p.classList.remove("selected"));
+    document.querySelectorAll(SPACE_SEL).forEach((p) => p.classList.remove("selected"));
     syncStrip();
     if (activeTab !== "space" && globe) globe.setAutoRotate(true);
   },
@@ -385,11 +384,15 @@ function buildSizesView() {
 }
 
 let solar3dLoading = null;
+let Solar3D = null;
 
 function loadSolar3DModule() {
-  if (window.Solar3D) return Promise.resolve(window.Solar3D);
+  if (Solar3D) return Promise.resolve(Solar3D);
   if (solar3dLoading) return solar3dLoading;
-  solar3dLoading = import("./solar3d.js").then(() => window.Solar3D);
+  solar3dLoading = import("./solar3d.js").then((mod) => {
+    Solar3D = mod;
+    return Solar3D;
+  });
   return solar3dLoading;
 }
 
@@ -402,14 +405,14 @@ async function ensureSolar3D(opts) {
     console.warn("Solar3D failed to load", err);
     return;
   }
-  if (!window.Solar3D) return;
+  if (!Solar3D) return;
   if (els.ss3d.dataset.ready === "1") {
-    window.Solar3D.resize();
-    window.Solar3D.setActive(true);
-    if (introZoom && window.Solar3D.playIntroZoom) window.Solar3D.playIntroZoom();
+    Solar3D.resize();
+    Solar3D.setActive(true);
+    if (introZoom && Solar3D.playIntroZoom) Solar3D.playIntroZoom();
     return;
   }
-  window.Solar3D.init(els.ss3d, {
+  Solar3D.init(els.ss3d, {
     introZoom,
     onSelect: (id) => {
       const obj = DATASETS.space.items.find((p) => p.id === id);
@@ -452,8 +455,8 @@ function setSpaceView(view, opts) {
 
   if (view === "spheres") {
     requestAnimationFrame(() => ensureSolar3D({ introZoom: !!(opts && opts.introZoom) }));
-  } else if (window.Solar3D) {
-    window.Solar3D.setActive(false);
+  } else if (Solar3D) {
+    Solar3D.setActive(false);
   }
 
   if (changed && !(opts && opts.silent)) playPop();
@@ -504,7 +507,7 @@ function leaveSpaceMode() {
   els.solarSystem.classList.remove("show");
   if (els.spaceSubtabs) els.spaceSubtabs.classList.remove("show");
   if (els.spaceHandoff) els.spaceHandoff.classList.remove("show");
-  if (window.Solar3D) window.Solar3D.setActive(false);
+  if (Solar3D) Solar3D.setActive(false);
   els.globeViz.classList.remove("hidden-view");
   if (els.globeShadow) els.globeShadow.classList.remove("hidden-view");
   if (els.nightBtn) els.nightBtn.style.display = "";
@@ -533,13 +536,11 @@ function openLandmark(id, sourceEl) {
   hideCoach();
   selectedId = id;
   document.querySelectorAll(".pin.selected").forEach((p) => p.classList.remove("selected"));
-  document.querySelectorAll(".ss-body.selected, .ss-sun.selected, .ss-size-item.selected, .ss-iso-item.selected").forEach((p) => p.classList.remove("selected"));
+  document.querySelectorAll(SPACE_SEL).forEach((p) => p.classList.remove("selected"));
   const pin = document.querySelector(`.pin[data-id="${id}"]`);
   if (pin) pin.classList.add("selected");
-  document.querySelectorAll(
-    `.ss-body[data-id="${id}"], .ss-sun[data-id="${id}"], .ss-size-item[data-id="${id}"], .ss-iso-item[data-id="${id}"]`
-  ).forEach((el) => el.classList.add("selected"));
-  if (window.Solar3D) window.Solar3D.highlight(id);
+  document.querySelectorAll(SPACE_SEL_BY_ID(id)).forEach((el) => el.classList.add("selected"));
+  if (Solar3D) Solar3D.highlight(id);
   syncStrip();
 
   playPop();
@@ -789,13 +790,3 @@ buildSolarSystem();
 initGlobe();
 setInterval(shootingStar, 28000);
 setTimeout(shootingStar, 8000);
-
-// Warm a few photos in the background after load
-setTimeout(() => {
-  places.slice(0, 6).forEach((lm) => {
-    (lm.photos || []).slice(0, 1).forEach((src) => {
-      const img = new Image();
-      img.src = src;
-    });
-  });
-}, 2000);

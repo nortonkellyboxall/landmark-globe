@@ -645,10 +645,10 @@ function highlight(id) {
   });
 }
 
-window.Solar3D = {
+export {
   init,
   destroy,
-  resize: onResize,
+  onResize as resize,
   setActive,
   highlight,
   playIntroZoom,

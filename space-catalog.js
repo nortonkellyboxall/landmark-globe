@@ -8,7 +8,6 @@ export const SPACE_BODIES = [
     "emoji": "☀️",
     "color": "#ffb703",
     "kind": "star",
-    "orbit": 0,
     "size": 72,
     "story": "The Sun is a gigantic glowing star. It gives Earth light and warmth so plants can grow and we can play outside.",
     "wow": "More than one million Earths could fit inside the Sun!",
@@ -21,9 +20,9 @@ export const SPACE_BODIES = [
     "diameterKm": 1392700,
     "visual": {
       "size": 7.5,
-      "colorHex": 16758531,
       "emissive": 16747520,
-      "style": "sun"
+      "style": "sun",
+      "colorHex": 16758531
     }
   },
   {
@@ -33,7 +32,6 @@ export const SPACE_BODIES = [
     "emoji": "☿️",
     "color": "#b0a99f",
     "kind": "planet",
-    "orbit": 1,
     "size": 18,
     "story": "Mercury is the closest planet to the Sun. It is a small, rocky world that gets baking hot in the day and freezing at night.",
     "wow": "A year on Mercury is only about 88 Earth days — super speedy!",
@@ -46,10 +44,10 @@ export const SPACE_BODIES = [
     "diameterKm": 4879,
     "visual": {
       "size": 1.35,
-      "colorHex": 13682878,
       "orbit": 12,
       "speed": 1.6,
-      "style": "rocky"
+      "style": "rocky",
+      "colorHex": 13682878
     },
     "au": 0.39,
     "orbitYears": 0.241
@@ -61,7 +59,6 @@ export const SPACE_BODIES = [
     "emoji": "♀️",
     "color": "#e9c46a",
     "kind": "planet",
-    "orbit": 2,
     "size": 24,
     "story": "Venus is almost the same size as Earth, but it is wrapped in thick cloudy air that traps heat like a giant blanket.",
     "wow": "Venus is the hottest planet — even hotter than Mercury!",
@@ -74,10 +71,10 @@ export const SPACE_BODIES = [
     "diameterKm": 12104,
     "visual": {
       "size": 1.85,
-      "colorHex": 16044894,
       "orbit": 16,
       "speed": 1.15,
-      "style": "cloudy"
+      "style": "cloudy",
+      "colorHex": 16044894
     },
     "au": 0.72,
     "orbitYears": 0.615
@@ -89,7 +86,6 @@ export const SPACE_BODIES = [
     "emoji": "🌍",
     "color": "#4cc9f0",
     "kind": "planet",
-    "orbit": 3,
     "size": 26,
     "story": "Earth is our home planet. It has oceans, land, clouds, and just the right temperature for people, animals, and plants.",
     "wow": "Earth is the only planet we know with liquid oceans on the surface — and life!",
@@ -102,10 +98,10 @@ export const SPACE_BODIES = [
     "diameterKm": 12742,
     "visual": {
       "size": 2,
-      "colorHex": 5032432,
       "orbit": 20.5,
       "speed": 1,
-      "style": "earth"
+      "style": "earth",
+      "colorHex": 5032432
     },
     "au": 1,
     "orbitYears": 1
@@ -117,7 +113,6 @@ export const SPACE_BODIES = [
     "emoji": "🌕",
     "color": "#d9d9d9",
     "kind": "moon",
-    "orbit": 3.4,
     "size": 14,
     "story": "The Moon is Earth’s special rocky friend. It circles around us and lights up the night when it catches sunlight.",
     "wow": "Footprints left by astronauts on the Moon can stay for millions of years!",
@@ -130,11 +125,11 @@ export const SPACE_BODIES = [
     "diameterKm": 3475,
     "visual": {
       "size": 0.85,
-      "colorHex": 15658734,
       "parent": "earth",
       "orbit": 3.4,
       "speed": 3.2,
-      "style": "rocky"
+      "style": "rocky",
+      "colorHex": 15658734
     },
     "orbitYears": 0.075
   },
@@ -145,7 +140,6 @@ export const SPACE_BODIES = [
     "emoji": "🔴",
     "color": "#e76f51",
     "kind": "planet",
-    "orbit": 4,
     "size": 22,
     "story": "Mars is the red planet. It has dusty deserts, giant volcanoes, and polar ice caps that look a little like Earth’s.",
     "wow": "Mars has the tallest volcano in the solar system — Olympus Mons!",
@@ -158,10 +152,10 @@ export const SPACE_BODIES = [
     "diameterKm": 6779,
     "visual": {
       "size": 1.55,
-      "colorHex": 15893596,
       "orbit": 25,
       "speed": 0.8,
-      "style": "rocky"
+      "style": "rocky",
+      "colorHex": 15893596
     },
     "au": 1.52,
     "orbitYears": 1.881
@@ -173,7 +167,6 @@ export const SPACE_BODIES = [
     "emoji": "☄️",
     "color": "#adb5bd",
     "kind": "belt",
-    "orbit": 4.7,
     "size": 28,
     "story": "The asteroid belt is a ring of rocky leftovers from when the planets were made. Most are much smaller than our Moon.",
     "wow": "If you gathered all the asteroids together, they would still be smaller than Earth’s Moon!",
@@ -197,7 +190,6 @@ export const SPACE_BODIES = [
     "emoji": "🪐",
     "color": "#f4a261",
     "kind": "planet",
-    "orbit": 5.5,
     "size": 48,
     "story": "Jupiter is the biggest planet — a giant ball of swirling gas with colourful stripes and a famous Big Red Spot storm.",
     "wow": "Jupiter is so big that all the other planets could fit inside it!",
@@ -210,10 +202,10 @@ export const SPACE_BODIES = [
     "diameterKm": 139820,
     "visual": {
       "size": 4.6,
-      "colorHex": 16032353,
       "orbit": 35,
       "speed": 0.42,
-      "style": "gas"
+      "style": "gas",
+      "colorHex": 16032353
     },
     "au": 5.2,
     "orbitYears": 11.86
@@ -225,7 +217,6 @@ export const SPACE_BODIES = [
     "emoji": "💍",
     "color": "#e9c46a",
     "kind": "planet",
-    "orbit": 6.6,
     "size": 42,
     "story": "Saturn is a giant gas planet famous for its beautiful rings made of ice and rock — like a cosmic hula hoop!",
     "wow": "Saturn’s rings are huge, but they are surprisingly thin — like paper compared to the planet!",
@@ -238,11 +229,11 @@ export const SPACE_BODIES = [
     "diameterKm": 116460,
     "visual": {
       "size": 4,
-      "colorHex": 15847531,
       "orbit": 43,
       "speed": 0.32,
       "rings": true,
-      "style": "gas"
+      "style": "gas",
+      "colorHex": 15847531
     },
     "au": 9.58,
     "orbitYears": 29.46
@@ -254,7 +245,6 @@ export const SPACE_BODIES = [
     "emoji": "🌀",
     "color": "#90e0ef",
     "kind": "planet",
-    "orbit": 7.6,
     "size": 32,
     "story": "Uranus is an icy blue-green giant that spins on its side, as if it rolled over and never got back up!",
     "wow": "A day on Uranus is only about 17 Earth hours — but a year lasts 84 Earth years!",
@@ -267,10 +257,10 @@ export const SPACE_BODIES = [
     "diameterKm": 50724,
     "visual": {
       "size": 2.8,
-      "colorHex": 9494767,
       "orbit": 50,
       "speed": 0.22,
-      "style": "ice"
+      "style": "ice",
+      "colorHex": 9494767
     },
     "au": 19.2,
     "orbitYears": 84
@@ -282,7 +272,6 @@ export const SPACE_BODIES = [
     "emoji": "🔵",
     "color": "#4361ee",
     "kind": "planet",
-    "orbit": 8.6,
     "size": 30,
     "story": "Neptune is the farthest big planet from the Sun. It is a deep blue icy giant with wild winds and dark storms.",
     "wow": "Neptune has the fastest winds in the solar system — faster than a jet plane!",
@@ -295,10 +284,10 @@ export const SPACE_BODIES = [
     "diameterKm": 49244,
     "visual": {
       "size": 2.7,
-      "colorHex": 5999871,
       "orbit": 56,
       "speed": 0.18,
-      "style": "ice"
+      "style": "ice",
+      "colorHex": 5999871
     },
     "au": 30.05,
     "orbitYears": 164.8
@@ -310,7 +299,6 @@ export const SPACE_BODIES = [
     "emoji": "💫",
     "color": "#bde0fe",
     "kind": "comet",
-    "orbit": 9.2,
     "size": 20,
     "story": "Comets are icy snowballs that grow a glowing tail when they swing near the Sun. They look like sparkly visitors in the night sky.",
     "wow": "A comet’s tail always points away from the Sun — like a windy scarf!",
@@ -323,11 +311,11 @@ export const SPACE_BODIES = [
     "diameterKm": 10,
     "visual": {
       "size": 1.1,
-      "colorHex": 14218239,
       "orbit": 62,
       "speed": 0.12,
       "eccentricity": 0.55,
-      "style": "ice"
+      "style": "ice",
+      "colorHex": 14218239
     },
     "au": 17,
     "orbitYears": 75
