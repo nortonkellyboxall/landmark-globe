@@ -186,11 +186,11 @@ body {
   color: rgba(255, 248, 239, 0.8);
   font-family: inherit;
   font-weight: 800;
-  font-size: 0.78rem;
-  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+  padding: 0.55rem 1.05rem;
   border-radius: 999px;
   cursor: pointer;
-  min-height: 34px;
+  min-height: 44px;
   transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
 }
 
@@ -664,6 +664,31 @@ body.space-mode .sky {
   z-index: 8;
 }
 
+.ss-toast {
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  z-index: 12;
+  margin: 0;
+  padding: 0.65rem 1.1rem;
+  border-radius: 999px;
+  background: rgba(6, 24, 40, 0.82);
+  border: 1px solid rgba(255, 248, 239, 0.28);
+  color: var(--sand);
+  font-weight: 800;
+  font-size: 0.92rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  white-space: nowrap;
+}
+
+.ss-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 .ss-views {
   position: absolute;
   inset: 0;
@@ -995,11 +1020,12 @@ body.space-mode .sky {
 .thumb {
   flex: 0 0 auto;
   scroll-snap-align: start;
-  width: 56px;
+  width: 68px;
+  min-height: 68px;
   border: none;
   background: rgba(255, 248, 239, 0.12);
-  border-radius: 1rem;
-  padding: 0.5rem 0.25rem;
+  border-radius: 1.1rem;
+  padding: 0.65rem 0.3rem;
   cursor: pointer;
   color: var(--sand);
   transition: transform 0.15s ease, background 0.2s ease;
@@ -1015,7 +1041,7 @@ body.space-mode .sky {
 }
 
 .thumb .te {
-  font-size: 1.75rem;
+  font-size: 1.95rem;
   display: block;
   line-height: 1.15;
 }
@@ -1360,6 +1386,34 @@ body.space-mode .sky {
   opacity: 0;
   transform: translateY(8px);
   transition: opacity 0.35s ease 0.34s, transform 0.35s ease 0.34s;
+}
+
+@media (max-height: 720px), (max-width: 560px) {
+  .card.compact-story:not(.story-open) #cardStoryBlock {
+    display: none;
+  }
+
+  .card.compact-story.story-open #cardStoryBlock {
+    display: block;
+  }
+
+  .thumb {
+    width: 74px;
+    min-height: 74px;
+  }
+
+  .strip {
+    gap: 0.7rem;
+    padding-bottom: 0.55rem;
+  }
+}
+
+body.bedtime .sky {
+  filter: brightness(0.88) saturate(0.92);
+}
+
+body.bedtime .topbar {
+  background: linear-gradient(180deg, rgba(6, 18, 32, 0.55), transparent);
 }
 
 .wow {

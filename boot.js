@@ -59,9 +59,34 @@ let globe = null;
 let selectedId = null;
 let coachHidden = false;
 let nightMode = false;
+let autoNight = true;
+let landmarkFilter = null;
 let globeReady = false;
 let spaceTransitioning = false;
 const sound = createSound();
+
+function isBedtimeHour(date = new Date()) {
+  const h = date.getHours();
+  return h >= 19 || h < 6;
+}
+
+function landmarksForContinent(continentId) {
+  const all = DATASETS.landmarks.items;
+  if (continentId === "northamerica") {
+    return all.filter((l) => l.continent === "Americas" && l.lat >= 7);
+  }
+  if (continentId === "southamerica") {
+    return all.filter((l) => l.continent === "Americas" && l.lat < 7);
+  }
+  const label = {
+    africa: "Africa",
+    asia: "Asia",
+    europe: "Europe",
+    oceania: "Oceania",
+  }[continentId];
+  if (!label) return [];
+  return all.filter((l) => l.continent === label);
+}
 
 const els = {
   loader: document.getElementById("loader"),
@@ -83,6 +108,7 @@ const els = {
   ssSizesRow: document.getElementById("ssSizesRow"),
   ss3d: document.getElementById("ss3d"),
   ssHint: document.getElementById("ssHint"),
+  ssToast: document.getElementById("ssToast"),
   spaceSubtabs: document.getElementById("spaceSubtabs"),
   subOrbits: document.getElementById("subOrbits"),
   subSizes: document.getElementById("subSizes"),
@@ -118,11 +144,13 @@ const els = {
   videoNote: document.getElementById("videoNote"),
   watchBtn: document.getElementById("watchBtn"),
   anthemBtn: document.getElementById("anthemBtn"),
+  showLandmarksBtn: document.getElementById("showLandmarksBtn"),
   cardMoreBtn: document.getElementById("cardMoreBtn"),
   cardMore: document.getElementById("cardMore"),
   muteBtn: document.getElementById("muteBtn"),
   muteIcon: document.getElementById("muteIcon"),
-  muteLabel: document.getElementById("muteLabel"),
+  autoNightBtn: document.getElementById("autoNightBtn"),
+  autoNightLabel: document.getElementById("autoNightLabel"),
   surpriseBtn: document.getElementById("surpriseBtn"),
   surpriseIcon: document.getElementById("surpriseIcon"),
   speakBtn: document.getElementById("speakBtn"),
@@ -217,6 +245,10 @@ function scrollStripToId(id) {
 const card = createCardMedia(els, {
   playPop,
   playChime,
+  landmarksForContinent,
+  onShowLandmarks(place) {
+    showLandmarksInContinent(place);
+  },
   onClose() {
     selectedId = null;
     document.querySelectorAll(".pin.selected").forEach((p) => p.classList.remove("selected"));
@@ -225,6 +257,45 @@ const card = createCardMedia(els, {
     if (activeTab !== "space" && globe) globe.setAutoRotate(true);
   },
 });
+
+function showLandmarksInContinent(place) {
+  const hits = landmarksForContinent(place.id);
+  if (!hits.length) return;
+  landmarkFilter = place.id;
+  card.close();
+  const leavingSpace = activeTab === "space";
+  if (leavingSpace) leaveSpaceMode();
+  activeTab = "landmarks";
+  places = hits;
+
+  els.tabLandmarks.classList.add("active");
+  els.tabWonders.classList.remove("active");
+  els.tabGeography.classList.remove("active");
+  els.tabSpace.classList.remove("active");
+  els.tabLandmarks.setAttribute("aria-selected", "true");
+  els.tabWonders.setAttribute("aria-selected", "false");
+  els.tabGeography.setAttribute("aria-selected", "false");
+  els.tabSpace.setAttribute("aria-selected", "false");
+  els.geoSubtabs.classList.remove("show");
+  if (els.spaceSubtabs) els.spaceSubtabs.classList.remove("show");
+  els.exploreLabel.textContent = `Landmarks in ${place.name}`;
+  els.brandHint.textContent = place.name;
+  if (els.adventuresBtn) els.adventuresBtn.classList.remove("active-mode");
+  setPanelOpen(els.adventureNav, els.adventuresBtn, false);
+  if (els.coach && !coachHidden) {
+    els.coach.textContent = `Tap a landmark in ${place.name}! ✨`;
+  }
+  buildStrip();
+  if (globe) {
+    globe.setPlaces(places);
+    const lat = places.reduce((s, p) => s + p.lat, 0) / places.length;
+    const lng = places.reduce((s, p) => s + p.lng, 0) / places.length;
+    globe.pointOfView(lat, lng, 1.65, leavingSpace ? 1100 : 900);
+    globe.setAutoRotate(true);
+  }
+  setAmbientForMode();
+  playPop();
+}
 
 /* —— Solar system —— */
 let spaceView = "spheres";
@@ -469,6 +540,7 @@ function enterSpaceMode() {
   els.solarSystem.hidden = false;
   if (els.spaceSubtabs) els.spaceSubtabs.classList.add("show");
   if (els.nightBtn) els.nightBtn.style.display = "none";
+  if (els.autoNightBtn) els.autoNightBtn.style.display = "none";
   if (els.spaceHandoff) els.spaceHandoff.classList.add("show");
   playFlyWhoosh();
   setAmbientForMode();
@@ -499,7 +571,20 @@ function enterSpaceMode() {
       window.setTimeout(() => els.spaceHandoff.classList.remove("show"), reduce ? 0 : 500);
     }
     spaceTransitioning = false;
+    showSpaceToast();
   }, zoomMs);
+}
+
+function showSpaceToast() {
+  if (!els.ssToast) return;
+  els.ssToast.hidden = false;
+  requestAnimationFrame(() => els.ssToast.classList.add("show"));
+  window.setTimeout(() => {
+    els.ssToast.classList.remove("show");
+    window.setTimeout(() => {
+      els.ssToast.hidden = true;
+    }, 400);
+  }, 3400);
 }
 
 function leaveSpaceMode() {
@@ -511,6 +596,7 @@ function leaveSpaceMode() {
   els.globeViz.classList.remove("hidden-view");
   if (els.globeShadow) els.globeShadow.classList.remove("hidden-view");
   if (els.nightBtn) els.nightBtn.style.display = "";
+  if (els.autoNightBtn) els.autoNightBtn.style.display = "";
   if (globe) {
     globe.setActive(true);
     globe.setNight(nightMode);
@@ -601,8 +687,9 @@ function staggerPinPlaces(items) {
 }
 
 function switchTab(tab) {
-  if (!DATASETS[tab] || tab === activeTab) return;
+  if (!DATASETS[tab] || (tab === activeTab && !(tab === "landmarks" && landmarkFilter))) return;
   card.close();
+  if (tab === "landmarks") landmarkFilter = null;
   const leavingSpace = activeTab === "space";
   const enteringSpace = tab === "space";
   activeTab = tab;
@@ -666,6 +753,7 @@ function switchTab(tab) {
 /* —— Night lights chrome (materials live in globe-app) —— */
 function applyNightMode(on) {
   nightMode = !!on;
+  document.body.classList.toggle("bedtime", nightMode);
   if (els.nightBtn) {
     els.nightBtn.setAttribute("aria-pressed", String(nightMode));
     const icon = document.getElementById("nightIcon");
@@ -675,8 +763,23 @@ function applyNightMode(on) {
 }
 
 function toggleNightMode() {
+  autoNight = false;
+  syncAutoNightChrome();
   applyNightMode(!nightMode);
   playPop();
+}
+
+function syncAutoNightChrome() {
+  if (!els.autoNightBtn) return;
+  els.autoNightBtn.setAttribute("aria-pressed", String(autoNight));
+  if (els.autoNightLabel) {
+    els.autoNightLabel.textContent = autoNight ? "Auto night on" : "Auto night off";
+  }
+}
+
+function applyAutoNightFromClock() {
+  if (!autoNight) return;
+  applyNightMode(isBedtimeHour());
 }
 
 /* —— Init globe —— */
@@ -694,7 +797,8 @@ function initGlobe() {
     onReady: markGlobeReady,
     hasSelection: () => !!selectedId,
   });
-  applyNightMode(false);
+  syncAutoNightChrome();
+  applyAutoNightFromClock();
 }
 
 /* —— Events —— */
@@ -758,9 +862,19 @@ els.muteBtn.addEventListener("click", () => {
     sound.stopAmbient();
   }
   els.muteBtn.setAttribute("aria-pressed", String(!nextOn));
+  els.muteBtn.setAttribute("aria-label", nextOn ? "Sound on" : "Sound off");
+  els.muteBtn.title = nextOn ? "Sound on" : "Sound off";
   els.muteIcon.textContent = nextOn ? "🔊" : "🔇";
-  if (els.muteLabel) els.muteLabel.textContent = nextOn ? "Sound on" : "Sound off";
 });
+
+if (els.autoNightBtn) {
+  els.autoNightBtn.addEventListener("click", () => {
+    autoNight = !autoNight;
+    syncAutoNightChrome();
+    if (autoNight) applyAutoNightFromClock();
+    playPop();
+  });
+}
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
@@ -790,3 +904,14 @@ buildSolarSystem();
 initGlobe();
 setInterval(shootingStar, 28000);
 setTimeout(shootingStar, 8000);
+
+// Browsers block audio until a gesture — unlock once when sound defaults on
+document.addEventListener(
+  "pointerdown",
+  () => {
+    if (!sound.isSoundOn()) return;
+    sound.ensureAudio();
+    setAmbientForMode();
+  },
+  { once: true }
+);

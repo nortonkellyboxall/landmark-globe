@@ -8,3 +8,4 @@
 - **CardMedia** — Place detail card: gallery, video/anthem, speech. Selection/fly-to stays outside.
 - **Sound** — Ambient audio, whoosh, mute. WebAudio details stay inside the module.
 - **Content pack** — Shallow `window.*` array file (`LANDMARKS`, `WONDERS`, `CONTINENTS`, `COUNTRIES`). Not deepened.
+- **Continent join** — From a continent Place card, “Landmarks here” filters the landmarks pack to that continent (Americas split N/S by latitude).

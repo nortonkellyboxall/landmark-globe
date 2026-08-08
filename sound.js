@@ -1,7 +1,7 @@
 /** Sound — ambient audio, whoosh, mute. WebAudio details stay inside. */
 
 export function createSound() {
-  let soundOn = false;
+  let soundOn = true;
   let audioCtx = null;
   let ambientNodes = null;
 

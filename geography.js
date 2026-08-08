@@ -639,5 +639,110 @@ window.COUNTRIES = [
     ],
     video: "FtZaaKFi7RM",
     anthem: "https://upload.wikimedia.org/wikipedia/commons/d/d6/God_Defend_New_Zealand_instrumental.ogg",
+  },
+  {
+    id: "poland",
+    name: "Poland",
+    place: "Europe",
+    lat: 51.9194,
+    lng: 19.1451,
+    emoji: "🇵🇱",
+    color: "#dc143c",
+    kind: "country",
+    continent: "europe",
+    story:
+      "Poland is a country in central Europe with old cities, deep forests, and tasty pierogi dumplings.",
+    wow: "Poland’s national anthem is a cheerful marching song from long ago!",
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Wawel_Castle%2C_Krakow%2C_Poland.jpg/960px-Wawel_Castle%2C_Krakow%2C_Poland.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Warsaw_Old_Town_Market_Square_%282%29.jpg/960px-Warsaw_Old_Town_Market_Square_%282%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Bialowieza_National_Park_in_Poland.jpg/960px-Bialowieza_National_Park_in_Poland.jpg"
+    ],
+    video: "RNx0akt3_XI",
+    anthem: "https://upload.wikimedia.org/wikipedia/commons/b/b1/Mazurek_Dabrowskiego.ogg",
+  },
+  {
+    id: "sweden",
+    name: "Sweden",
+    place: "Europe",
+    lat: 60.1282,
+    lng: 18.6435,
+    emoji: "🇸🇪",
+    color: "#006aa7",
+    kind: "country",
+    continent: "europe",
+    story:
+      "Sweden is a northern country with lakes, forests, and long bright summers. Kids there love cinnamon buns!",
+    wow: "In far-north Sweden, the summer sun barely sets — it can stay light almost all night!",
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Stockholm_panorama_2018.jpg/960px-Stockholm_panorama_2018.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Kiruna_midnight_sun.jpg/960px-Kiruna_midnight_sun.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Abisko_National_Park_Sweden.jpg/960px-Abisko_National_Park_Sweden.jpg"
+    ],
+    video: "RNx0akt3_XI",
+    anthem: "https://upload.wikimedia.org/wikipedia/commons/a/a2/Du_gamla%2C_du_fria.ogg",
+  },
+  {
+    id: "portugal",
+    name: "Portugal",
+    place: "Europe",
+    lat: 39.3999,
+    lng: -8.2245,
+    emoji: "🇵🇹",
+    color: "#006600",
+    kind: "country",
+    continent: "europe",
+    story:
+      "Portugal sits on Europe’s west coast with sunny beaches, tiled cities, and delicious pastries.",
+    wow: "Portuguese sailors once explored oceans all around the world!",
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Lisbon_Portugal_%28Unsplash%29.jpg/960px-Lisbon_Portugal_%28Unsplash%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Porto_Portugal_Ribeira.jpg/960px-Porto_Portugal_Ribeira.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Algarve_beach_Portugal.jpg/960px-Algarve_beach_Portugal.jpg"
+    ],
+    video: "RNx0akt3_XI",
+    anthem: "https://upload.wikimedia.org/wikipedia/commons/5/58/A_Portuguesa.ogg",
+  },
+  {
+    id: "southkorea",
+    name: "South Korea",
+    place: "Asia",
+    lat: 35.9078,
+    lng: 127.7669,
+    emoji: "🇰🇷",
+    color: "#0047a0",
+    kind: "country",
+    continent: "asia",
+    story:
+      "South Korea is a country of busy cities, green mountains, and amazing technology — plus tasty food like kimchi!",
+    wow: "Seoul is one of the biggest cities on Earth, with millions of people!",
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Gyeongbokgung-Palace.jpg/960px-Gyeongbokgung-Palace.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Seoul_cityscape.jpg/960px-Seoul_cityscape.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Jeju_Island_Korea.jpg/960px-Jeju_Island_Korea.jpg"
+    ],
+    video: "1pNBDTNVhCw",
+    anthem: "https://upload.wikimedia.org/wikipedia/commons/5/5e/National_Anthem_of_Republic_of_Korea_2018_Orchestral_(1_Verse_Version).ogg",
+  },
+  {
+    id: "chile",
+    name: "Chile",
+    place: "South America",
+    lat: -35.6751,
+    lng: -71.543,
+    emoji: "🇨🇱",
+    color: "#0039a6",
+    kind: "country",
+    continent: "southamerica",
+    story:
+      "Chile is a long skinny country along South America’s Pacific coast, with deserts in the north and icy lands in the south.",
+    wow: "Chile is so long it can take days to drive from top to bottom!",
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Torres_del_Paine_%28Chile%29.jpg/960px-Torres_del_Paine_%28Chile%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Atacama_Desert_Chile.jpg/960px-Atacama_Desert_Chile.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Santiago_de_Chile.jpg/960px-Santiago_de_Chile.jpg"
+    ],
+    video: "Z4iwEMbal24",
+    anthem: "https://upload.wikimedia.org/wikipedia/commons/b/b5/Himno_Nacional_de_Chile.ogg",
   }
 ];

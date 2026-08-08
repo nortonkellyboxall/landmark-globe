@@ -2,12 +2,21 @@
 
 /**
  * @param {Record<string, HTMLElement|null>} els card-related DOM elements
- * @param {{ playPop: () => void, playChime?: () => void, onClose?: () => void }} deps
+ * @param {{
+ *   playPop: () => void,
+ *   playChime?: () => void,
+ *   onClose?: () => void,
+ *   onShowLandmarks?: (place: object) => void,
+ *   landmarksForContinent?: (continentId: string) => object[],
+ * }} deps
  */
 export function createCardMedia(els, deps) {
   const playPop = deps.playPop || (() => {});
   const playChime = deps.playChime || (() => {});
   const onClose = deps.onClose || (() => {});
+  const onShowLandmarks = deps.onShowLandmarks || (() => {});
+  const landmarksForContinent = deps.landmarksForContinent || (() => []);
+  const compactMq = window.matchMedia("(max-height: 720px), (max-width: 560px)");
 
   let photoIndex = 0;
   let photoCount = 0;
@@ -21,10 +30,18 @@ export function createCardMedia(els, deps) {
   let scrollSyncTimer = null;
   let listenersBound = false;
 
+  function isCompact() {
+    return compactMq.matches;
+  }
+
   function setCardMoreOpen(open) {
     if (!els.cardMore || !els.cardMoreBtn) return;
     els.cardMore.classList.toggle("open", open);
     els.cardMoreBtn.setAttribute("aria-expanded", String(open));
+    if (els.card) {
+      els.card.classList.toggle("story-open", open && isCompact());
+      els.card.classList.toggle("compact-story", isCompact());
+    }
   }
 
   function updatePhotoChrome() {
@@ -330,7 +347,13 @@ export function createCardMedia(els, deps) {
     els.watchBtn.hidden = !currentVideoId;
     els.anthemBtn.hidden = !currentAnthemUrl;
     els.anthemBtn.style.display = currentAnthemUrl ? "inline-flex" : "none";
-    els.cardMoreBtn.hidden = !currentAnthemUrl;
+    const landmarkHits =
+      place.kind === "continent" ? landmarksForContinent(place.id) : [];
+    if (els.showLandmarksBtn) {
+      els.showLandmarksBtn.hidden = landmarkHits.length === 0;
+    }
+    const needMore = !!currentAnthemUrl || isCompact();
+    els.cardMoreBtn.hidden = !needMore;
     setCardMoreOpen(false);
     els.cardTitle.textContent = place.name;
     els.cardPlace.textContent = place.place;
@@ -341,6 +364,7 @@ export function createCardMedia(els, deps) {
     requestAnimationFrame(() => {
       els.overlay.classList.add("open");
       els.card.classList.add("open");
+      if (els.card) els.card.classList.toggle("compact-story", isCompact());
     });
     playChime();
   }
@@ -410,6 +434,11 @@ export function createCardMedia(els, deps) {
     els.speakBtn.addEventListener("click", () => speak());
     els.watchBtn.addEventListener("click", toggleVideo);
     els.anthemBtn.addEventListener("click", toggleAnthem);
+    if (els.showLandmarksBtn) {
+      els.showLandmarksBtn.addEventListener("click", () => {
+        if (currentPlace) onShowLandmarks(currentPlace);
+      });
+    }
     els.cardMoreBtn.addEventListener("click", () => {
       setCardMoreOpen(!els.cardMore.classList.contains("open"));
     });
