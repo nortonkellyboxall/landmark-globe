@@ -196,7 +196,7 @@ export function createFindGame(opts) {
   }
 
   function markPinWrong(id) {
-    queryAll(`.pin[data-id="${id}"]`).forEach((pin) => {
+    queryAll(`.pin[data-id="${id}"], .ss-size-item[data-id="${id}"]`).forEach((pin) => {
       pin.classList.remove("pin-wrong");
       void pin.offsetWidth;
       pin.classList.add("pin-wrong");

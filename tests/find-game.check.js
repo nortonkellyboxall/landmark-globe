@@ -45,10 +45,17 @@ const els = {
   card: Object.assign(fakeEl(), { classList: fakeClassList() }),
 };
 const bodyClass = fakeClassList();
+const earthPin = fakeEl({ offsetWidth: 0 });
+const marsSizeItem = fakeEl({ offsetWidth: 0 });
 const origBody = globalThis.document;
 globalThis.document = {
   body: { classList: bodyClass },
-  querySelectorAll: () => [],
+  querySelectorAll(selector) {
+    const matches = [];
+    if (selector.includes('.pin[data-id="b"]')) matches.push(earthPin);
+    if (selector.includes('.ss-size-item[data-id="mars"]')) matches.push(marsSizeItem);
+    return matches;
+  },
 };
 
 let tab = "landmarks";
@@ -84,6 +91,7 @@ assert.equal(game.isActive(), true);
 assert.equal(game.getTarget().id, "a"); // rand() => 0 picks first fresh
 assert.equal(els.findPrompt.hidden, false);
 assert.equal(game.handlePinTap("b").correct, false);
+assert.equal(earthPin.classList._has("pin-wrong"), true);
 assert.equal(game.isActive(), true);
 const hit = game.handlePinTap("a");
 assert.equal(hit.correct, true);
@@ -137,6 +145,8 @@ const spaceGame = createFindGame(spaceOpts);
 spaceGame.start();
 assert.ok(spaceGame.getTarget());
 assert.notEqual(spaceGame.getTarget().id, "iss");
+assert.equal(spaceGame.handlePinTap("mars").correct, false);
+assert.equal(marsSizeItem.classList._has("pin-wrong"), true);
 
 globalThis.document = origBody;
 console.log("find-game.check.js OK");

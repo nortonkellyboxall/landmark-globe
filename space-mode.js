@@ -10,6 +10,7 @@ export function createSpaceMode(opts) {
   let spacePinchArmed = false;
   let Solar3D = null;
   let solar3dLoading = null;
+  const loadSolar3D = opts.loadSolar3D || (() => import("./solar3d.js"));
 
   function armPinch() { spacePinchArmed = true; }
   function shouldHandoff(alt) {
@@ -97,7 +98,7 @@ export function createSpaceMode(opts) {
   function loadSolar3DModule() {
     if (Solar3D) return Promise.resolve(Solar3D);
     if (solar3dLoading) return solar3dLoading;
-    solar3dLoading = import("./solar3d.js").then((mod) => {
+    solar3dLoading = loadSolar3D().then((mod) => {
       Solar3D = mod;
       return Solar3D;
     });

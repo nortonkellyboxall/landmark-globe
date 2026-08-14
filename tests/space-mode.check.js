@@ -63,6 +63,8 @@ assert.equal(selected, 0);
 
 const ss3d = { dataset: {} };
 let canvasSelected = 0;
+let solarLoads = 0;
+let solarInits = 0;
 const canvasMode = createSpaceMode({
   els: { ss3d, solarSystem: { hidden: true, classList: { add() {}, remove() {} } }, globeViz: { classList: { add() {}, remove() {} } } },
   getGlobe: () => null,
@@ -77,8 +79,14 @@ const canvasMode = createSpaceMode({
   onSelect() { canvasSelected += 1; },
   stopFind() {},
   matchReduce: () => true,
+  loadSolar3D: async () => {
+    solarLoads += 1;
+    return { init() { solarInits += 1; } };
+  },
 });
 await canvasMode.preload();
+assert.equal(solarLoads, 1);
+assert.equal(solarInits, 0);
 assert.equal(ss3d.dataset.ready, undefined);
 assert.equal(canvasSelected, 0);
 
