@@ -1,5 +1,10 @@
 /** Sound — ambient audio, whoosh, mute. WebAudio details stay inside. */
 
+export function ambientKind(tab, selectedId) {
+  if (tab === "space" || selectedId) return "on";
+  return "duck";
+}
+
 export function createSound() {
   let soundOn = true;
   let audioCtx = null;
@@ -150,12 +155,12 @@ export function createSound() {
     }, 900);
   }
 
-  function setAmbientForMode({ activeTab, selectedId } = {}) {
+  function setAmbientForMode(kind) {
     if (!soundOn) {
       stopAmbient();
       return;
     }
-    if (activeTab === "space" || selectedId) startAmbient();
+    if (kind === "on") startAmbient();
     else if (ambientNodes && ambientNodes.master) {
       ambientNodes.master.gain.setTargetAtTime(0.028, audioCtx.currentTime, 0.4);
     } else {

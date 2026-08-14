@@ -6,7 +6,7 @@ import { createCardMedia } from "./card-media.js";
 import { createGlobe } from "./globe-app.js";
 import { diveMs, heatHint, isDeepSpace } from "./orbit-look.js";
 import { weatherForPlace } from "./place-weather.js";
-import { createSound } from "./sound.js";
+import { ambientKind, createSound } from "./sound.js";
 import { createAdventure, placesForContinent as continentPlaces } from "./adventure.js";
 import { createFindGame } from "./find-game.js";
 import { createFindProgress } from "./find-progress.js";
@@ -215,10 +215,7 @@ function startFireflies() {
 }
 
 function setAmbientForMode() {
-  sound.setAmbientForMode({
-    activeTab: adventure.getTab(),
-    selectedId: adventure.getSelectedId(),
-  });
+  sound.setAmbientForMode(ambientKind(adventure.getTab(), adventure.getSelectedId()));
 }
 const { playPop, playChime, playFanfare, playBoop, playFlyWhoosh } = sound;
 
