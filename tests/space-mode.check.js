@@ -7,6 +7,7 @@ assert.ok(planetDisplayPx(140000, 140000, 54) >= 50);
 
 const flags = { transitioning: false, pinchArmed: false, tab: "landmarks" };
 let stopped = 0;
+let selected = 0;
 const mode = createSpaceMode({
   els: { ssSizesRow: null, ssSizesPanel: null, ss3d: null, solarSystem: { hidden: true, classList: { add() {}, remove() {} } }, globeViz: { classList: { add() {}, remove() {} } }, globeShadow: { classList: { add() {}, remove() {} } }, nightBtn: { style: {} }, autoNightBtn: { style: {} }, sunBtn: { hidden: false } },
   getGlobe: () => null,
@@ -18,7 +19,7 @@ const mode = createSpaceMode({
   playFlyWhoosh() {},
   setAmbient() {},
   sparkAt() {},
-  onSelect() {},
+  onSelect() { selected += 1; },
   stopFind() { stopped += 1; },
   matchReduce: () => true,
 });
@@ -37,6 +38,7 @@ assert.equal(typeof mode.setSizesOpen, "function");
 assert.equal(typeof mode.toggleSizes, "function");
 assert.equal(typeof mode.highlight, "function");
 assert.equal(typeof mode.ensure, "function");
+assert.equal(typeof mode.preload, "function");
 assert.equal(typeof mode.resize, "function");
 
 mode.buildSizes();
@@ -55,5 +57,29 @@ try {
 } finally {
   globalThis.document = prevDoc;
 }
+
+await mode.preload();
+assert.equal(selected, 0);
+
+const ss3d = { dataset: {} };
+let canvasSelected = 0;
+const canvasMode = createSpaceMode({
+  els: { ss3d, solarSystem: { hidden: true, classList: { add() {}, remove() {} } }, globeViz: { classList: { add() {}, remove() {} } } },
+  getGlobe: () => null,
+  getTab: () => "landmarks",
+  getNightMode: () => false,
+  getSpaceItems: () => [],
+  spaceDiameterKm: () => 1,
+  diveMs: () => 400,
+  playFlyWhoosh() {},
+  setAmbient() {},
+  sparkAt() {},
+  onSelect() { canvasSelected += 1; },
+  stopFind() {},
+  matchReduce: () => true,
+});
+await canvasMode.preload();
+assert.equal(ss3d.dataset.ready, undefined);
+assert.equal(canvasSelected, 0);
 
 console.log("space-mode.check.js OK");

@@ -644,7 +644,7 @@ function markGlobeReady() {
   window.setTimeout(() => {
     spaceMode.armPinch();
   }, reduce ? 400 : 5200);
-  spaceMode.ensure().catch(() => {});
+  spaceMode.preload();
 }
 
 function initGlobe() {

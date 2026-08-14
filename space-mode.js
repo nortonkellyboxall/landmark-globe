@@ -104,6 +104,10 @@ export function createSpaceMode(opts) {
     return solar3dLoading;
   }
 
+  function preload() {
+    return loadSolar3DModule().catch(() => {});
+  }
+
   async function ensure(ensureOpts) {
     if (!els.ss3d) return;
     const introZoom = !!(ensureOpts && ensureOpts.introZoom);
@@ -239,6 +243,7 @@ export function createSpaceMode(opts) {
     setSizesOpen,
     toggleSizes,
     highlight,
+    preload,
     ensure,
     resize,
   };
