@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { placesForContinent } from "../adventure.js";
+import { placesForContinent, createAdventure } from "../adventure.js";
 
 const landmarks = [
   { id: "ny", continent: "Americas", lat: 40 },
@@ -25,5 +25,62 @@ assert.deepEqual(
   ["paris", "alps"]
 );
 assert.deepEqual(placesForContinent("nope", landmarks, wonders), []);
+
+function fakeClassList() {
+  const s = new Set();
+  return {
+    add: (c) => s.add(c),
+    remove: (c) => s.delete(c),
+    contains: (c) => s.has(c),
+    toggle: (c, on) => (on ? s.add(c) : s.delete(c)),
+  };
+}
+function fakeEl() {
+  return { hidden: true, textContent: "", classList: fakeClassList(), setAttribute() {}, innerHTML: "" };
+}
+
+const datasets = {
+  landmarks: { items: [{ id: "eiffel", lat: 1, lng: 1 }], label: "L", hint: "", main: "landmarks" },
+  wonders: { items: [{ id: "fuji", lat: 2, lng: 2 }], label: "W", hint: "", main: "wonders" },
+  continents: { items: [], label: "C", hint: "", main: "continents" },
+  countries: { items: [], label: "K", hint: "", main: "countries" },
+  space: { items: [{ id: "mars", kind: "planet" }], label: "S", hint: "", main: "space" },
+};
+let stopped = 0;
+const adventure = createAdventure({
+  datasets,
+  els: {
+    tabLandmarks: fakeEl(),
+    tabWonders: fakeEl(),
+    tabContinents: fakeEl(),
+    tabCountries: fakeEl(),
+    tabSpace: fakeEl(),
+    exploreLabel: fakeEl(),
+    brandHint: fakeEl(),
+    settingsPanel: fakeEl(),
+    settingsBtn: fakeEl(),
+    strip: null,
+  },
+  getGlobe: () => null,
+  card: { close() {} },
+  stopFind: () => { stopped += 1; },
+  spaceEnter() {},
+  spaceLeave() { return Promise.resolve(); },
+  diveMs: () => 400,
+  setAmbient() {},
+  playPop() {},
+  setPanelOpen() {},
+  onOpenPlace() {},
+  hideStickers() {},
+});
+
+assert.equal(adventure.getTab(), "landmarks");
+adventure.switchTab("wonders");
+assert.equal(adventure.getTab(), "wonders");
+assert.equal(adventure.getPlaces()[0].id, "fuji");
+assert.ok(stopped >= 1);
+const before = adventure.getTab();
+adventure.switchTab("nope");
+assert.equal(adventure.getTab(), before);
 
 console.log("adventure.check.js OK");
