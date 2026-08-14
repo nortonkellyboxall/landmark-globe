@@ -20,19 +20,6 @@ export function geoPool(pool) {
 }
 
 /**
- * Pins for a round = entire geo pool (do not thin options).
- * @param {Place} target
- * @param {Place[]} pool
- * @returns {Place[]}
- */
-export function pinSetForRound(target, pool) {
-  const pins = geoPool(pool);
-  if (!target || !pins.length) return pins;
-  if (!pins.some((p) => p.id === target.id)) return [target, ...pins];
-  return pins;
-}
-
-/**
  * @param {{
  *   onPrompt?: (target: Place, pins: Place[]) => void,
  *   onCorrect?: (target: Place) => void,
@@ -62,7 +49,7 @@ export function createFindQuiz(opts = {}) {
       ((items) => items[Math.floor(Math.random() * items.length)]);
     const target = pick(list);
     if (!target) return null;
-    const pins = pinSetForRound(target, list);
+    const pins = list;
     active = { target, pins };
     if (opts.onPrompt) opts.onPrompt(target, pins);
     return active;

@@ -8,6 +8,7 @@ import { SPACE_BODIES, labelName, orbitSpinSeconds } from "./space-catalog.js";
  * Body truth lives in SpaceCatalog; this module only renders.
  * Orbit periods follow catalog orbitYears (Earth year = EARTH_YEAR_SECONDS).
  */
+const HOME_CAM = new THREE.Vector3(50, 78, 136);
 function toVisualDef(body) {
   const v = body.visual || {};
   const years = body.orbitYears;
@@ -546,24 +547,80 @@ function destroy() {
   onSelect = null;
 }
 
-function playIntroZoom() {
+let camTween = 0;
+
+function bodyWorldPos(id) {
+  const entry = bodies.get(id);
+  if (!entry || !entry.mesh) return new THREE.Vector3();
+  if (rootGroup) rootGroup.updateWorldMatrix(true, true);
+  const p = new THREE.Vector3();
+  entry.mesh.getWorldPosition(p);
+  return p;
+}
+
+function tweenCamera(toPos, toTarget, ms) {
+  return new Promise((resolve) => {
+    if (!camera || !controls) {
+      resolve();
+      return;
+    }
+    const id = ++camTween;
+    const from = camera.position.clone();
+    const fromTarget = controls.target.clone();
+    const start = performance.now();
+    const dur = Math.max(1, ms);
+    function step(now) {
+      if (id !== camTween || !camera || !controls) {
+        resolve();
+        return;
+      }
+      const t = Math.min(1, (now - start) / dur);
+      const e = 1 - Math.pow(1 - t, 3);
+      camera.position.lerpVectors(from, toPos, e);
+      controls.target.lerpVectors(fromTarget, toTarget, e);
+      controls.update();
+      if (t < 1) requestAnimationFrame(step);
+      else resolve();
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+function earthClosePos(distance = 5.4) {
+  const p = bodyWorldPos("earth");
+  const dir = p.clone().normalize();
+  if (dir.lengthSq() < 0.01) dir.set(0.45, 0.28, 0.85);
+  return { pos: p.clone().add(dir.multiplyScalar(distance)), target: p };
+}
+
+function frameEarth(distance = 5.4) {
   if (!camera || !controls) return;
-  camera.position.set(8, 10, 16);
-  controls.target.set(0, 0, 0);
+  const { pos, target } = earthClosePos(distance);
+  camera.position.copy(pos);
+  controls.target.copy(target);
+  controls.minDistance = 3.2;
+  controls.autoRotate = false;
   controls.update();
-  const start = performance.now();
-  const from = camera.position.clone();
-  const to = new THREE.Vector3(14, 22, 38);
-  const dur = 1600;
-  function step(now) {
-    if (!camera || !controls) return;
-    const t = Math.min(1, (now - start) / dur);
-    const e = 1 - Math.pow(1 - t, 3);
-    camera.position.lerpVectors(from, to, e);
-    controls.update();
-    if (t < 1) requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
+}
+
+function playIntroZoom() {
+  if (!camera || !controls) return Promise.resolve();
+  frameEarth(5.4);
+  controls.autoRotate = false;
+  return tweenCamera(HOME_CAM.clone(), new THREE.Vector3(0, 0, 0), 2200).then(() => {
+    if (controls) {
+      controls.minDistance = 12;
+      controls.autoRotate = true;
+    }
+  });
+}
+
+function zoomToEarth(ms = 1600) {
+  if (!camera || !controls) return Promise.resolve();
+  controls.autoRotate = false;
+  controls.minDistance = 3.2;
+  const { pos, target } = earthClosePos(5.4);
+  return tweenCamera(pos, target, ms);
 }
 
 function init(container, opts) {
@@ -587,14 +644,14 @@ function init(container, opts) {
   renderer.domElement.style.touchAction = "none";
   renderer.domElement.setAttribute("aria-label", "3D solar system");
 
-  camera = new THREE.PerspectiveCamera(48, w / h, 0.1, 500);
-  camera.position.set(14, 22, 38);
+  camera = new THREE.PerspectiveCamera(48, w / h, 0.1, 800);
+  camera.position.copy(HOME_CAM);
 
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.06;
   controls.minDistance = 12;
-  controls.maxDistance = 130;
+  controls.maxDistance = 240;
   controls.target.set(0, 0, 0);
   controls.enablePan = true;
   controls.autoRotate = true;
@@ -618,7 +675,10 @@ function init(container, opts) {
   running = true;
   animate();
 
-  if (opts && opts.introZoom) playIntroZoom();
+  if (opts && opts.introZoom) {
+    frameEarth(5.4);
+    playIntroZoom();
+  }
 }
 
 function setActive(active) {
@@ -656,4 +716,6 @@ export {
   setActive,
   highlight,
   playIntroZoom,
+  frameEarth,
+  zoomToEarth,
 };

@@ -4,9 +4,11 @@ import {
 } from "./space-catalog.js";
 import { createCardMedia } from "./card-media.js";
 import { createGlobe } from "./globe-app.js";
+import { diveMs, heatHint, isDeepSpace, shouldEnterSpace } from "./orbit-look.js";
+import { weatherForPlace } from "./place-weather.js";
 import { createSound } from "./sound.js";
-import { createChrome } from "./chrome.js";
 import { createFindQuiz } from "./quiz.js";
+import { createFindProgress, STAR_CAP } from "./find-progress.js";
 import { speakName } from "./speak.js";
 
 const SPACE_SEL = ".ss-size-item.selected";
@@ -54,7 +56,11 @@ let autoNight = true;
 let landmarkFilter = null;
 let globeReady = false;
 let spaceTransitioning = false;
+let spacePinchArmed = false;
+let lastHeat = "";
+let resumeFindAfterCard = false;
 const sound = createSound();
+const progress = createFindProgress();
 
 function isBedtimeHour(date = new Date()) {
   const h = date.getHours();
@@ -86,8 +92,10 @@ const els = {
   loader: document.getElementById("loader"),
   globeViz: document.getElementById("globeViz"),
   globeShadow: document.getElementById("globeShadow"),
+  foundFlash: document.getElementById("foundFlash"),
   spaceHandoff: document.getElementById("spaceHandoff"),
   nightBtn: document.getElementById("nightBtn"),
+  sunBtn: document.getElementById("sunBtn"),
   settingsBtn: document.getElementById("settingsBtn"),
   settingsPanel: document.getElementById("settingsPanel"),
   adventureNav: document.getElementById("adventureNav"),
@@ -140,22 +148,34 @@ const els = {
   findPrompt: document.getElementById("findPrompt"),
   findExit: document.getElementById("findExit"),
   findCue: document.getElementById("findCue"),
+  findStars: document.getElementById("findStars"),
   findEmoji: document.getElementById("findEmoji"),
   findPhoto: document.getElementById("findPhoto"),
   findHear: document.getElementById("findHear"),
   findAgain: document.getElementById("findAgain"),
+  stickersBtn: document.getElementById("stickersBtn"),
+  stickerCount: document.getElementById("stickerCount"),
+  stickerSheet: document.getElementById("stickerSheet"),
+  stickerGrid: document.getElementById("stickerGrid"),
+  stickerClose: document.getElementById("stickerClose"),
+  luna: document.getElementById("luna"),
+  lunaBubble: document.getElementById("lunaBubble"),
+  fireflies: document.getElementById("fireflies"),
   speakBtn: document.getElementById("speakBtn"),
 };
 
-const chrome = createChrome(els);
-const { setPanelOpen, closeChromeMenus } = chrome;
+function setPanelOpen(panel, btn, open) {
+  if (!panel || !btn) return;
+  panel.classList.toggle("open", open);
+  btn.setAttribute("aria-expanded", String(open));
+}
 
 /* —— Stars —— */
 function makeStars() {
   const frag = document.createDocumentFragment();
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < 95; i++) {
     const s = document.createElement("span");
-    s.className = "star" + (i % 7 === 0 ? " big" : "");
+    s.className = "star" + (i % 7 === 0 ? " big" : "") + (i % 11 === 0 ? " flare" : "");
     s.style.left = Math.random() * 100 + "%";
     s.style.top = Math.random() * 70 + "%";
     s.style.setProperty("--dur", 2.2 + Math.random() * 3.5 + "s");
@@ -176,13 +196,54 @@ function shootingStar() {
   setTimeout(() => star.remove(), 1200);
 }
 
+function startFireflies() {
+  const canvas = els.fireflies;
+  if (!canvas || !canvas.getContext) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const ctx = canvas.getContext("2d");
+  const bugs = Array.from({ length: 26 }, () => ({
+    x: Math.random(),
+    y: Math.random(),
+    vx: (Math.random() - 0.5) * 0.00045,
+    vy: (Math.random() - 0.5) * 0.00035,
+    r: 1.2 + Math.random() * 2.2,
+    phase: Math.random() * Math.PI * 2,
+  }));
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  function tick() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    bugs.forEach((b) => {
+      b.x += b.vx;
+      b.y += b.vy;
+      b.phase += 0.04;
+      if (b.x < 0 || b.x > 1) b.vx *= -1;
+      if (b.y < 0 || b.y > 1) b.vy *= -1;
+      const glow = 0.35 + Math.abs(Math.sin(b.phase)) * 0.65;
+      const x = b.x * canvas.width;
+      const y = b.y * canvas.height;
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255, 220, 110, ${glow})`;
+      ctx.shadowColor = "rgba(255, 180, 60, 0.9)";
+      ctx.shadowBlur = 12;
+      ctx.arc(x, y, b.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    requestAnimationFrame(tick);
+  }
+  tick();
+}
+
 function setAmbientForMode() {
   sound.setAmbientForMode({ activeTab, selectedId });
 }
-const playPop = () => sound.playPop();
-const playChime = () => sound.playChime();
-const playBoop = () => sound.playBoop();
-const playFlyWhoosh = () => sound.playFlyWhoosh();
+const { playPop, playChime, playFanfare, playBoop, playFlyWhoosh } = sound;
 
 /* —— Sparkles —— */
 function sparkAt(x, y) {
@@ -202,13 +263,57 @@ function sparkAt(x, y) {
   }
 }
 
+function sparkBurst(x, y) {
+  sparkAt(x, y);
+  sparkAt(x, y);
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  for (let i = 0; i < 8; i++) {
+    const sp = document.createElement("span");
+    sp.className = "spark-emoji";
+    sp.textContent = i % 2 ? "✨" : "⭐";
+    const angle = (Math.PI * 2 * i) / 8 + 0.2;
+    const dist = 36 + Math.random() * 48;
+    sp.style.left = x + "px";
+    sp.style.top = y + "px";
+    sp.style.setProperty("--sx", Math.cos(angle) * dist + "px");
+    sp.style.setProperty("--sy", Math.sin(angle) * dist + "px");
+    els.sparkles.appendChild(sp);
+    setTimeout(() => sp.remove(), 900);
+  }
+}
+
+function setLunaMood(mood, bubble) {
+  if (!els.luna) return;
+  els.luna.dataset.mood = mood || "idle";
+  if (!els.lunaBubble) return;
+  if (!bubble) {
+    els.lunaBubble.hidden = true;
+    return;
+  }
+  els.lunaBubble.hidden = false;
+  els.lunaBubble.textContent = bubble;
+}
+
+function flashFound() {
+  if (!els.foundFlash) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  els.foundFlash.classList.remove("go");
+  void els.foundFlash.offsetWidth;
+  els.foundFlash.classList.add("go");
+  els.foundFlash.addEventListener(
+    "animationend",
+    () => els.foundFlash.classList.remove("go"),
+    { once: true }
+  );
+}
+
 /* —— Strip —— */
 function buildStrip() {
   els.strip.innerHTML = "";
   places.forEach((lm) => {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "thumb";
+    btn.className = "thumb" + (progress.isFound(lm.id) ? " found" : "");
     btn.dataset.id = lm.id;
     btn.title = lm.name;
     btn.innerHTML = `<span class="te">${lm.emoji}</span><span class="tn">${lm.name}</span>`;
@@ -220,6 +325,7 @@ function buildStrip() {
 function syncStrip() {
   els.strip.querySelectorAll(".thumb").forEach((t) => {
     t.classList.toggle("active", t.dataset.id === selectedId);
+    t.classList.toggle("found", progress.isFound(t.dataset.id));
   });
 }
 
@@ -246,7 +352,13 @@ const card = createCardMedia(els, {
     document.querySelectorAll(".pin.selected").forEach((p) => p.classList.remove("selected"));
     document.querySelectorAll(SPACE_SEL).forEach((p) => p.classList.remove("selected"));
     syncStrip();
+    if (globe) globe.setWeather();
+    if (!findQuiz.isActive()) setLunaMood("idle", "🌙");
     if (activeTab !== "space" && globe) globe.setAutoRotate(true);
+    if (resumeFindAfterCard) {
+      resumeFindAfterCard = false;
+      requestAnimationFrame(() => startFindQuiz());
+    }
   },
 });
 
@@ -415,70 +527,167 @@ function enterSpaceMode() {
   if (spaceTransitioning) return;
   stopFindQuiz();
   spaceTransitioning = true;
+  spacePinchArmed = false;
   document.body.classList.add("space-mode");
   els.solarSystem.hidden = false;
   if (els.findBtn) els.findBtn.hidden = true;
   if (els.nightBtn) els.nightBtn.style.display = "none";
   if (els.autoNightBtn) els.autoNightBtn.style.display = "none";
-  if (els.spaceHandoff) els.spaceHandoff.classList.add("show");
+  if (els.sunBtn) els.sunBtn.hidden = true;
   playFlyWhoosh();
   setAmbientForMode();
   setSizesOpen(true);
 
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const pov = globe ? globe.pointOfView() || {} : {};
+  const outAlt = 12.6;
+  const ms = reduce ? 180 : Math.max(1600, diveMs(pov.altitude, outAlt));
+
   if (globe) {
     globe.setAutoRotate(false);
     globe.setPlaces([]);
-    const pov = globe.pointOfView();
-    globe.pointOfView(pov.lat || 15, pov.lng || 10, 2.4, 0);
-    globe.pointOfView(12, 20, 9.5, 1700);
+    globe.setWeather();
+    globe.pointOfView(pov.lat || 12, pov.lng || 20, outAlt, ms);
   }
 
-  loadSolar3DModule().catch(() => {});
+  const primed = ensureSolar3D({ introZoom: false })
+    .then(() => {
+      if (Solar3D) {
+        Solar3D.setActive(true);
+        Solar3D.resize();
+        if (Solar3D.frameEarth) Solar3D.frameEarth();
+      }
+    })
+    .catch(() => {});
 
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const zoomMs = reduce ? 200 : 1600;
-  if (reduce && globe) {
-    globe.pointOfView(12, 20, 9.5, 0);
-  }
   window.setTimeout(() => {
-    els.globeViz.classList.add("hidden-view");
-    if (els.globeShadow) els.globeShadow.classList.add("hidden-view");
-    if (globe) globe.setActive(false);
-    els.solarSystem.classList.add("show");
-    requestAnimationFrame(() => {
-      ensureSolar3D({ introZoom: !reduce }).then(() => {
-        if (Solar3D) Solar3D.resize();
-      });
+    primed.then(() => {
+      els.solarSystem.classList.add("show");
+      els.globeViz.classList.add("hidden-view");
+      if (els.globeShadow) els.globeShadow.classList.add("hidden-view");
+      if (Solar3D && Solar3D.playIntroZoom && !reduce) Solar3D.playIntroZoom();
+      window.setTimeout(() => {
+        if (globe) globe.setActive(false);
+        spaceTransitioning = false;
+      }, reduce ? 0 : 900);
     });
-    if (els.spaceHandoff) {
-      window.setTimeout(() => els.spaceHandoff.classList.remove("show"), reduce ? 0 : 500);
-    }
-    spaceTransitioning = false;
-  }, zoomMs);
+  }, reduce ? 0 : Math.round(ms * 0.7));
 }
 
 function leaveSpaceMode() {
-  document.body.classList.remove("space-mode");
-  els.solarSystem.classList.remove("show");
-  if (els.findBtn) els.findBtn.hidden = false;
-  if (els.spaceHandoff) els.spaceHandoff.classList.remove("show");
-  if (Solar3D) Solar3D.setActive(false);
-  els.globeViz.classList.remove("hidden-view");
-  if (els.globeShadow) els.globeShadow.classList.remove("hidden-view");
-  if (els.nightBtn) els.nightBtn.style.display = "";
-  if (els.autoNightBtn) els.autoNightBtn.style.display = "";
-  if (globe) {
-    globe.setActive(true);
-    globe.setNight(nightMode);
-  }
+  spaceTransitioning = true;
+  spacePinchArmed = false;
   playFlyWhoosh();
-  window.setTimeout(() => {
-    if (activeTab !== "space") els.solarSystem.hidden = true;
-  }, 750);
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const inbound = reduce || !Solar3D || !Solar3D.zoomToEarth
+    ? Promise.resolve()
+    : Solar3D.zoomToEarth(1500);
+
+  return inbound.then(() => {
+    document.body.classList.remove("space-mode");
+    if (els.findBtn) els.findBtn.hidden = false;
+    if (els.nightBtn) els.nightBtn.style.display = "";
+    if (els.sunBtn) els.sunBtn.hidden = false;
+    if (els.autoNightBtn) els.autoNightBtn.style.display = "";
+    if (globe) {
+      globe.setActive(true);
+      globe.setNight(nightMode);
+      const pov = globe.pointOfView() || {};
+      globe.pointOfView(pov.lat || 18, pov.lng || -18, 11, 0);
+    }
+    els.globeViz.classList.remove("hidden-view");
+    if (els.globeShadow) els.globeShadow.classList.remove("hidden-view");
+    els.solarSystem.classList.remove("show");
+    window.setTimeout(() => {
+      if (activeTab !== "space") {
+        els.solarSystem.hidden = true;
+        if (Solar3D) Solar3D.setActive(false);
+      }
+      spaceTransitioning = false;
+      spacePinchArmed = true;
+    }, 800);
+  });
 }
 
 /* —— Find quiz —— */
 let findTargetPlace = null;
+
+function placeById(id) {
+  for (const key of Object.keys(DATASETS)) {
+    const hit = DATASETS[key].items.find((p) => p.id === id);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function syncFindStars() {
+  if (!els.findStars) return;
+  const n = progress.starsShown();
+  els.findStars.innerHTML = "";
+  for (let i = 0; i < STAR_CAP; i++) {
+    const star = document.createElement("span");
+    star.className = "find-star" + (i < n ? " on" : "");
+    star.textContent = "⭐";
+    els.findStars.appendChild(star);
+  }
+  els.findStars.classList.toggle("hot", progress.hotStreak());
+}
+
+function syncStickersBtn() {
+  if (!els.stickersBtn) return;
+  const n = progress.foundCount();
+  els.stickersBtn.hidden = n === 0;
+  if (els.stickerCount) els.stickerCount.textContent = n > 99 ? "★" : String(n);
+}
+
+function stampPlace(id) {
+  document.querySelectorAll(`.pin[data-id="${id}"]`).forEach((pin) => {
+    pin.classList.add("found");
+  });
+  document.querySelectorAll(`.thumb[data-id="${id}"]`).forEach((thumb) => {
+    thumb.classList.add("found");
+  });
+}
+
+function hideStickerSheet() {
+  if (!els.stickerSheet) return;
+  els.stickerSheet.hidden = true;
+}
+
+function showStickerSheet() {
+  if (!els.stickerSheet || !els.stickerGrid) return;
+  els.stickerGrid.innerHTML = "";
+  progress.foundIds().forEach((id) => {
+    const place = placeById(id);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "sticker";
+    btn.dataset.id = id;
+    btn.textContent = (place && place.emoji) || "📍";
+    btn.setAttribute("aria-label", (place && place.name) || "Sticker");
+    btn.addEventListener("click", () => handleStickerTap(id));
+    els.stickerGrid.appendChild(btn);
+  });
+  els.stickerSheet.hidden = false;
+}
+
+function handleStickerTap(id) {
+  const place = placeById(id);
+  if (!place) return;
+  if (findQuiz.isActive()) {
+    if (place.name) {
+      sound.ensureAudio();
+      speakName(place);
+    }
+    return;
+  }
+  hideStickerSheet();
+  if (places.some((p) => p.id === id)) openLandmark(id);
+  else if (place.name) {
+    sound.ensureAudio();
+    speakName(place);
+  }
+}
 
 function hideFindPrompt() {
   if (!els.findPrompt) return;
@@ -488,6 +697,9 @@ function hideFindPrompt() {
   if (els.findAgain) els.findAgain.hidden = true;
   if (els.findCue) els.findCue.textContent = "Find this!";
   findTargetPlace = null;
+  lastHeat = "";
+  setLunaMood("idle");
+  if (globe) globe.lockRadar();
 }
 
 function showFindPrompt(target) {
@@ -499,6 +711,9 @@ function showFindPrompt(target) {
   if (els.findCue) els.findCue.textContent = "Find this!";
   if (els.findEmoji) els.findEmoji.textContent = target.emoji || "📍";
   if (els.findAgain) els.findAgain.hidden = true;
+  syncFindStars();
+  lastHeat = "";
+  setLunaMood("hunt", "🔎");
   if (els.findPhoto) {
     const src = target.photos && target.photos[0];
     if (src) {
@@ -517,6 +732,7 @@ function markFindFound() {
   els.findPrompt.classList.add("found");
   if (els.findCue) els.findCue.textContent = "You found it!";
   if (els.findAgain) els.findAgain.hidden = false;
+  setLunaMood("cheer", "🎉");
 }
 
 function speakFindTarget(e) {
@@ -531,12 +747,35 @@ const findQuiz = createFindQuiz({
   onPrompt(target) {
     showFindPrompt(target);
   },
-  onCorrect() {
-    playChime();
+  onCorrect(found) {
+    playFanfare();
+    progress.recordFind(found.id);
+    stampPlace(found.id);
+    syncFindStars();
+    syncStickersBtn();
     markFindFound();
+    resumeFindAfterCard = true;
+    flashFound();
+    if (globe) {
+      globe.lockRadar();
+      globe.punch();
+    }
+    const pin = document.querySelector(`.pin[data-id="${found.id}"]`);
+    if (pin) {
+      const rect = pin.getBoundingClientRect();
+      sparkBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    }
+    if (els.luna) {
+      const lr = els.luna.getBoundingClientRect();
+      sparkBurst(lr.left + lr.width / 2, lr.top + lr.height / 2);
+    }
   },
   onWrong(_tapped, _target) {
     playBoop();
+    setLunaMood("oops", "🙈");
+    setTimeout(() => {
+      if (findQuiz.isActive()) setLunaMood("hunt", "🔎");
+    }, 500);
   },
   onCancel() {
     hideFindPrompt();
@@ -545,17 +784,35 @@ const findQuiz = createFindQuiz({
 
 function startFindQuiz() {
   if (activeTab === "space") return;
+  resumeFindAfterCard = false;
+  hideStickerSheet();
   const pool = places.filter((p) => p && p.lat != null && p.lng != null);
   if (pool.length < 2) return;
-  card.close();
+  if (els.card && els.card.classList.contains("open")) card.close();
   findQuiz.cancel();
-  const round = findQuiz.start(pool);
+  const round = findQuiz.start(pool, {
+    pickTarget: (list) => progress.pickTarget(list),
+  });
   if (!round) return;
   playPop();
-  if (globe) globe.setAutoRotate(true);
+  syncFindStars();
+  shootingStar();
+  if (globe) {
+    globe.setAutoRotate(true);
+    if (round.target && round.target.lat != null) {
+      globe.lockRadar(round.target.lat, round.target.lng);
+    }
+    const pov = globe.pointOfView() || {};
+    if (isDeepSpace(pov.altitude)) {
+      globe.pointOfView(pov.lat || 20, pov.lng || 20, 2.35, diveMs(pov.altitude, 2.35));
+    }
+  }
 }
 
 function stopFindQuiz() {
+  resumeFindAfterCard = false;
+  progress.resetSession();
+  syncFindStars();
   if (!findQuiz.isActive() && (!els.findPrompt || els.findPrompt.hidden)) return;
   findQuiz.cancel();
   hideFindPrompt();
@@ -583,6 +840,12 @@ function openLandmark(id, sourceEl) {
     if (result.handled && result.correct) skipFly = true;
   }
 
+  if (id === "iss") {
+    playPop();
+    setLunaMood("cheer", "🛰️");
+    return;
+  }
+
   const lm = places.find((l) => l.id === id);
   if (!lm) return;
 
@@ -598,6 +861,11 @@ function openLandmark(id, sourceEl) {
   playPop();
   if (!skipFly) playFlyWhoosh();
   if (sound.isSoundOn()) setAmbientForMode();
+  if (!skipFly && sound.isSoundOn() && lm.name) {
+    sound.ensureAudio();
+    speakName(lm);
+    setLunaMood("hunt", lm.emoji || "🌍");
+  }
 
   if (activeTab === "space") {
     setTimeout(() => card.openPlaceCard(lm), 220);
@@ -607,12 +875,15 @@ function openLandmark(id, sourceEl) {
 
   if (!globe) return;
   globe.setAutoRotate(false);
+  globe.setWeather(lm.lat, lm.lng, weatherForPlace(lm));
   if (skipFly) {
     setTimeout(() => card.openPlaceCard(lm), 220);
   } else {
     const alt = activeTab === "countries" ? 1.35 : activeTab === "continents" ? 1.9 : 1.55;
-    globe.pointOfView(lm.lat, lm.lng, alt, 1400);
-    setTimeout(() => card.openPlaceCard(lm), 900);
+    const from = (globe.pointOfView() || {}).altitude;
+    const ms = diveMs(from, alt);
+    globe.pointOfView(lm.lat, lm.lng, alt, ms);
+    setTimeout(() => card.openPlaceCard(lm), Math.min(ms - 180, Math.max(420, ms * 0.62)));
   }
 
   scrollStripToId(id);
@@ -629,6 +900,8 @@ function surprise() {
     [{ transform: "rotate(0deg)" }, { transform: "rotate(360deg)" }],
     { duration: 450, easing: "ease-out" }
   );
+  const rect = els.globeViz ? els.globeViz.getBoundingClientRect() : null;
+  if (rect) sparkBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
   const next = randomLandmark(selectedId);
   if (next) openLandmark(next.id);
 }
@@ -658,6 +931,7 @@ function staggerPinPlaces(items) {
 
 function switchTab(tab) {
   if (!DATASETS[tab] || (tab === activeTab && !(tab === "landmarks" && landmarkFilter))) return;
+  hideStickerSheet();
   stopFindQuiz();
   card.close();
   if (tab === "landmarks") landmarkFilter = null;
@@ -683,25 +957,31 @@ function switchTab(tab) {
 
   buildStrip();
 
+  const views = {
+    landmarks: [20, 20, 2.2],
+    wonders: [10, 30, 2.25],
+    continents: [15, 20, 2.35],
+    countries: [18, 12, 1.85],
+  };
+
+  function showEarthPins() {
+    if (!globe || activeTab === "space") return;
+    const pinData =
+      activeTab === "countries" || activeTab === "continents" ? staggerPinPlaces(places) : places;
+    globe.setPlaces(pinData);
+    const v = views[activeTab] || views.landmarks;
+    const from = (globe.pointOfView() || {}).altitude;
+    globe.pointOfView(v[0], v[1], v[2], leavingSpace ? diveMs(from, v[2]) : 900);
+    globe.setAutoRotate(true);
+    setAmbientForMode();
+  }
+
   if (enteringSpace) {
     enterSpaceMode();
+  } else if (leavingSpace) {
+    Promise.resolve(leaveSpaceMode()).then(showEarthPins);
   } else {
-    if (leavingSpace) leaveSpaceMode();
-    if (globe) {
-      const pinData =
-        tab === "countries" || tab === "continents" ? staggerPinPlaces(places) : places;
-      globe.setPlaces(pinData);
-      const views = {
-        landmarks: [20, 20, 2.2],
-        wonders: [10, 30, 2.25],
-        continents: [15, 20, 2.35],
-        countries: [18, 12, 1.85],
-      };
-      const v = views[tab] || views.landmarks;
-      globe.pointOfView(v[0], v[1], v[2], leavingSpace ? 1100 : 900);
-      globe.setAutoRotate(true);
-    }
-    setAmbientForMode();
+    showEarthPins();
   }
   playPop();
 }
@@ -739,10 +1019,42 @@ function applyAutoNightFromClock() {
 }
 
 /* —— Init globe —— */
+function syncFindHeat(pov) {
+  if (!findQuiz.isActive() || !findTargetPlace || !pov) return;
+  if (els.luna && els.luna.dataset.mood === "oops") return;
+  if (findTargetPlace.lat == null) return;
+  const hint = heatHint(pov.lat, pov.lng, findTargetPlace.lat, findTargetPlace.lng);
+  if (hint === lastHeat) return;
+  lastHeat = hint;
+  const bubble = hint === "hot" ? "🔥" : hint === "warm" ? "🌤️" : "❄️";
+  setLunaMood("hunt", bubble);
+}
+
+function syncOrbitChrome(pov) {
+  const alt = pov && pov.altitude;
+  document.body.classList.toggle("deep-space", isDeepSpace(alt));
+  syncFindHeat(pov);
+  if (
+    shouldEnterSpace(alt, spacePinchArmed) &&
+    activeTab !== "space" &&
+    !spaceTransitioning
+  ) {
+    switchTab("space");
+  }
+}
+
 function markGlobeReady() {
   if (globeReady) return;
   globeReady = true;
   els.loader.classList.add("hide");
+  if (!globe || activeTab === "space") return;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const sky = globe.skyShowLook ? globe.skyShowLook() : { lat: 18, lng: -18, altitude: 2.45 };
+  globe.pointOfView(sky.lat, sky.lng, sky.altitude, reduce ? 0 : 4800);
+  window.setTimeout(() => {
+    spacePinchArmed = true;
+  }, reduce ? 400 : 5200);
+  loadSolar3DModule().catch(() => {});
 }
 
 function initGlobe() {
@@ -751,8 +1063,11 @@ function initGlobe() {
     onSelect: (id) => openLandmark(id),
     sparkAt,
     onReady: markGlobeReady,
+    onPov: syncOrbitChrome,
     hasSelection: () => !!selectedId,
+    isFound: (id) => progress.isFound(id),
   });
+  document.body.classList.add("deep-space");
   syncAutoNightChrome();
   applyAutoNightFromClock();
 }
@@ -768,7 +1083,61 @@ if (els.findBtn) {
 if (els.findExit) els.findExit.addEventListener("click", stopFindQuiz);
 if (els.findAgain) els.findAgain.addEventListener("click", startFindQuiz);
 if (els.findHear) els.findHear.addEventListener("click", speakFindTarget);
+if (els.luna) {
+  els.luna.addEventListener("click", () => {
+    if (activeTab === "space") return;
+    if (findQuiz.isActive()) {
+      speakFindTarget();
+      return;
+    }
+    startFindQuiz();
+  });
+}
+if (els.stickersBtn) {
+  els.stickersBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (els.stickerSheet && !els.stickerSheet.hidden) hideStickerSheet();
+    else showStickerSheet();
+    playPop();
+  });
+}
+if (els.stickerClose) els.stickerClose.addEventListener("click", hideStickerSheet);
+document.addEventListener("pointerdown", (e) => {
+  if (!els.stickerSheet || els.stickerSheet.hidden) return;
+  const t = e.target;
+  if (!(t instanceof Node)) return;
+  if (els.stickerSheet.contains(t) || (els.stickersBtn && els.stickersBtn.contains(t))) return;
+  hideStickerSheet();
+});
 if (els.nightBtn) els.nightBtn.addEventListener("click", toggleNightMode);
+
+if (els.sunBtn) {
+  let sunHours = 0;
+  let sunDrag = null;
+  els.sunBtn.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    els.sunBtn.setPointerCapture(e.pointerId);
+    sunDrag = { x: e.clientX, hours: sunHours, moved: false };
+  });
+  els.sunBtn.addEventListener("pointermove", (e) => {
+    if (!sunDrag || !globe) return;
+    const dx = e.clientX - sunDrag.x;
+    if (Math.abs(dx) > 6) sunDrag.moved = true;
+    sunHours = sunDrag.hours + dx / 28;
+    globe.setSunHours(sunHours);
+    els.sunBtn.classList.toggle("tugged", Math.abs(sunHours) > 0.2);
+  });
+  els.sunBtn.addEventListener("pointerup", () => {
+    if (!globe) return;
+    if (!sunDrag || !sunDrag.moved) {
+      sunHours = 0;
+      globe.setSunHours(0);
+    }
+    els.sunBtn.classList.toggle("tugged", Math.abs(sunHours) > 0.2);
+    sunDrag = null;
+    playPop();
+  });
+}
 
 els.settingsBtn.addEventListener("click", (e) => {
   e.stopPropagation();
@@ -819,12 +1188,16 @@ if (els.autoNightBtn) {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
+    if (els.stickerSheet && !els.stickerSheet.hidden) {
+      hideStickerSheet();
+      return;
+    }
     if (els.findPrompt && !els.findPrompt.hidden) {
       stopFindQuiz();
       return;
     }
     if (els.settingsPanel.classList.contains("open")) {
-      closeChromeMenus();
+      setPanelOpen(els.settingsPanel, els.settingsBtn, false);
       return;
     }
     if (!card.tryDismiss()) card.close();
@@ -838,12 +1211,16 @@ document.addEventListener("keydown", (e) => {
 });
 
 makeStars();
+startFireflies();
+setLunaMood("idle", "🌙");
 buildStrip();
 buildSizesView();
 setSizesOpen(true);
 initGlobe();
-setInterval(shootingStar, 28000);
-setTimeout(shootingStar, 8000);
+syncStickersBtn();
+syncFindStars();
+setInterval(shootingStar, 16000);
+setTimeout(shootingStar, 5000);
 
 // Browsers block audio until a gesture — unlock once when sound defaults on
 document.addEventListener(

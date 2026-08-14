@@ -324,21 +324,13 @@ export const SPACE_BODIES = [
 
 export const EARTH_YEAR_SECONDS = 22;
 
-export function getBody(id) {
+function getBody(id) {
   return SPACE_BODIES.find((b) => b.id === id) || null;
 }
 
 export function diameterKm(bodyOrId) {
   const body = typeof bodyOrId === "string" ? getBody(bodyOrId) : bodyOrId;
   return (body && body.diameterKm) || 1000;
-}
-
-export function orbitRadiusPct(au) {
-  const s = Math.sqrt(au);
-  const min = Math.sqrt(0.39);
-  const max = Math.sqrt(30.05);
-  const t = (s - min) / (max - min);
-  return 16 + t * 80;
 }
 
 export function orbitSpinSeconds(years) {

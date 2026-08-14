@@ -1,6 +1,4 @@
 Kitten TTS (Apache-2.0) — https://github.com/KittenML/KittenTTS
 kitten-tts-js (Apache-2.0) — https://github.com/Algiras/kitten-tts-js
-ONNX Runtime Web (MIT) — https://github.com/microsoft/onnxruntime
-phonemizer.js / eSpeak NG — bundled inside kitten-tts.bundle.js
 
 Model: KittenML/kitten-tts-nano-0.8-int8 (vendored under model/)

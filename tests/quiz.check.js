@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { geoPool, pinSetForRound, createFindQuiz } from "../quiz.js";
+import { geoPool, createFindQuiz } from "../quiz.js";
 
 const pool = [
   { id: "a", continent: "Europe", lat: 1, lng: 1 },
@@ -10,11 +10,6 @@ const pool = [
 ];
 
 assert.equal(geoPool(pool).length, 4);
-
-const pins = pinSetForRound(pool[0], pool);
-assert.equal(pins.length, 4);
-assert.ok(pins.every((p) => p.lat != null));
-assert.ok(pins.some((p) => p.id === "a"));
 
 let prompted = null;
 let correctId = null;

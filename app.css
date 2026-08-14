@@ -16,6 +16,10 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+[hidden] {
+  display: none !important;
+}
+
 html, body {
   height: 100%;
   width: 100%;
@@ -42,10 +46,30 @@ body {
   z-index: 0;
   background:
     radial-gradient(ellipse 90% 60% at 50% 110%, rgba(26, 95, 122, 0.55), transparent 55%),
-    radial-gradient(circle at 15% 20%, rgba(255, 200, 87, 0.12), transparent 28%),
-    radial-gradient(circle at 85% 15%, rgba(61, 154, 170, 0.2), transparent 30%),
-    linear-gradient(180deg, #061828 0%, var(--sky-deep) 35%, #0d3d55 70%, #1a5f7a 100%);
+    radial-gradient(circle at 12% 18%, rgba(255, 200, 87, 0.2), transparent 32%),
+    radial-gradient(circle at 88% 12%, rgba(90, 170, 220, 0.22), transparent 34%),
+    radial-gradient(circle at 50% 0%, rgba(160, 120, 255, 0.08), transparent 40%),
+    linear-gradient(180deg, #04101c 0%, var(--sky-deep) 38%, #0d3d55 72%, #1a5f7a 100%);
   pointer-events: none;
+}
+
+.horizon {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 42%;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 95% 70% at 50% 118%, rgba(255, 176, 92, 0.28), transparent 58%);
+}
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  background: radial-gradient(ellipse 78% 72% at 50% 46%, transparent 52%, rgba(4, 12, 22, 0.42) 100%);
 }
 
 #stars {
@@ -218,6 +242,16 @@ body {
 .mode-tab.active .mode-label {
   opacity: 1;
   color: var(--sky-deep);
+}
+
+.mode-tab.active .mode-emoji {
+  animation: modePop 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes modePop {
+  0% { transform: scale(0.86) rotate(-8deg); }
+  60% { transform: scale(1.12) rotate(4deg); }
+  100% { transform: scale(1) rotate(0deg); }
 }
 
 /* Narrow screens: emoji-only tiles */
@@ -407,6 +441,48 @@ body {
   min-width: 44px;
   justify-content: center;
 }
+
+.find-wrap {
+  position: relative;
+}
+
+.find-badge {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.4rem;
+  z-index: 2;
+  appearance: none;
+  border: 2px solid #fff;
+  background: var(--sun);
+  color: var(--ink);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 0.72rem;
+  min-width: 1.55rem;
+  height: 1.55rem;
+  padding: 0 0.28rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.05rem;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28);
+  line-height: 1;
+}
+
+.find-badge[hidden] {
+  display: none !important;
+}
+
+.find-badge .sticker-count {
+  font-size: 0.7rem;
+}
+
+.find-badge:focus-visible {
+  outline: 2px solid var(--sun);
+  outline-offset: 2px;
+}
 .btn.active-mode {
   background: rgba(255, 200, 87, 0.28);
   border-color: rgba(255, 200, 87, 0.5);
@@ -478,9 +554,38 @@ body {
   z-index: 4;
   opacity: 0.7;
   transition: opacity 0.5s ease;
+  animation: shadowBreathe 4.8s ease-in-out infinite;
 }
 
-.globe-shadow.hidden-view { opacity: 0; }
+.globe-shadow.hidden-view { opacity: 0; animation: none; }
+
+@keyframes shadowBreathe {
+  0%, 100% { opacity: 0.5; transform: translateX(-50%) scaleX(1); }
+  50% { opacity: 0.78; transform: translateX(-50%) scaleX(1.1); }
+}
+
+.found-flash {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: min(62vw, 420px);
+  height: min(62vw, 420px);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 8;
+  opacity: 0;
+  box-shadow: 0 0 0 0 rgba(255, 200, 87, 0.55);
+}
+
+.found-flash.go {
+  animation: foundFlash 0.75s ease-out forwards;
+}
+
+@keyframes foundFlash {
+  0% { opacity: 0.9; box-shadow: 0 0 0 0 rgba(255, 200, 87, 0.55); }
+  100% { opacity: 0; box-shadow: 0 0 0 70px rgba(255, 200, 87, 0); }
+}
 
 /* —— Solar system —— */
 body.space-mode .sky {
@@ -489,6 +594,14 @@ body.space-mode .sky {
     radial-gradient(circle at 20% 25%, rgba(255, 200, 87, 0.08), transparent 22%),
     radial-gradient(circle at 80% 20%, rgba(100, 140, 255, 0.12), transparent 28%),
     linear-gradient(180deg, #020617 0%, #0b1224 40%, #101828 100%);
+}
+
+body.space-mode .horizon {
+  background: radial-gradient(ellipse 90% 60% at 50% 120%, rgba(80, 60, 160, 0.22), transparent 58%);
+}
+
+body.find-mode .horizon {
+  background: radial-gradient(ellipse 95% 70% at 50% 118%, rgba(255, 200, 87, 0.32), transparent 58%);
 }
 
 #solarSystem {
@@ -1063,6 +1176,7 @@ body.space-mode .sky {
   justify-content: center;
   cursor: pointer;
   pointer-events: auto;
+  position: relative;
   transform-origin: 50% 100%;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.35));
   transition: transform 0.2s ease;
@@ -1124,6 +1238,32 @@ body.space-mode .sky {
   line-height: 1;
 }
 
+.pin-stamp {
+  position: absolute;
+  right: -2px;
+  top: -4px;
+  font-size: 0.85rem;
+  line-height: 1;
+  display: none;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+.pin.found .pin-stamp {
+  display: block;
+  animation: stampPop 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pin.found .pin-inner {
+  box-shadow: 0 0 0 3px var(--sun);
+}
+
+@keyframes stampPop {
+  0% { transform: scale(0.2) rotate(-20deg); }
+  70% { transform: scale(1.25) rotate(8deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
 .pin-glow {
   position: absolute;
   inset: -8px;
@@ -1171,6 +1311,14 @@ body.space-mode .sky {
   border-radius: 50%;
   background: var(--sun);
   animation: sparkOut 0.7s ease-out forwards;
+}
+
+.spark-emoji {
+  position: absolute;
+  font-size: 1.05rem;
+  line-height: 1;
+  pointer-events: none;
+  animation: sparkOut 0.85s ease-out forwards;
 }
 
 @keyframes sparkOut {
@@ -1270,6 +1418,44 @@ body.space-mode .sky {
   margin-top: 0.15rem;
 }
 
+.find-stars {
+  display: flex;
+  gap: 0.12rem;
+  min-height: 1.1rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.find-star {
+  font-size: 0.85rem;
+  line-height: 1;
+  opacity: 0.22;
+  filter: grayscale(1);
+  transform: scale(0.85);
+}
+
+.find-star.on {
+  opacity: 1;
+  filter: none;
+  transform: scale(1);
+  animation: starOn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.find-stars.hot .find-star.on {
+  animation: starHot 0.9s ease-in-out infinite;
+}
+
+@keyframes starOn {
+  0% { transform: scale(0.4); }
+  70% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+@keyframes starHot {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+}
+
 .find-emoji {
   font-size: 2.6rem;
   line-height: 1;
@@ -1321,6 +1507,93 @@ body.space-mode .sky {
 
 .find-prompt.found .find-cue {
   color: var(--leaf);
+}
+
+.find-prompt.found {
+  animation: foundPop 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes foundPop {
+  0% { transform: translateY(-50%) scale(1); }
+  45% { transform: translateY(-50%) scale(1.06); }
+  100% { transform: translateY(-50%) scale(1); }
+}
+
+.sticker-sheet {
+  position: fixed;
+  z-index: 45;
+  left: 50%;
+  bottom: calc(6.2rem + var(--safe-bottom));
+  transform: translateX(-50%);
+  width: max-content;
+  min-width: 8.5rem;
+  max-width: min(22rem, calc(100vw - 1.5rem));
+  max-height: min(48vh, 22rem);
+  overflow: auto;
+  padding: 1.15rem 1rem 0.95rem;
+  border-radius: 1.35rem;
+  background: rgba(255, 248, 239, 0.96);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
+  color: var(--ink);
+}
+
+.sticker-sheet[hidden] {
+  display: none !important;
+}
+
+.sticker-cue {
+  text-align: center;
+  font-size: 1.4rem;
+  margin-bottom: 0.55rem;
+}
+
+.sticker-close {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.4rem;
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.35rem;
+  line-height: 1;
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+  border-radius: 999px;
+}
+
+.sticker-close:focus-visible {
+  outline: 2px solid var(--sun);
+}
+
+.sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3.4rem, 1fr));
+  gap: 0.45rem;
+}
+
+.sticker {
+  appearance: none;
+  border: none;
+  background: rgba(26, 43, 52, 0.06);
+  border-radius: 1rem;
+  min-height: 3.4rem;
+  font-size: 1.85rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.sticker:active {
+  transform: scale(0.94);
+}
+
+.sticker:focus-visible {
+  outline: 2px solid var(--sun);
+}
+
+.thumb.found {
+  box-shadow: inset 0 0 0 2px rgba(255, 200, 87, 0.7);
 }
 
 body.find-mode .explore {
@@ -1759,6 +2032,10 @@ body.bedtime .sky {
   filter: brightness(0.88) saturate(0.92);
 }
 
+body.bedtime .horizon {
+  background: radial-gradient(ellipse 95% 70% at 50% 118%, rgba(90, 130, 255, 0.22), transparent 58%);
+}
+
 body.bedtime .topbar {
   background: linear-gradient(180deg, rgba(6, 18, 32, 0.55), transparent);
 }
@@ -1789,6 +2066,10 @@ body.bedtime .topbar {
   text-transform: uppercase;
   margin-bottom: 0.2rem;
   color: #9a6b00;
+}
+
+.wow strong::before {
+  content: "✨ ";
 }
 
 .card.open .card-body h2,
@@ -2146,8 +2427,10 @@ body.bedtime .topbar {
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .star, .pin, .pin-glow, .pin.selected .pin-inner,
-  .brand h1, .coach, .shooting-star, .spark, .loader-orb,
-  .ss-orbit, .ss-body, .ss-sun, .anthem-now .pulse {
+  .brand h1, .coach, .shooting-star, .spark, .spark-emoji, .loader-orb,
+  .ss-orbit, .ss-body, .ss-sun, .anthem-now .pulse,
+  .find-star, .pin-stamp, .find-prompt.found,
+  .globe-shadow, .found-flash, .mode-tab.active .mode-emoji {
     animation: none !important;
   }
   .card, .overlay, .card-hero, .card-body h2,

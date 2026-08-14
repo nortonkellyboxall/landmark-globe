@@ -40,6 +40,14 @@ export function createSound() {
     setTimeout(() => tone(880, 0.22, "sine", 0.05), 90);
   }
 
+  function playFanfare() {
+    ensureAudio();
+    tone(523, 0.14, "sine", 0.06);
+    setTimeout(() => tone(659, 0.16, "sine", 0.07), 90);
+    setTimeout(() => tone(784, 0.22, "triangle", 0.07), 180);
+    setTimeout(() => tone(1047, 0.28, "sine", 0.05), 300);
+  }
+
   function playBoop() {
     ensureAudio();
     tone(180, 0.14, "triangle", 0.05);
@@ -169,6 +177,7 @@ export function createSound() {
     isSoundOn,
     playPop,
     playChime,
+    playFanfare,
     playBoop,
     playFlyWhoosh,
     setAmbientForMode,
