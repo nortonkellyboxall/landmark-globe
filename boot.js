@@ -7,7 +7,7 @@ import { createGlobe } from "./globe-app.js";
 import { diveMs, heatHint, isDeepSpace } from "./orbit-look.js";
 import { weatherForPlace } from "./place-weather.js";
 import { createSound } from "./sound.js";
-import { createAdventure, placesForContinent } from "./adventure.js";
+import { createAdventure, placesForContinent as continentPlaces } from "./adventure.js";
 import { createFindGame } from "./find-game.js";
 import { createFindProgress } from "./find-progress.js";
 import { createSpaceMode } from "./space-mode.js";
@@ -289,7 +289,7 @@ const card = createCardMedia(els, {
   playPop,
   playChime,
   placesForContinent: (id) =>
-    placesForContinent(id, DATASETS.landmarks.items, DATASETS.wonders.items),
+    continentPlaces(id, DATASETS.landmarks.items, DATASETS.wonders.items),
   onShowPlaces(place) {
     adventure.showPlacesInContinent(place);
   },
