@@ -10,4 +10,7 @@
 - **Content pack** — Shallow `window.*` array file (`LANDMARKS`, `WONDERS`, `CONTINENTS`, `COUNTRIES`). Not deepened.
 - **Continent join** — From a continent Place card, “Explore here” filters landmarks **and** natural wonders for that continent (Americas split N/S by latitude).
 - **Speak** — Pre-baked Luna MP3 clips in `vendor/tts/clips/` (`speakCard` / `speakName`). MP3 for Safari/phone support. Rebake with `node scripts/bake-speech.mjs`.
-- **Find quiz** — Guided “tap the matching pin” loop (`quiz.js`). Topbar 🔍. Keeps the full current place set on the globe (no decoy thinning). Session stars + persisted sticker collection live in `find-progress.js`.
+- **Find quiz** — Guided “tap the matching pin” loop. Round rules live in `quiz.js` (`createFindQuiz`). Prompt, pool, stickers, heat, and card-resume live in the Find quiz module (`find-game.js`). Globe and CardMedia stay free of quiz rules (ADR 0002).
+- **Space handoff** — Earth↔space transition: pinch-arm, enter/leave timing, dual-view visibility, sizes strip. `solar3d.js` only renders.
+- **Adventure navigation** — Active tab, current Place pool, strip, and Continent join. Not `chrome.js`.
+- **Ambient kind** — `'on' | 'duck'`. Sound plays full pads when kind is `'on'` (space tab or a Place is selected); otherwise ducks. Sound does not know tab names.
