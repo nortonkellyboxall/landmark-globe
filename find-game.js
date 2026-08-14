@@ -50,6 +50,7 @@ export function createFindGame(opts) {
   const progress = opts.progress;
   let lastHeat = "";
   let resumeAfterCard = false;
+  let lastPrompted = null;
 
   function syncFindStars() {
     if (!els.findStars) return;
@@ -139,6 +140,7 @@ export function createFindGame(opts) {
     if (body && body.classList) body.classList.remove("find-mode");
     if (els.findAgain) els.findAgain.hidden = true;
     if (els.findCue) els.findCue.textContent = "Find this!";
+    lastPrompted = null;
     lastHeat = "";
     opts.setLunaMood("idle");
     const globe = opts.getGlobe();
@@ -147,6 +149,7 @@ export function createFindGame(opts) {
 
   function showFindPrompt(target) {
     if (!els.findPrompt || !target) return;
+    lastPrompted = target;
     els.findPrompt.hidden = false;
     els.findPrompt.classList.remove("found");
     const body = docBody();
@@ -180,7 +183,7 @@ export function createFindGame(opts) {
 
   function speakTarget(e) {
     if (e) e.stopPropagation();
-    const lm = quiz.getTarget();
+    const lm = quiz.getTarget() || lastPrompted;
     if (!lm || !lm.name) return;
     opts.ensureAudio();
     opts.speakName(lm);

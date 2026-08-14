@@ -7,8 +7,8 @@ import { createGlobe } from "./globe-app.js";
 import { diveMs, heatHint, isDeepSpace, shouldEnterSpace } from "./orbit-look.js";
 import { weatherForPlace } from "./place-weather.js";
 import { createSound } from "./sound.js";
-import { createFindQuiz } from "./quiz.js";
-import { createFindProgress, STAR_CAP } from "./find-progress.js";
+import { createFindGame } from "./find-game.js";
+import { createFindProgress } from "./find-progress.js";
 import { speakName } from "./speak.js";
 
 const SPACE_SEL = ".ss-size-item.selected";
@@ -57,8 +57,6 @@ let landmarkFilter = null;
 let globeReady = false;
 let spaceTransitioning = false;
 let spacePinchArmed = false;
-let lastHeat = "";
-let resumeFindAfterCard = false;
 const sound = createSound();
 const progress = createFindProgress();
 
@@ -353,19 +351,48 @@ const card = createCardMedia(els, {
     document.querySelectorAll(SPACE_SEL).forEach((p) => p.classList.remove("selected"));
     syncStrip();
     if (globe) globe.setWeather();
-    if (!findQuiz.isActive()) setLunaMood("idle", "🌙");
+    if (!findGame.isActive()) setLunaMood("idle", "🌙");
     if (activeTab !== "space" && globe) globe.setAutoRotate(true);
-    if (resumeFindAfterCard) {
-      resumeFindAfterCard = false;
-      requestAnimationFrame(() => startFindQuiz());
-    }
+    findGame.onCardClose();
   },
+});
+
+function placeById(id) {
+  for (const key of Object.keys(DATASETS)) {
+    const hit = DATASETS[key].items.find((p) => p.id === id);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+const findGame = createFindGame({
+  els,
+  getTab: () => activeTab,
+  getPlaces: () => places,
+  lookupPlace: placeById,
+  getGlobe: () => globe,
+  card,
+  progress,
+  diveMs,
+  isDeepSpace,
+  heatHint,
+  playPop,
+  playFanfare,
+  playBoop,
+  playFlyWhoosh,
+  ensureAudio: () => sound.ensureAudio(),
+  speakName,
+  setLunaMood,
+  sparkBurst,
+  shootingStar,
+  flashFound,
+  onOpenPlace: (id) => openLandmark(id),
 });
 
 function showPlacesInContinent(place) {
   const hits = placesForContinent(place.id);
   if (!hits.length) return;
-  stopFindQuiz();
+  findGame.stop();
   landmarkFilter = place.id;
   card.close();
   const leavingSpace = activeTab === "space";
@@ -525,12 +552,11 @@ async function ensureSolar3D(opts) {
 
 function enterSpaceMode() {
   if (spaceTransitioning) return;
-  stopFindQuiz();
+  findGame.stop();
   spaceTransitioning = true;
   spacePinchArmed = false;
   document.body.classList.add("space-mode");
   els.solarSystem.hidden = false;
-  if (els.findBtn) els.findBtn.hidden = true;
   if (els.nightBtn) els.nightBtn.style.display = "none";
   if (els.autoNightBtn) els.autoNightBtn.style.display = "none";
   if (els.sunBtn) els.sunBtn.hidden = true;
@@ -585,7 +611,6 @@ function leaveSpaceMode() {
 
   return inbound.then(() => {
     document.body.classList.remove("space-mode");
-    if (els.findBtn) els.findBtn.hidden = false;
     if (els.nightBtn) els.nightBtn.style.display = "";
     if (els.sunBtn) els.sunBtn.hidden = false;
     if (els.autoNightBtn) els.autoNightBtn.style.display = "";
@@ -609,236 +634,12 @@ function leaveSpaceMode() {
   });
 }
 
-/* —— Find quiz —— */
-let findTargetPlace = null;
-
-function placeById(id) {
-  for (const key of Object.keys(DATASETS)) {
-    const hit = DATASETS[key].items.find((p) => p.id === id);
-    if (hit) return hit;
-  }
-  return null;
-}
-
-function syncFindStars() {
-  if (!els.findStars) return;
-  const n = progress.starsShown();
-  els.findStars.innerHTML = "";
-  for (let i = 0; i < STAR_CAP; i++) {
-    const star = document.createElement("span");
-    star.className = "find-star" + (i < n ? " on" : "");
-    star.textContent = "⭐";
-    els.findStars.appendChild(star);
-  }
-  els.findStars.classList.toggle("hot", progress.hotStreak());
-}
-
-function syncStickersBtn() {
-  if (!els.stickersBtn) return;
-  const n = progress.foundCount();
-  els.stickersBtn.hidden = n === 0;
-  if (els.stickerCount) els.stickerCount.textContent = n > 99 ? "★" : String(n);
-}
-
-function stampPlace(id) {
-  document.querySelectorAll(`.pin[data-id="${id}"]`).forEach((pin) => {
-    pin.classList.add("found");
-  });
-  document.querySelectorAll(`.thumb[data-id="${id}"]`).forEach((thumb) => {
-    thumb.classList.add("found");
-  });
-}
-
-function hideStickerSheet() {
-  if (!els.stickerSheet) return;
-  els.stickerSheet.hidden = true;
-}
-
-function showStickerSheet() {
-  if (!els.stickerSheet || !els.stickerGrid) return;
-  els.stickerGrid.innerHTML = "";
-  progress.foundIds().forEach((id) => {
-    const place = placeById(id);
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "sticker";
-    btn.dataset.id = id;
-    btn.textContent = (place && place.emoji) || "📍";
-    btn.setAttribute("aria-label", (place && place.name) || "Sticker");
-    btn.addEventListener("click", () => handleStickerTap(id));
-    els.stickerGrid.appendChild(btn);
-  });
-  els.stickerSheet.hidden = false;
-}
-
-function handleStickerTap(id) {
-  const place = placeById(id);
-  if (!place) return;
-  if (findQuiz.isActive()) {
-    if (place.name) {
-      sound.ensureAudio();
-      speakName(place);
-    }
-    return;
-  }
-  hideStickerSheet();
-  if (places.some((p) => p.id === id)) openLandmark(id);
-  else if (place.name) {
-    sound.ensureAudio();
-    speakName(place);
-  }
-}
-
-function hideFindPrompt() {
-  if (!els.findPrompt) return;
-  els.findPrompt.hidden = true;
-  els.findPrompt.classList.remove("found");
-  document.body.classList.remove("find-mode");
-  if (els.findAgain) els.findAgain.hidden = true;
-  if (els.findCue) els.findCue.textContent = "Find this!";
-  findTargetPlace = null;
-  lastHeat = "";
-  setLunaMood("idle");
-  if (globe) globe.lockRadar();
-}
-
-function showFindPrompt(target) {
-  if (!els.findPrompt || !target) return;
-  findTargetPlace = target;
-  els.findPrompt.hidden = false;
-  els.findPrompt.classList.remove("found");
-  document.body.classList.add("find-mode");
-  if (els.findCue) els.findCue.textContent = "Find this!";
-  if (els.findEmoji) els.findEmoji.textContent = target.emoji || "📍";
-  if (els.findAgain) els.findAgain.hidden = true;
-  syncFindStars();
-  lastHeat = "";
-  setLunaMood("hunt", "🔎");
-  if (els.findPhoto) {
-    const src = target.photos && target.photos[0];
-    if (src) {
-      els.findPhoto.hidden = false;
-      els.findPhoto.src = src;
-      els.findPhoto.alt = target.name || "";
-    } else {
-      els.findPhoto.hidden = true;
-      els.findPhoto.removeAttribute("src");
-    }
-  }
-}
-
-function markFindFound() {
-  if (!els.findPrompt) return;
-  els.findPrompt.classList.add("found");
-  if (els.findCue) els.findCue.textContent = "You found it!";
-  if (els.findAgain) els.findAgain.hidden = false;
-  setLunaMood("cheer", "🎉");
-}
-
-function speakFindTarget(e) {
-  if (e) e.stopPropagation();
-  const lm = findTargetPlace || findQuiz.getTarget();
-  if (!lm || !lm.name) return;
-  sound.ensureAudio();
-  speakName(lm);
-}
-
-const findQuiz = createFindQuiz({
-  onPrompt(target) {
-    showFindPrompt(target);
-  },
-  onCorrect(found) {
-    playFanfare();
-    progress.recordFind(found.id);
-    stampPlace(found.id);
-    syncFindStars();
-    syncStickersBtn();
-    markFindFound();
-    resumeFindAfterCard = true;
-    flashFound();
-    if (globe) {
-      globe.lockRadar();
-      globe.punch();
-    }
-    const pin = document.querySelector(`.pin[data-id="${found.id}"]`);
-    if (pin) {
-      const rect = pin.getBoundingClientRect();
-      sparkBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
-    }
-    if (els.luna) {
-      const lr = els.luna.getBoundingClientRect();
-      sparkBurst(lr.left + lr.width / 2, lr.top + lr.height / 2);
-    }
-  },
-  onWrong(_tapped, _target) {
-    playBoop();
-    setLunaMood("oops", "🙈");
-    setTimeout(() => {
-      if (findQuiz.isActive()) setLunaMood("hunt", "🔎");
-    }, 500);
-  },
-  onCancel() {
-    hideFindPrompt();
-  },
-});
-
-function startFindQuiz() {
-  if (activeTab === "space") return;
-  resumeFindAfterCard = false;
-  hideStickerSheet();
-  const pool = places.filter((p) => p && p.lat != null && p.lng != null);
-  if (pool.length < 2) return;
-  if (els.card && els.card.classList.contains("open")) card.close();
-  findQuiz.cancel();
-  const round = findQuiz.start(pool, {
-    pickTarget: (list) => progress.pickTarget(list),
-  });
-  if (!round) return;
-  playPop();
-  syncFindStars();
-  shootingStar();
-  if (globe) {
-    globe.setAutoRotate(true);
-    if (round.target && round.target.lat != null) {
-      globe.lockRadar(round.target.lat, round.target.lng);
-    }
-    const pov = globe.pointOfView() || {};
-    if (isDeepSpace(pov.altitude)) {
-      globe.pointOfView(pov.lat || 20, pov.lng || 20, 2.35, diveMs(pov.altitude, 2.35));
-    }
-  }
-}
-
-function stopFindQuiz() {
-  resumeFindAfterCard = false;
-  progress.resetSession();
-  syncFindStars();
-  if (!findQuiz.isActive() && (!els.findPrompt || els.findPrompt.hidden)) return;
-  findQuiz.cancel();
-  hideFindPrompt();
-}
-
 /* —— Globe helpers —— */
 function openLandmark(id, sourceEl) {
   let skipFly = false;
-  if (findQuiz.isActive()) {
-    const result = findQuiz.handlePinTap(id);
-    if (result.handled && !result.correct) {
-      const pin = document.querySelector(`.pin[data-id="${id}"]`);
-      if (pin) {
-        pin.classList.remove("pin-wrong");
-        void pin.offsetWidth;
-        pin.classList.add("pin-wrong");
-        pin.addEventListener(
-          "animationend",
-          () => pin.classList.remove("pin-wrong"),
-          { once: true }
-        );
-      }
-      return;
-    }
-    if (result.handled && result.correct) skipFly = true;
-  }
+  const result = findGame.handlePinTap(id);
+  if (result.handled && !result.correct) return;
+  if (result.handled && result.correct) skipFly = true;
 
   if (id === "iss") {
     playPop();
@@ -931,8 +732,8 @@ function staggerPinPlaces(items) {
 
 function switchTab(tab) {
   if (!DATASETS[tab] || (tab === activeTab && !(tab === "landmarks" && landmarkFilter))) return;
-  hideStickerSheet();
-  stopFindQuiz();
+  findGame.hideStickers();
+  findGame.stop();
   card.close();
   if (tab === "landmarks") landmarkFilter = null;
   const leavingSpace = activeTab === "space";
@@ -1019,21 +820,10 @@ function applyAutoNightFromClock() {
 }
 
 /* —— Init globe —— */
-function syncFindHeat(pov) {
-  if (!findQuiz.isActive() || !findTargetPlace || !pov) return;
-  if (els.luna && els.luna.dataset.mood === "oops") return;
-  if (findTargetPlace.lat == null) return;
-  const hint = heatHint(pov.lat, pov.lng, findTargetPlace.lat, findTargetPlace.lng);
-  if (hint === lastHeat) return;
-  lastHeat = hint;
-  const bubble = hint === "hot" ? "🔥" : hint === "warm" ? "🌤️" : "❄️";
-  setLunaMood("hunt", bubble);
-}
-
 function syncOrbitChrome(pov) {
   const alt = pov && pov.altitude;
   document.body.classList.toggle("deep-space", isDeepSpace(alt));
-  syncFindHeat(pov);
+  findGame.syncHeat(pov);
   if (
     shouldEnterSpace(alt, spacePinchArmed) &&
     activeTab !== "space" &&
@@ -1076,38 +866,36 @@ function initGlobe() {
 els.surpriseBtn.addEventListener("click", surprise);
 if (els.findBtn) {
   els.findBtn.addEventListener("click", () => {
-    if (activeTab === "space") return;
-    startFindQuiz();
+    findGame.start();
   });
 }
-if (els.findExit) els.findExit.addEventListener("click", stopFindQuiz);
-if (els.findAgain) els.findAgain.addEventListener("click", startFindQuiz);
-if (els.findHear) els.findHear.addEventListener("click", speakFindTarget);
+if (els.findExit) els.findExit.addEventListener("click", () => findGame.stop());
+if (els.findAgain) els.findAgain.addEventListener("click", () => findGame.start());
+if (els.findHear) els.findHear.addEventListener("click", (e) => findGame.speakTarget(e));
 if (els.luna) {
   els.luna.addEventListener("click", () => {
-    if (activeTab === "space") return;
-    if (findQuiz.isActive()) {
-      speakFindTarget();
+    if (findGame.isActive()) {
+      findGame.speakTarget();
       return;
     }
-    startFindQuiz();
+    findGame.start();
   });
 }
 if (els.stickersBtn) {
   els.stickersBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    if (els.stickerSheet && !els.stickerSheet.hidden) hideStickerSheet();
-    else showStickerSheet();
+    if (els.stickerSheet && !els.stickerSheet.hidden) findGame.hideStickers();
+    else findGame.showStickers();
     playPop();
   });
 }
-if (els.stickerClose) els.stickerClose.addEventListener("click", hideStickerSheet);
+if (els.stickerClose) els.stickerClose.addEventListener("click", () => findGame.hideStickers());
 document.addEventListener("pointerdown", (e) => {
   if (!els.stickerSheet || els.stickerSheet.hidden) return;
   const t = e.target;
   if (!(t instanceof Node)) return;
   if (els.stickerSheet.contains(t) || (els.stickersBtn && els.stickersBtn.contains(t))) return;
-  hideStickerSheet();
+  findGame.hideStickers();
 });
 if (els.nightBtn) els.nightBtn.addEventListener("click", toggleNightMode);
 
@@ -1189,11 +977,11 @@ if (els.autoNightBtn) {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     if (els.stickerSheet && !els.stickerSheet.hidden) {
-      hideStickerSheet();
+      findGame.hideStickers();
       return;
     }
     if (els.findPrompt && !els.findPrompt.hidden) {
-      stopFindQuiz();
+      findGame.stop();
       return;
     }
     if (els.settingsPanel.classList.contains("open")) {
@@ -1217,8 +1005,7 @@ buildStrip();
 buildSizesView();
 setSizesOpen(true);
 initGlobe();
-syncStickersBtn();
-syncFindStars();
+findGame.syncChrome();
 setInterval(shootingStar, 16000);
 setTimeout(shootingStar, 5000);
 

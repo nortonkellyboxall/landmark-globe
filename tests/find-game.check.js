@@ -52,6 +52,7 @@ globalThis.document = {
 };
 
 let tab = "landmarks";
+const spoken = [];
 const progress = createFindProgress({ storage: memoryStorage(), rand: () => 0 });
 const game = createFindGame({
   els,
@@ -69,7 +70,7 @@ const game = createFindGame({
   playBoop() {},
   playFlyWhoosh() {},
   ensureAudio() {},
-  speakName() {},
+  speakName(place) { spoken.push(place && place.name); },
   setLunaMood() {},
   sparkBurst() {},
   shootingStar() {},
@@ -88,6 +89,9 @@ const hit = game.handlePinTap("a");
 assert.equal(hit.correct, true);
 assert.equal(hit.skipFly, true);
 assert.equal(game.isActive(), false);
+assert.equal(game.getTarget(), null);
+game.speakTarget();
+assert.equal(spoken[spoken.length - 1], "A");
 
 game.start();
 game.stop();
