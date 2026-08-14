@@ -4,11 +4,12 @@ import {
 } from "./space-catalog.js";
 import { createCardMedia } from "./card-media.js";
 import { createGlobe } from "./globe-app.js";
-import { diveMs, heatHint, isDeepSpace, shouldEnterSpace } from "./orbit-look.js";
+import { diveMs, heatHint, isDeepSpace } from "./orbit-look.js";
 import { weatherForPlace } from "./place-weather.js";
 import { createSound } from "./sound.js";
 import { createFindGame } from "./find-game.js";
 import { createFindProgress } from "./find-progress.js";
+import { createSpaceMode } from "./space-mode.js";
 import { speakName } from "./speak.js";
 
 const SPACE_SEL = ".ss-size-item.selected";
@@ -55,8 +56,6 @@ let nightMode = false;
 let autoNight = true;
 let landmarkFilter = null;
 let globeReady = false;
-let spaceTransitioning = false;
-let spacePinchArmed = false;
 const sound = createSound();
 const progress = createFindProgress();
 
@@ -389,6 +388,22 @@ const findGame = createFindGame({
   onOpenPlace: (id) => openLandmark(id),
 });
 
+const spaceMode = createSpaceMode({
+  els,
+  getGlobe: () => globe,
+  getTab: () => activeTab,
+  getNightMode: () => nightMode,
+  getSpaceItems: () => DATASETS.space.items,
+  spaceDiameterKm,
+  diveMs,
+  playFlyWhoosh,
+  setAmbient: setAmbientForMode,
+  sparkAt,
+  onSelect: (id) => openLandmark(id),
+  stopFind: () => findGame.stop(),
+  matchReduce: () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+});
+
 function showPlacesInContinent(place) {
   const hits = placesForContinent(place.id);
   if (!hits.length) return;
@@ -396,7 +411,7 @@ function showPlacesInContinent(place) {
   landmarkFilter = place.id;
   card.close();
   const leavingSpace = activeTab === "space";
-  if (leavingSpace) leaveSpaceMode();
+  if (leavingSpace) spaceMode.leave();
   activeTab = "landmarks";
   places = hits;
 
@@ -425,215 +440,6 @@ function showPlacesInContinent(place) {
   playPop();
 }
 
-/* —— Solar system —— */
-function bindSpacePick(el, obj) {
-  el.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const rect = el.getBoundingClientRect();
-    sparkAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
-    openLandmark(obj.id, el);
-  });
-}
-
-function planetDisplayPx(km, jupKm, maxPx) {
-  // Linear vs Jupiter, with a tiny floor so Mercury stays visible
-  return Math.max(8, Math.round((km / jupKm) * maxPx));
-}
-
-function buildSizesView() {
-  if (!els.ssSizesRow) return;
-  els.ssSizesRow.innerHTML = "";
-  const items = DATASETS.space.items.filter((o) =>
-    o.kind === "star" || o.kind === "planet" || o.kind === "moon"
-  );
-  const jupKm = spaceDiameterKm("jupiter");
-  const maxPlanetPx = 54;
-  const sunMaxPx = 70;
-
-  items.forEach((obj) => {
-    const km = spaceDiameterKm(obj);
-    const px = obj.kind === "star" ? sunMaxPx : planetDisplayPx(km, jupKm, maxPlanetPx);
-
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "ss-size-item" + (obj.kind === "star" ? " sun" : "") + (obj.id === "saturn" ? " saturn" : "");
-    btn.dataset.id = obj.id;
-    btn.setAttribute("aria-label", obj.name + " size comparison");
-
-    const ball = document.createElement("span");
-    ball.className = "ss-size-ball";
-    ball.style.width = px + "px";
-    ball.style.height = px + "px";
-    ball.style.setProperty("--ball", obj.color);
-
-    const name = document.createElement("span");
-    name.className = "ss-size-name";
-    name.textContent = obj.name.replace(/^The /, "");
-
-    const meta = document.createElement("span");
-    meta.className = "ss-size-meta";
-    if (obj.kind === "star") {
-      meta.textContent = "Much bigger!";
-    } else if (obj.id === "earth") {
-      meta.textContent = "Our home";
-    } else {
-      const ratio = km / spaceDiameterKm("earth");
-      meta.textContent = ratio >= 1
-        ? (Math.round(ratio * 10) / 10) + "× Earth"
-        : Math.round(ratio * 100) + "% Earth";
-    }
-
-    btn.appendChild(ball);
-    btn.appendChild(name);
-    btn.appendChild(meta);
-    bindSpacePick(btn, obj);
-    els.ssSizesRow.appendChild(btn);
-  });
-}
-
-function setSizesOpen(open) {
-  if (!els.ssSizesPanel) return;
-  els.ssSizesPanel.classList.toggle("open", open);
-  if (els.ssViewIso) els.ssViewIso.classList.toggle("with-sizes", open);
-  if (els.ssSizesToggle) {
-    els.ssSizesToggle.setAttribute("aria-expanded", String(open));
-    els.ssSizesToggle.setAttribute("aria-label", open ? "Hide planet sizes" : "Show planet sizes");
-  }
-  if (Solar3D) requestAnimationFrame(() => Solar3D.resize());
-}
-
-function toggleSizesPanel() {
-  if (!els.ssSizesPanel) return;
-  setSizesOpen(!els.ssSizesPanel.classList.contains("open"));
-  playPop();
-}
-
-let solar3dLoading = null;
-let Solar3D = null;
-
-function loadSolar3DModule() {
-  if (Solar3D) return Promise.resolve(Solar3D);
-  if (solar3dLoading) return solar3dLoading;
-  solar3dLoading = import("./solar3d.js").then((mod) => {
-    Solar3D = mod;
-    return Solar3D;
-  });
-  return solar3dLoading;
-}
-
-async function ensureSolar3D(opts) {
-  if (!els.ss3d) return;
-  const introZoom = !!(opts && opts.introZoom);
-  try {
-    await loadSolar3DModule();
-  } catch (err) {
-    console.warn("Solar3D failed to load", err);
-    return;
-  }
-  if (!Solar3D) return;
-  if (els.ss3d.dataset.ready === "1") {
-    Solar3D.resize();
-    Solar3D.setActive(true);
-    if (introZoom && Solar3D.playIntroZoom) Solar3D.playIntroZoom();
-    return;
-  }
-  Solar3D.init(els.ss3d, {
-    introZoom,
-    onSelect: (id) => {
-      const obj = DATASETS.space.items.find((p) => p.id === id);
-      if (!obj) return;
-      const rect = els.ss3d.getBoundingClientRect();
-      sparkAt(rect.left + rect.width / 2, rect.top + rect.height * 0.4);
-      openLandmark(id);
-    },
-  });
-  els.ss3d.dataset.ready = "1";
-}
-
-function enterSpaceMode() {
-  if (spaceTransitioning) return;
-  findGame.stop();
-  spaceTransitioning = true;
-  spacePinchArmed = false;
-  document.body.classList.add("space-mode");
-  els.solarSystem.hidden = false;
-  if (els.nightBtn) els.nightBtn.style.display = "none";
-  if (els.autoNightBtn) els.autoNightBtn.style.display = "none";
-  if (els.sunBtn) els.sunBtn.hidden = true;
-  playFlyWhoosh();
-  setAmbientForMode();
-  setSizesOpen(true);
-
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const pov = globe ? globe.pointOfView() || {} : {};
-  const outAlt = 12.6;
-  const ms = reduce ? 180 : Math.max(1600, diveMs(pov.altitude, outAlt));
-
-  if (globe) {
-    globe.setAutoRotate(false);
-    globe.setPlaces([]);
-    globe.setWeather();
-    globe.pointOfView(pov.lat || 12, pov.lng || 20, outAlt, ms);
-  }
-
-  const primed = ensureSolar3D({ introZoom: false })
-    .then(() => {
-      if (Solar3D) {
-        Solar3D.setActive(true);
-        Solar3D.resize();
-        if (Solar3D.frameEarth) Solar3D.frameEarth();
-      }
-    })
-    .catch(() => {});
-
-  window.setTimeout(() => {
-    primed.then(() => {
-      els.solarSystem.classList.add("show");
-      els.globeViz.classList.add("hidden-view");
-      if (els.globeShadow) els.globeShadow.classList.add("hidden-view");
-      if (Solar3D && Solar3D.playIntroZoom && !reduce) Solar3D.playIntroZoom();
-      window.setTimeout(() => {
-        if (globe) globe.setActive(false);
-        spaceTransitioning = false;
-      }, reduce ? 0 : 900);
-    });
-  }, reduce ? 0 : Math.round(ms * 0.7));
-}
-
-function leaveSpaceMode() {
-  spaceTransitioning = true;
-  spacePinchArmed = false;
-  playFlyWhoosh();
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const inbound = reduce || !Solar3D || !Solar3D.zoomToEarth
-    ? Promise.resolve()
-    : Solar3D.zoomToEarth(1500);
-
-  return inbound.then(() => {
-    document.body.classList.remove("space-mode");
-    if (els.nightBtn) els.nightBtn.style.display = "";
-    if (els.sunBtn) els.sunBtn.hidden = false;
-    if (els.autoNightBtn) els.autoNightBtn.style.display = "";
-    if (globe) {
-      globe.setActive(true);
-      globe.setNight(nightMode);
-      const pov = globe.pointOfView() || {};
-      globe.pointOfView(pov.lat || 18, pov.lng || -18, 11, 0);
-    }
-    els.globeViz.classList.remove("hidden-view");
-    if (els.globeShadow) els.globeShadow.classList.remove("hidden-view");
-    els.solarSystem.classList.remove("show");
-    window.setTimeout(() => {
-      if (activeTab !== "space") {
-        els.solarSystem.hidden = true;
-        if (Solar3D) Solar3D.setActive(false);
-      }
-      spaceTransitioning = false;
-      spacePinchArmed = true;
-    }, 800);
-  });
-}
-
 /* —— Globe helpers —— */
 function openLandmark(id, sourceEl) {
   let skipFly = false;
@@ -656,7 +462,7 @@ function openLandmark(id, sourceEl) {
   const pin = document.querySelector(`.pin[data-id="${id}"]`);
   if (pin) pin.classList.add("selected");
   document.querySelectorAll(SPACE_SEL_BY_ID(id)).forEach((el) => el.classList.add("selected"));
-  if (Solar3D) Solar3D.highlight(id);
+  spaceMode.highlight(id);
   syncStrip();
 
   playPop();
@@ -778,9 +584,9 @@ function switchTab(tab) {
   }
 
   if (enteringSpace) {
-    enterSpaceMode();
+    spaceMode.enter();
   } else if (leavingSpace) {
-    Promise.resolve(leaveSpaceMode()).then(showEarthPins);
+    Promise.resolve(spaceMode.leave()).then(showEarthPins);
   } else {
     showEarthPins();
   }
@@ -824,13 +630,7 @@ function syncOrbitChrome(pov) {
   const alt = pov && pov.altitude;
   document.body.classList.toggle("deep-space", isDeepSpace(alt));
   findGame.syncHeat(pov);
-  if (
-    shouldEnterSpace(alt, spacePinchArmed) &&
-    activeTab !== "space" &&
-    !spaceTransitioning
-  ) {
-    switchTab("space");
-  }
+  if (spaceMode.shouldHandoff(alt)) switchTab("space");
 }
 
 function markGlobeReady() {
@@ -842,9 +642,9 @@ function markGlobeReady() {
   const sky = globe.skyShowLook ? globe.skyShowLook() : { lat: 18, lng: -18, altitude: 2.45 };
   globe.pointOfView(sky.lat, sky.lng, sky.altitude, reduce ? 0 : 4800);
   window.setTimeout(() => {
-    spacePinchArmed = true;
+    spaceMode.armPinch();
   }, reduce ? 400 : 5200);
-  loadSolar3DModule().catch(() => {});
+  spaceMode.ensure().catch(() => {});
 }
 
 function initGlobe() {
@@ -947,7 +747,12 @@ els.tabWonders.addEventListener("click", () => switchTab("wonders"));
 els.tabContinents.addEventListener("click", () => switchTab("continents"));
 els.tabCountries.addEventListener("click", () => switchTab("countries"));
 els.tabSpace.addEventListener("click", () => switchTab("space"));
-if (els.ssSizesToggle) els.ssSizesToggle.addEventListener("click", toggleSizesPanel);
+if (els.ssSizesToggle) {
+  els.ssSizesToggle.addEventListener("click", () => {
+    spaceMode.toggleSizes();
+    playPop();
+  });
+}
 
 els.muteBtn.addEventListener("click", () => {
   const nextOn = !sound.isSoundOn();
@@ -1002,8 +807,8 @@ makeStars();
 startFireflies();
 setLunaMood("idle", "🌙");
 buildStrip();
-buildSizesView();
-setSizesOpen(true);
+spaceMode.buildSizes();
+spaceMode.setSizesOpen(true);
 initGlobe();
 findGame.syncChrome();
 setInterval(shootingStar, 16000);
