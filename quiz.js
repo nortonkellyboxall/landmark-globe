@@ -20,6 +20,21 @@ export function geoPool(pool) {
 }
 
 /**
+ * @param {string} tab
+ * @param {Place[]} places
+ * @returns {Place[]}
+ */
+export function findPool(tab, places) {
+  const list = places || [];
+  if (tab === "space") {
+    return list.filter(
+      (p) => p && p.id && (p.kind === "star" || p.kind === "planet" || p.kind === "moon")
+    );
+  }
+  return geoPool(list);
+}
+
+/**
  * @param {{
  *   onPrompt?: (target: Place, pins: Place[]) => void,
  *   onCorrect?: (target: Place) => void,
@@ -41,7 +56,7 @@ export function createFindQuiz(opts = {}) {
    * @param {{ pickTarget?: (pool: Place[]) => Place }} [startOpts]
    */
   function start(pool, startOpts = {}) {
-    const list = geoPool(pool);
+    const list = (pool || []).filter((p) => p && p.id);
     if (list.length < 2) return null;
     if (active) active = null;
     const pick =
