@@ -64,6 +64,8 @@ assert.equal(selected, 0);
 const ss3d = { dataset: {} };
 let canvasSelected = 0;
 let solarLoads = 0;
+let solarWarms = 0;
+let solarInits = 0;
 const solarCalls = [];
 const globeActive = [];
 const handoff = [];
@@ -92,7 +94,11 @@ const canvasMode = createSpaceMode({
   loadSolar3D: async () => {
     solarLoads += 1;
     return {
-      init(_el, opts) { solarCalls.push(["init", opts && opts.startActive]); },
+      init(_el, opts) {
+        solarInits += 1;
+        solarCalls.push(["init", opts && opts.startActive]);
+      },
+      warmTextures() { solarWarms += 1; },
       setActive(on) { solarCalls.push(["setActive", on]); handoff.push(["solar", on]); },
       resize() {},
       frameEarth() {},
@@ -102,6 +108,8 @@ const canvasMode = createSpaceMode({
 });
 await canvasMode.preload();
 assert.equal(solarLoads, 1);
+assert.equal(solarWarms, 1);
+assert.equal(solarInits, 0);
 assert.equal(solarCalls.length, 0);
 assert.equal(ss3d.dataset.ready, undefined);
 assert.equal(canvasSelected, 0);

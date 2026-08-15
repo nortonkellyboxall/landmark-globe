@@ -226,6 +226,15 @@ function makeLabelSprite(text) {
   return sprite;
 }
 
+function warmTextures() {
+  SPACE_BODIES.map(toVisualDef).forEach((def) => {
+    if (def.kind === "belt") return;
+    makePlanetTexture(def);
+    if (def.kind === "star") makeGlowTexture();
+    if (def.kind === "planet" || def.kind === "moon") makeAtmosphereTexture(def.color);
+  });
+}
+
 function makePlanetMesh(def) {
   const geo = new THREE.SphereGeometry(def.size, 48, 32);
   const map = makePlanetTexture(def);
@@ -725,4 +734,5 @@ export {
   playIntroZoom,
   frameEarth,
   zoomToEarth,
+  warmTextures,
 };

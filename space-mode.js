@@ -106,7 +106,11 @@ export function createSpaceMode(opts) {
   }
 
   function preload() {
-    return loadSolar3DModule().catch(() => {});
+    return loadSolar3DModule()
+      .then((mod) => {
+        if (mod && typeof mod.warmTextures === "function") mod.warmTextures();
+      })
+      .catch(() => {});
   }
 
   async function ensure(ensureOpts) {
