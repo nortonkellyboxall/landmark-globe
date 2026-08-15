@@ -2,6 +2,16 @@ import { speakCard, stopSpeech } from "./speak.js";
 
 /** CardMedia — place detail card: gallery, video/anthem, speech. */
 
+const WIKI_PX = /\/(\d+)px-/;
+
+export function cardPhotoUrl(src, width) {
+  if (typeof src !== "string" || !src) return src;
+  const w = Number(width);
+  if (!Number.isFinite(w) || w <= 0) return src;
+  if (!src.includes("upload.wikimedia.org")) return src;
+  return src.replace(WIKI_PX, `/${Math.round(w)}px-`);
+}
+
 /**
  * @param {Record<string, HTMLElement|null>} els card-related DOM elements
  * @param {{
@@ -58,9 +68,19 @@ export function createCardMedia(els, deps) {
     }
   }
 
+  function loadPhotoSrc(index) {
+    const slide = els.photoTrack.children[index];
+    if (!slide) return;
+    const img = slide.querySelector("img");
+    if (!img || !img.dataset.src) return;
+    if (!img.getAttribute("src")) img.src = img.dataset.src;
+  }
+
   function goToPhoto(index, smooth) {
     if (!photoCount) return;
     photoIndex = Math.max(0, Math.min(photoCount - 1, index));
+    loadPhotoSrc(photoIndex);
+    loadPhotoSrc(photoIndex + 1);
     const slide = els.photoTrack.children[photoIndex];
     if (slide) {
       els.photoTrack.scrollTo({
@@ -89,10 +109,15 @@ export function createCardMedia(els, deps) {
         const slide = document.createElement("div");
         slide.className = "photo-slide";
         const img = document.createElement("img");
-        img.src = src;
         img.alt = `${lm.name} photo ${i + 1}`;
-        img.loading = i === 0 ? "eager" : "lazy";
         img.decoding = "async";
+        img.loading = i === 0 ? "eager" : "lazy";
+        const url = cardPhotoUrl(src, 640);
+        if (i === 0) {
+          img.src = url;
+        } else {
+          img.dataset.src = url;
+        }
         img.addEventListener("error", () => slide.classList.add("broken"));
         const fallback = document.createElement("div");
         fallback.className = "photo-fallback";
@@ -119,6 +144,8 @@ export function createCardMedia(els, deps) {
     els.photoNext.style.display = showNav ? "flex" : "none";
     els.photoDots.style.display = showNav ? "flex" : "none";
     els.photoTrack.scrollLeft = 0;
+    loadPhotoSrc(0);
+    loadPhotoSrc(1);
     updatePhotoChrome();
   }
 
@@ -458,6 +485,8 @@ export function createCardMedia(els, deps) {
           const idx = Math.round(els.photoTrack.scrollLeft / w);
           if (idx !== photoIndex) {
             photoIndex = Math.max(0, Math.min(photoCount - 1, idx));
+            loadPhotoSrc(photoIndex);
+            loadPhotoSrc(photoIndex + 1);
             updatePhotoChrome();
           }
         }, 60);

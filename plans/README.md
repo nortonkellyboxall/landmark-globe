@@ -22,7 +22,7 @@ Repo facts every executor needs:
 | 004 | Throttle globe tick | P1 | M | — | DONE |
 | 005 | Instance the asteroid belt | P1 | S | — | DONE |
 | 006 | Warm Solar3D textures before first pinch | P2 | M | 003 | DONE |
-| 007 | Lazy card photos + smaller thumbs | P2 | M | — | TODO |
+| 007 | Lazy card photos + smaller thumbs | P2 | M | — | DONE |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED | REJECTED
 
