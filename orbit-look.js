@@ -51,6 +51,10 @@ export function isDeepSpace(alt) {
   return (Number.isFinite(alt) ? alt : 2) > DEEP_SPACE_ALT;
 }
 
+export function firefliesShouldTick({ reduceMotion, deepSpace, pageHidden }) {
+  return !reduceMotion && !deepSpace && !pageHidden;
+}
+
 /** Pinch-out past this altitude leaves Earth for the solar view. */
 export function shouldEnterSpace(alt, armed) {
   return !!armed && (Number.isFinite(alt) ? alt : 0) > SPACE_HANDOFF_ALT;

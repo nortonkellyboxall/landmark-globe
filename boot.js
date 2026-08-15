@@ -4,7 +4,7 @@ import {
 } from "./space-catalog.js";
 import { createCardMedia } from "./card-media.js";
 import { createGlobe } from "./globe-app.js";
-import { diveMs, heatHint, isDeepSpace } from "./orbit-look.js";
+import { diveMs, firefliesShouldTick, heatHint, isDeepSpace } from "./orbit-look.js";
 import { weatherForPlace } from "./place-weather.js";
 import { ambientKind, createSound } from "./sound.js";
 import { createAdventure, placesForContinent as continentPlaces } from "./adventure.js";
@@ -170,6 +170,27 @@ function shootingStar() {
   setTimeout(() => star.remove(), 1200);
 }
 
+let fireflyRaf = 0;
+let fireflyTick = null;
+
+function fireflyTickFlags() {
+  return {
+    reduceMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    deepSpace: document.body.classList.contains("deep-space"),
+    pageHidden: document.hidden,
+  };
+}
+
+function syncFireflies() {
+  if (!fireflyTick || fireflyRaf !== 0) return;
+  if (!firefliesShouldTick(fireflyTickFlags())) return;
+  fireflyTick();
+}
+
+function handleFireflyVisibility() {
+  syncFireflies();
+}
+
 function startFireflies() {
   const canvas = els.fireflies;
   if (!canvas || !canvas.getContext) return;
@@ -192,6 +213,10 @@ function startFireflies() {
   window.addEventListener("resize", resize);
 
   function tick() {
+    if (!firefliesShouldTick(fireflyTickFlags())) {
+      fireflyRaf = 0;
+      return;
+    }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     bugs.forEach((b) => {
       b.x += b.vx;
@@ -209,9 +234,11 @@ function startFireflies() {
       ctx.arc(x, y, b.r, 0, Math.PI * 2);
       ctx.fill();
     });
-    requestAnimationFrame(tick);
+    fireflyRaf = requestAnimationFrame(tick);
   }
-  tick();
+  fireflyTick = tick;
+  document.addEventListener("visibilitychange", handleFireflyVisibility);
+  syncFireflies();
 }
 
 function setAmbientForMode() {
@@ -479,6 +506,7 @@ function syncOrbitChrome(pov) {
   document.body.classList.toggle("deep-space", isDeepSpace(alt));
   findGame.syncHeat(pov);
   if (spaceMode.shouldHandoff(alt)) adventure.switchTab("space");
+  syncFireflies();
 }
 
 function markGlobeReady() {

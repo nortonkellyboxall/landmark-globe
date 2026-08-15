@@ -4,6 +4,7 @@ import {
   SPACE_HANDOFF_ALT,
   diveMs,
   isDeepSpace,
+  firefliesShouldTick,
   lookFromAltitude,
   shouldEnterSpace,
   subsolarPoint,
@@ -26,6 +27,11 @@ assert.ok(lookFromAltitude(11).atmosphereAltitude < lookFromAltitude(2).atmosphe
 
 assert.equal(isDeepSpace(DEEP_SPACE_ALT + 0.01), true);
 assert.equal(isDeepSpace(2), false);
+
+assert.equal(firefliesShouldTick({ reduceMotion: true, deepSpace: false, pageHidden: false }), false);
+assert.equal(firefliesShouldTick({ reduceMotion: false, deepSpace: true, pageHidden: false }), false);
+assert.equal(firefliesShouldTick({ reduceMotion: false, deepSpace: false, pageHidden: true }), false);
+assert.equal(firefliesShouldTick({ reduceMotion: false, deepSpace: false, pageHidden: false }), true);
 
 assert.ok(diveMs(10, 2) > diveMs(3, 2));
 assert.ok(diveMs(40, 1) <= 3400);
