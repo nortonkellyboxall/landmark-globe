@@ -2,6 +2,8 @@
 
 import * as THREE from "three";
 import {
+  dueThisFrame,
+  GLOBE_TICK,
   latLngDirection,
   lookFromAltitude,
   MOON_RADIUS,
@@ -111,6 +113,7 @@ export function createGlobe(el, opts = {}) {
   let places = opts.places || [];
   let sunHours = 0;
   let lastTick = 0;
+  let weatherDt = 0;
   let lookBand = "";
   let povFrame = 0;
   let weather = null;
@@ -229,9 +232,13 @@ export function createGlobe(el, opts = {}) {
       }
       const dt = Math.min(48, now - lastTick);
       lastTick = now;
-      applySun();
-      tickWeather(dt);
-      tickAurora(now);
+      weatherDt += dt;
+      if (dueThisFrame(povFrame, GLOBE_TICK.sun)) applySun();
+      if (dueThisFrame(povFrame, GLOBE_TICK.weather)) {
+        tickWeather(weatherDt);
+        weatherDt = 0;
+      }
+      if (dueThisFrame(povFrame, GLOBE_TICK.aurora)) tickAurora(now);
       const next = travelerPos(now / 1000);
       traveler.lat = next.lat;
       traveler.lng = next.lng;
@@ -239,8 +246,8 @@ export function createGlobe(el, opts = {}) {
       if (sunMesh) sunMesh.rotation.y += 0.0006;
       const pov = world.pointOfView();
       if (pov) applyLook(pov.altitude);
+      if (dueThisFrame(povFrame, GLOBE_TICK.pov) && pov) onPov(pov);
       povFrame += 1;
-      if (povFrame % 8 === 0 && pov) onPov(pov);
       tickRaf = requestAnimationFrame(tick);
     })(lastTick);
   }

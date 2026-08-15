@@ -9,6 +9,15 @@ export const MOON_RADII_OUT = 4.8;
 export const SUN_RADII_OUT = 7.4;
 export const SUN_RADIUS = SUN_RADII_OUT * (MOON_RADIUS / MOON_RADII_OUT);
 
+/** Frame periods for createGlobe's companion rAF. 1 = every frame. */
+export const GLOBE_TICK = { sun: 8, aurora: 2, weather: 2, pov: 8 };
+
+export function dueThisFrame(frame, period) {
+  const p = Number(period);
+  if (!Number.isFinite(p) || p <= 1) return true;
+  return frame % p === 0;
+}
+
 /** False when a sky body is sitting in/on the planet (the 168-unit moon bug). */
 export function skyBodyClearOfGlobe(globeR, dist) {
   return Number(dist) > Number(globeR) * 3;

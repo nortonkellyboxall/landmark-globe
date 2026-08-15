@@ -18,6 +18,8 @@ import {
   SUN_RADIUS,
   MOON_RADII_OUT,
   MOON_RADIUS,
+  dueThisFrame,
+  GLOBE_TICK,
 } from "../orbit-look.js";
 
 assert.equal(lookFromAltitude(11).band, "far");
@@ -70,5 +72,14 @@ const show = skyShowLook({ lat: 23.44, lng: 0 });
 assert.ok(Math.abs(show.lng - 78) < 1e-9);
 assert.ok(show.altitude > 5);
 assert.ok(show.altitude < SPACE_HANDOFF_ALT);
+
+assert.equal(dueThisFrame(0, 8), true);
+assert.equal(dueThisFrame(1, 8), false);
+assert.equal(dueThisFrame(8, 8), true);
+assert.equal(dueThisFrame(3, 1), true);
+assert.equal(dueThisFrame(3, 0), true);
+assert.equal(GLOBE_TICK.pov, 8);
+assert.ok(GLOBE_TICK.sun >= 4);
+assert.ok(GLOBE_TICK.aurora >= 2);
 
 console.log("orbit-look.check.js OK");
