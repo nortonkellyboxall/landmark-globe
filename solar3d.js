@@ -672,8 +672,9 @@ function init(container, opts) {
   resizeObs = new ResizeObserver(() => onResize());
   resizeObs.observe(container);
 
-  running = true;
-  animate();
+  const startActive = !opts || opts.startActive !== false;
+  running = startActive;
+  if (startActive) animate();
 
   if (opts && opts.introZoom) {
     frameEarth(5.4);

@@ -64,10 +64,20 @@ assert.equal(selected, 0);
 const ss3d = { dataset: {} };
 let canvasSelected = 0;
 let solarLoads = 0;
-let solarInits = 0;
+const solarCalls = [];
+const globeActive = [];
+const handoff = [];
+const globe = {
+  setAutoRotate() {},
+  setPlaces() {},
+  setWeather() {},
+  pointOfView() { return {}; },
+  setActive(on) { globeActive.push(on); handoff.push(["globe", on]); },
+  setNight() {},
+};
 const canvasMode = createSpaceMode({
-  els: { ss3d, solarSystem: { hidden: true, classList: { add() {}, remove() {} } }, globeViz: { classList: { add() {}, remove() {} } } },
-  getGlobe: () => null,
+  els: { ss3d, solarSystem: { hidden: true, classList: { add() {}, remove() {} } }, globeViz: { classList: { add() {}, remove() {} } }, globeShadow: { classList: { add() {}, remove() {} } } },
+  getGlobe: () => globe,
   getTab: () => "landmarks",
   getNightMode: () => false,
   getSpaceItems: () => [],
@@ -81,13 +91,47 @@ const canvasMode = createSpaceMode({
   matchReduce: () => true,
   loadSolar3D: async () => {
     solarLoads += 1;
-    return { init() { solarInits += 1; } };
+    return {
+      init(_el, opts) { solarCalls.push(["init", opts && opts.startActive]); },
+      setActive(on) { solarCalls.push(["setActive", on]); handoff.push(["solar", on]); },
+      resize() {},
+      frameEarth() {},
+      playIntroZoom() {},
+    };
   },
 });
 await canvasMode.preload();
 assert.equal(solarLoads, 1);
-assert.equal(solarInits, 0);
+assert.equal(solarCalls.length, 0);
 assert.equal(ss3d.dataset.ready, undefined);
 assert.equal(canvasSelected, 0);
+
+await canvasMode.ensure();
+assert.deepEqual(solarCalls, [["init", false]]);
+await canvasMode.ensure();
+assert.deepEqual(solarCalls, [["init", false]]);
+
+const prevDoc2 = globalThis.document;
+globalThis.document = { body: { classList: { add() {}, remove() {} } } };
+try {
+  canvasMode.enter();
+  await new Promise((r) => setTimeout(r, 0));
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.deepEqual(solarCalls.filter((c) => c[0] === "setActive").slice(-1), [["setActive", true]]);
+  assert.equal(globeActive.at(-1), false);
+  const solarOnAt = solarCalls.findIndex((c) => c[0] === "setActive" && c[1] === true);
+  assert.ok(solarOnAt >= 0);
+  assert.deepEqual(handoff.slice(-2), [["solar", true], ["globe", false]]);
+
+  await canvasMode.leave();
+  const solarOffAt = solarCalls.findIndex((c, i) => i > solarOnAt && c[0] === "setActive" && c[1] === false);
+  assert.ok(solarOffAt >= 0, "leave must pause solar immediately");
+  assert.equal(globeActive.at(-1), true);
+  assert.deepEqual(handoff.slice(-2), [["solar", false], ["globe", true]]);
+} finally {
+  globalThis.document = prevDoc2;
+}
 
 console.log("space-mode.check.js OK");

@@ -121,12 +121,11 @@ export function createSpaceMode(opts) {
     if (!Solar3D) return;
     if (els.ss3d.dataset.ready === "1") {
       Solar3D.resize();
-      Solar3D.setActive(true);
-      if (introZoom && Solar3D.playIntroZoom) Solar3D.playIntroZoom();
       return;
     }
     Solar3D.init(els.ss3d, {
       introZoom,
+      startActive: false,
       onSelect: (id) => {
         const obj = (opts.getSpaceItems() || []).find((p) => p.id === id);
         if (!obj) return;
@@ -173,26 +172,21 @@ export function createSpaceMode(opts) {
       globe.pointOfView(pov.lat || 12, pov.lng || 20, outAlt, ms);
     }
 
-    const primed = ensure({ introZoom: false })
-      .then(() => {
-        if (Solar3D) {
-          Solar3D.setActive(true);
-          Solar3D.resize();
-          if (Solar3D.frameEarth) Solar3D.frameEarth();
-        }
-      })
-      .catch(() => {});
+    const primed = ensure({ introZoom: false }).catch(() => {});
 
     setTimeout(() => {
       primed.then(() => {
+        if (Solar3D) {
+          Solar3D.resize();
+          if (Solar3D.frameEarth) Solar3D.frameEarth();
+          Solar3D.setActive(true);
+        }
+        if (globe) globe.setActive(false);
         els.solarSystem.classList.add("show");
         els.globeViz.classList.add("hidden-view");
         if (els.globeShadow) els.globeShadow.classList.add("hidden-view");
         if (Solar3D && Solar3D.playIntroZoom && !reduce) Solar3D.playIntroZoom();
-        setTimeout(() => {
-          if (globe) globe.setActive(false);
-          spaceTransitioning = false;
-        }, reduce ? 0 : 900);
+        spaceTransitioning = false;
       });
     }, reduce ? 0 : Math.round(ms * 0.7));
   }
@@ -212,6 +206,7 @@ export function createSpaceMode(opts) {
       if (els.sunBtn) els.sunBtn.hidden = false;
       if (els.autoNightBtn) els.autoNightBtn.style.display = "";
       const globe = opts.getGlobe();
+      if (Solar3D) Solar3D.setActive(false);
       if (globe) {
         globe.setActive(true);
         globe.setNight(opts.getNightMode());
@@ -224,7 +219,6 @@ export function createSpaceMode(opts) {
       setTimeout(() => {
         if (opts.getTab() !== "space") {
           els.solarSystem.hidden = true;
-          if (Solar3D) Solar3D.setActive(false);
         }
         spaceTransitioning = false;
         spacePinchArmed = true;
