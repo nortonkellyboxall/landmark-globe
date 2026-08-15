@@ -296,15 +296,21 @@ function buildBelt(orbit) {
     emissive: 0x8899aa,
     emissiveIntensity: 0.2,
   });
-  for (let i = 0; i < 160; i++) {
-    const rock = new THREE.Mesh(geo, mat);
+  const COUNT = 160;
+  const inst = new THREE.InstancedMesh(geo, mat, COUNT);
+  const dummy = new THREE.Object3D();
+  for (let i = 0; i < COUNT; i++) {
     const a = Math.random() * Math.PI * 2;
     const r = orbit + (Math.random() - 0.5) * 3.2;
     const y = (Math.random() - 0.5) * 0.9;
-    rock.position.set(Math.cos(a) * r, y, Math.sin(a) * r);
-    rock.scale.setScalar(0.7 + Math.random() * 2.2);
-    group.add(rock);
+    dummy.position.set(Math.cos(a) * r, y, Math.sin(a) * r);
+    dummy.scale.setScalar(0.7 + Math.random() * 2.2);
+    dummy.rotation.set(0, 0, 0);
+    dummy.updateMatrix();
+    inst.setMatrixAt(i, dummy.matrix);
   }
+  inst.instanceMatrix.needsUpdate = true;
+  group.add(inst);
   addOrbitRing(orbit);
   rootGroup.add(group);
   bodies.set("asteroids", {
