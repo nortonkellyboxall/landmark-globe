@@ -17,7 +17,7 @@ Repo facts every executor needs:
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 001 | Pause fireflies when hidden | P1 | S | — | DONE |
-| 002 | Ship 2048px Earth textures | P1 | S | — | TODO |
+| 002 | Ship 2048px Earth textures | P1 | S | — | DONE |
 | 003 | One live WebGL context during handoff | P1 | M | — | TODO |
 | 004 | Throttle globe tick | P1 | M | — | TODO |
 | 005 | Instance the asteroid belt | P1 | S | — | TODO |
