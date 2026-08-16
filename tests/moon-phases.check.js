@@ -56,9 +56,12 @@ test("boundaries: 0.0625 → waxing-crescent; 0.9375 → new", () => {
   assert.equal(phaseFromTurn(0.9375).id, "new");
 });
 
-test("createMoonPhaseToy stub throws", () => {
-  assert.throws(
-    () => createMoonPhaseToy(),
-    /createMoonPhaseToy: not implemented/,
-  );
+test("createMoonPhaseToy is a function", () => {
+  assert.equal(typeof createMoonPhaseToy, "function");
+});
+
+test("phaseFromTurn exposes name and blurb", () => {
+  const p = phaseFromTurn(0.5);
+  assert.equal(p.name, "Full Moon");
+  assert.ok(p.blurb && p.blurb.length > 0);
 });
