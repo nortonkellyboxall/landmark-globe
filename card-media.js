@@ -4,13 +4,22 @@ import { createMoonPhaseToy } from "./moon-phases.js";
 /** CardMedia — place detail card: gallery, video/anthem, speech. */
 
 const WIKI_PX = /\/(\d+)px-/;
+/** Discrete widths Wikimedia actually serves for commons thumbs (invented 640px URLs 400). */
+const WIKI_THUMB_WIDTHS = [120, 500, 960, 1280, 1920];
+
+function snapWikiThumbWidth(width) {
+  for (const w of WIKI_THUMB_WIDTHS) {
+    if (width <= w) return w;
+  }
+  return WIKI_THUMB_WIDTHS[WIKI_THUMB_WIDTHS.length - 1];
+}
 
 export function cardPhotoUrl(src, width) {
   if (typeof src !== "string" || !src) return src;
   const w = Number(width);
   if (!Number.isFinite(w) || w <= 0) return src;
   if (!src.includes("upload.wikimedia.org")) return src;
-  return src.replace(WIKI_PX, `/${Math.round(w)}px-`);
+  return src.replace(WIKI_PX, `/${snapWikiThumbWidth(Math.round(w))}px-`);
 }
 
 /**

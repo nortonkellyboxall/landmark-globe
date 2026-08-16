@@ -120,7 +120,7 @@ export const SPACE_BODIES = [
     "photos": [
       "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/960px-FullMoon2010.jpg",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Full_Moon_Luc_Viatour.jpg/960px-Full_Moon_Luc_Viatour.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/AS11-44-6551.jpg/960px-AS11-44-6551.jpg"
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Aldrin_Apollo_11_original.jpg/960px-Aldrin_Apollo_11_original.jpg"
     ],
     "diameterKm": 3475,
     "visual": {
