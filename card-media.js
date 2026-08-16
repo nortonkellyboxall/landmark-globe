@@ -51,14 +51,27 @@ export function createCardMedia(els, deps) {
       clearTimeout(phaseSpeakTimer);
       phaseSpeakTimer = 0;
     }
+    const hadToy = !!moonToy;
     if (moonToy) {
       moonToy.destroy();
       moonToy = null;
     }
     lastSpokenPhaseId = null;
+    if (hadToy) stopSpeech();
     if (els.card) els.card.classList.remove("moon-phase-open");
     if (els.photoCredit) els.photoCredit.hidden = false;
     if (els.photoHint) els.photoHint.hidden = false;
+  }
+
+  function speakPhaseNow(phase) {
+    if (!phase?.id) return;
+    if (phaseSpeakTimer) {
+      clearTimeout(phaseSpeakTimer);
+      phaseSpeakTimer = 0;
+    }
+    if (phase.id === lastSpokenPhaseId) return;
+    lastSpokenPhaseId = phase.id;
+    speakPhase(phase.id);
   }
 
   function schedulePhaseSpeak(phase) {
@@ -66,14 +79,16 @@ export function createCardMedia(els, deps) {
     if (phaseSpeakTimer) clearTimeout(phaseSpeakTimer);
     phaseSpeakTimer = window.setTimeout(() => {
       phaseSpeakTimer = 0;
-      if (phase.id === lastSpokenPhaseId) return;
-      lastSpokenPhaseId = phase.id;
-      speakPhase(phase.id);
+      speakPhaseNow(phase);
     }, 200);
   }
 
   function handlePhaseChange(phase) {
     schedulePhaseSpeak(phase);
+  }
+
+  function handlePhaseInteractEnd(phase) {
+    speakPhaseNow(phase);
   }
 
   function isCompact() {
@@ -145,6 +160,7 @@ export function createCardMedia(els, deps) {
       if (els.card) els.card.classList.add("moon-phase-open");
       moonToy = createMoonPhaseToy(els.photoTrack, {
         onPhaseChange: handlePhaseChange,
+        onInteractEnd: handlePhaseInteractEnd,
       });
       updatePhotoChrome();
       return;

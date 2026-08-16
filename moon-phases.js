@@ -99,10 +99,11 @@ export function phaseFromTurn(t) {
 
 /**
  * @param {HTMLElement} container
- * @param {{ onPhaseChange?: (phase: ReturnType<typeof phaseFromTurn>) => void }} [opts]
+ * @param {{ onPhaseChange?: (phase: ReturnType<typeof phaseFromTurn>) => void, onInteractEnd?: (phase: ReturnType<typeof phaseFromTurn>) => void }} [opts]
  */
 export function createMoonPhaseToy(container, opts) {
   const onPhaseChange = opts && opts.onPhaseChange;
+  const onInteractEnd = opts && opts.onInteractEnd;
   let t = 0.5;
   let lastId = null;
   let destroyed = false;
@@ -124,7 +125,7 @@ export function createMoonPhaseToy(container, opts) {
         </g>
         <circle class="moon-phase-rim" cx="50" cy="50" r="46" fill="none" />
       </svg>
-      <p class="moon-phase-name" data-phase-name></p>
+      <p class="moon-phase-name" data-phase-name aria-live="polite"></p>
       <p class="moon-phase-blurb" data-phase-blurb></p>
     </div>
     <div class="moon-phase-orbit-wrap">
@@ -223,12 +224,21 @@ export function createMoonPhaseToy(container, opts) {
     if (!dragging) return;
     setTurn(turnFromPointer(e.clientX, e.clientY));
   }
+  function notifyInteractEnd() {
+    if (typeof onInteractEnd !== "function") return;
+    onInteractEnd(phaseFromTurn(t));
+  }
   function handleOrbitPointerUp() {
+    if (!dragging) return;
     dragging = false;
+    notifyInteractEnd();
   }
   function handleSliderInput() {
     if (!slider) return;
     setTurn(Number(slider.value) / 1000);
+  }
+  function handleSliderChange() {
+    notifyInteractEnd();
   }
 
   if (orbitSvg) {
@@ -237,7 +247,10 @@ export function createMoonPhaseToy(container, opts) {
     orbitSvg.addEventListener("pointerup", handleOrbitPointerUp);
     orbitSvg.addEventListener("pointercancel", handleOrbitPointerUp);
   }
-  if (slider) slider.addEventListener("input", handleSliderInput);
+  if (slider) {
+    slider.addEventListener("input", handleSliderInput);
+    slider.addEventListener("change", handleSliderChange);
+  }
 
   container.appendChild(root);
   paint();
@@ -251,7 +264,10 @@ export function createMoonPhaseToy(container, opts) {
       orbitSvg.removeEventListener("pointerup", handleOrbitPointerUp);
       orbitSvg.removeEventListener("pointercancel", handleOrbitPointerUp);
     }
-    if (slider) slider.removeEventListener("input", handleSliderInput);
+    if (slider) {
+      slider.removeEventListener("input", handleSliderInput);
+      slider.removeEventListener("change", handleSliderChange);
+    }
     root.remove();
   }
 
