@@ -2,18 +2,19 @@ import { shouldEnterSpace } from "./orbit-look.js";
 
 /**
  * Ball diameter for the Space size chart.
- * Scaled to Earth so Moon (~27%) stays distinct; gas giants clamp to maxPx.
+ * Square-root scale vs Earth keeps Moon visibly smaller, preserves Jupiter > Saturn,
+ * and fits giants without clamping both to the same max.
  * @param {number} km
  * @param {number} earthKm
- * @param {number} [earthPx=22]
- * @param {number} [maxPx=54]
- * @param {number} [minPx=6]
+ * @param {number} [earthPx=26]
+ * @param {number} [maxPx=96]
+ * @param {number} [minPx=7]
  */
-export function planetDisplayPx(km, earthKm, earthPx = 22, maxPx = 54, minPx = 6) {
+export function planetDisplayPx(km, earthKm, earthPx = 26, maxPx = 96, minPx = 7) {
   if (!Number.isFinite(km) || km <= 0 || !Number.isFinite(earthKm) || earthKm <= 0) {
     return minPx;
   }
-  const px = (km / earthKm) * earthPx;
+  const px = earthPx * Math.sqrt(km / earthKm);
   return Math.max(minPx, Math.min(maxPx, Math.round(px)));
 }
 
@@ -48,9 +49,9 @@ export function createSpaceMode(opts) {
       o.kind === "star" || o.kind === "planet" || o.kind === "moon"
     );
     const earthKm = opts.spaceDiameterKm("earth");
-    const earthPx = 22;
-    const maxPlanetPx = 54;
-    const sunMaxPx = 70;
+    const earthPx = 26;
+    const maxPlanetPx = 96;
+    const sunMaxPx = 84;
 
     items.forEach((obj) => {
       const km = opts.spaceDiameterKm(obj);

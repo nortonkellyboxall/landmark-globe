@@ -6,12 +6,14 @@ import { diameterKm } from "../space-catalog.js";
 const EARTH = diameterKm("earth");
 const MOON = diameterKm("moon");
 const JUPITER = diameterKm("jupiter");
+const SATURN = diameterKm("saturn");
 
-assert.equal(planetDisplayPx(0, EARTH), 6);
-assert.equal(planetDisplayPx(EARTH, EARTH), 22);
-assert.equal(planetDisplayPx(MOON, EARTH), Math.round((MOON / EARTH) * 22));
+assert.equal(planetDisplayPx(0, EARTH), 7);
+assert.equal(planetDisplayPx(EARTH, EARTH), 26);
 assert.ok(planetDisplayPx(MOON, EARTH) < planetDisplayPx(EARTH, EARTH));
-assert.equal(planetDisplayPx(JUPITER, EARTH), 54);
+assert.ok(planetDisplayPx(JUPITER, EARTH) > planetDisplayPx(SATURN, EARTH));
+assert.ok(planetDisplayPx(JUPITER, EARTH) <= 96);
+assert.ok(planetDisplayPx(SATURN, EARTH) < planetDisplayPx(JUPITER, EARTH));
 
 const flags = { transitioning: false, pinchArmed: false, tab: "landmarks" };
 let stopped = 0;

@@ -975,9 +975,9 @@ body.find-mode .horizon {
 }
 
 .ss-sizes.open {
-  width: min(9.25rem, 36vw);
-  max-width: 10rem;
-  padding: 0.55rem 0.45rem 1.1rem;
+  width: min(11.5rem, 42vw);
+  max-width: 12.5rem;
+  padding: 0.55rem 0.5rem 1.1rem;
 }
 
 .ss-sizes-toggle {
@@ -1099,10 +1099,10 @@ body.find-mode .horizon {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 165%;
-  height: 34%;
+  width: 128%;
+  height: 28%;
   transform: translate(-50%, -50%) rotate(-18deg);
-  border: 2px solid rgba(233, 196, 106, 0.8);
+  border: 1.5px solid rgba(233, 196, 106, 0.75);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -1136,8 +1136,8 @@ body.find-mode .horizon {
 
 @media (max-width: 520px) {
   .ss-sizes.open {
-    width: min(7.6rem, 32vw);
-    padding-inline: 0.3rem;
+    width: min(9.5rem, 38vw);
+    padding-inline: 0.35rem;
   }
   .ss-sizes-note { font-size: 0.55rem; }
 }
