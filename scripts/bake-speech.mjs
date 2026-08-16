@@ -114,6 +114,21 @@ for (const p of byId.values()) {
   await bakeOne(tts, p.id, "name", nameText(p));
 }
 
+const PHASE_NAMES = [
+  ["new", "New Moon."],
+  ["waxing-crescent", "Waxing Crescent."],
+  ["first-quarter", "First Quarter."],
+  ["waxing-gibbous", "Waxing Gibbous."],
+  ["full", "Full Moon."],
+  ["waning-gibbous", "Waning Gibbous."],
+  ["last-quarter", "Last Quarter."],
+  ["waning-crescent", "Waning Crescent."],
+];
+
+for (const [id, text] of PHASE_NAMES) {
+  await bakeOne(tts, `phase-${id}`, "name", text);
+}
+
 writeFileSync(
   join(clipsDir, "manifest.json"),
   JSON.stringify(

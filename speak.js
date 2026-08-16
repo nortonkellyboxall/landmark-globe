@@ -78,3 +78,12 @@ export function speakName(place) {
   if (!place?.id) return;
   playUrl(clipUrl(place.id, "name"));
 }
+
+/**
+ * Play a moon-phase name clip (pre-baked).
+ * @param {string} phaseId e.g. "full"
+ */
+export function speakPhase(phaseId) {
+  if (!phaseId) return;
+  playUrl(clipUrl(`phase-${phaseId}`, "name"));
+}
