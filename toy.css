@@ -593,9 +593,39 @@ body.deep-space .vignette {
   stroke-width: 1;
 }
 
-.moon-phase-slider {
+.moon-phase-scrub {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   width: min(78vw, 240px);
+}
+
+.moon-phase-slider-label {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.moon-phase-slider {
+  width: 100%;
   accent-color: #ffb703;
+}
+
+.moon-phase-step {
+  flex: 0 0 auto;
+  width: 2.35rem;
+  height: 2.35rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 248, 239, 0.14);
+  color: #fff8ef;
+  font-size: 1.55rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.moon-phase-step:active {
+  background: rgba(255, 183, 3, 0.35);
 }
 
 .card.moon-phase-open .card-actions,

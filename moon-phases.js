@@ -80,6 +80,49 @@ function phaseIdForTurn(t) {
   return "new";
 }
 
+/** Phase midpoints for step buttons (new → … → waning-crescent). */
+const PHASE_MIDS = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875];
+
+/**
+ * Earth-sky silhouette (northern-hemisphere convention):
+ * waxing → right lit, waning → left lit. Used by the face painter + checks.
+ * @param {number} t
+ * @returns {{ litFraction: number, litSide: "none" | "right" | "left" | "full", shadowX: number, shadowWidth: number, terminatorRx: number, terminatorFill: "dark" | "light" | "hidden" }}
+ */
+export function earthViewFace(t) {
+  const u = wrapTurn(t);
+  const litFraction = 0.5 - 0.5 * Math.cos(2 * Math.PI * u);
+  if (litFraction <= 0.02) {
+    return {
+      litFraction,
+      litSide: "none",
+      shadowX: 0,
+      shadowWidth: 100,
+      terminatorRx: 0,
+      terminatorFill: "hidden",
+    };
+  }
+  if (litFraction >= 0.98) {
+    return {
+      litFraction,
+      litSide: "full",
+      shadowX: 0,
+      shadowWidth: 0,
+      terminatorRx: 0,
+      terminatorFill: "hidden",
+    };
+  }
+  const waxing = u < 0.5;
+  return {
+    litFraction,
+    litSide: waxing ? "right" : "left",
+    shadowX: waxing ? 0 : 50,
+    shadowWidth: 50,
+    terminatorRx: Math.abs(2 * litFraction - 1) * 46,
+    terminatorFill: litFraction < 0.5 ? "dark" : "light",
+  };
+}
+
 /**
  * @param {number} t orbit turn
  * @returns {{ id: string, name: string, blurb: string, litFraction: number, moonAngle: number }}
@@ -135,10 +178,14 @@ export function createMoonPhaseToy(container, opts) {
         <circle class="moon-phase-path" cx="100" cy="100" r="58" fill="none" />
         <circle class="moon-phase-moon" cx="158" cy="100" r="8" />
       </svg>
-      <label class="moon-phase-slider-label">
-        <span class="sr-only">Move the Moon around Earth</span>
-        <input type="range" class="moon-phase-slider" min="0" max="1000" value="500" />
-      </label>
+      <div class="moon-phase-scrub">
+        <button type="button" class="moon-phase-step" data-phase-step="-1" aria-label="Previous phase">‹</button>
+        <label class="moon-phase-slider-label">
+          <span class="sr-only">Move the Moon around Earth</span>
+          <input type="range" class="moon-phase-slider" min="0" max="1000" value="500" />
+        </label>
+        <button type="button" class="moon-phase-step" data-phase-step="1" aria-label="Next phase">›</button>
+      </div>
     </div>
   `;
 
@@ -157,6 +204,7 @@ export function createMoonPhaseToy(container, opts) {
   const moonDot = root.querySelector(".moon-phase-moon");
   const slider = root.querySelector(".moon-phase-slider");
   const orbitSvg = root.querySelector(".moon-phase-orbit");
+  const stepBtns = [...root.querySelectorAll("[data-phase-step]")];
 
   function paint() {
     const phase = phaseFromTurn(t);
@@ -164,20 +212,23 @@ export function createMoonPhaseToy(container, opts) {
     if (blurbEl) blurbEl.textContent = phase.blurb;
     if (slider) slider.value = String(Math.round(t * 1000));
 
-    const lit = phase.litFraction;
-    const waxing = t < 0.5;
+    // Earth-facing disk (N. hemisphere): right lit while waxing, left while waning
+    const face = earthViewFace(t);
     if (shadow) {
-      shadow.setAttribute("x", waxing ? "0" : "50");
-      shadow.setAttribute("width", "50");
-      shadow.style.opacity = lit <= 0.02 ? "1" : lit >= 0.98 ? "0" : "1";
+      shadow.setAttribute("x", String(face.shadowX));
+      shadow.setAttribute("width", String(face.shadowWidth));
+      shadow.style.opacity = face.shadowWidth > 0 ? "1" : "0";
     }
     if (terminator) {
-      const rx = Math.abs(2 * lit - 1) * 46;
-      terminator.setAttribute("rx", String(rx));
+      terminator.setAttribute("rx", String(face.terminatorRx));
       terminator.setAttribute("cx", "50");
-      terminator.style.fill = lit < 0.5 ? "#0b1220" : "#e8e0d0";
-      if (lit <= 0.02 || lit >= 0.98) terminator.style.opacity = "0";
-      else terminator.style.opacity = "1";
+      if (face.terminatorFill === "hidden") {
+        terminator.style.opacity = "0";
+      } else {
+        terminator.style.opacity = "1";
+        terminator.style.fill =
+          face.terminatorFill === "dark" ? "#0b1220" : "#e8e0d0";
+      }
     }
 
     const r = 58;
@@ -240,6 +291,16 @@ export function createMoonPhaseToy(container, opts) {
   function handleSliderChange() {
     notifyInteractEnd();
   }
+  function handlePhaseStep(e) {
+    const dir = Number(e.currentTarget.getAttribute("data-phase-step"));
+    if (!Number.isFinite(dir) || dir === 0) return;
+    const id = phaseFromTurn(t).id;
+    let i = PHASE_ORDER.indexOf(id);
+    if (i < 0) i = 0;
+    i = (i + dir + PHASE_ORDER.length) % PHASE_ORDER.length;
+    setTurn(PHASE_MIDS[i]);
+    notifyInteractEnd();
+  }
 
   if (orbitSvg) {
     orbitSvg.addEventListener("pointerdown", handleOrbitPointerDown);
@@ -250,6 +311,9 @@ export function createMoonPhaseToy(container, opts) {
   if (slider) {
     slider.addEventListener("input", handleSliderInput);
     slider.addEventListener("change", handleSliderChange);
+  }
+  for (const btn of stepBtns) {
+    btn.addEventListener("click", handlePhaseStep);
   }
 
   container.appendChild(root);
@@ -267,6 +331,9 @@ export function createMoonPhaseToy(container, opts) {
     if (slider) {
       slider.removeEventListener("input", handleSliderInput);
       slider.removeEventListener("change", handleSliderChange);
+    }
+    for (const btn of stepBtns) {
+      btn.removeEventListener("click", handlePhaseStep);
     }
     root.remove();
   }

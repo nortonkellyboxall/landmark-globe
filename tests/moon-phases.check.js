@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   PHASE_ORDER,
   createMoonPhaseToy,
+  earthViewFace,
   phaseFromTurn,
 } from "../moon-phases.js";
 
@@ -64,4 +65,14 @@ test("phaseFromTurn exposes name and blurb", () => {
   const p = phaseFromTurn(0.5);
   assert.equal(p.name, "Full Moon");
   assert.ok(p.blurb && p.blurb.length > 0);
+});
+
+test("earthViewFace matches northern-hemisphere sky (right lit waxing)", () => {
+  assert.equal(earthViewFace(0).litSide, "none");
+  assert.equal(earthViewFace(0).shadowWidth, 100);
+  assert.equal(earthViewFace(0.25).litSide, "right");
+  assert.equal(earthViewFace(0.25).shadowX, 0);
+  assert.equal(earthViewFace(0.5).litSide, "full");
+  assert.equal(earthViewFace(0.75).litSide, "left");
+  assert.equal(earthViewFace(0.75).shadowX, 50);
 });
