@@ -14,4 +14,4 @@
 - **Space handoff** — Earth↔space transition: pinch-arm, enter/leave timing, dual-view visibility, sizes strip. `solar3d.js` only renders.
 - **Adventure navigation** — Active tab, current Place pool, strip, and Continent join. Not `chrome.js`.
 - **Ambient kind** — `'on' | 'duck'`. Sound plays full pads when kind is `'on'` (space tab or a Place is selected); otherwise ducks. Sound does not know tab names.
-- **Moon phases toy** — Interactive teacher on The Moon Place card in Space: shared orbit turn `t`, big moon face + Earth–Moon–Sun diagram, eight phase names. Math and DOM in `moon-phases.js`. CardMedia mounts it when `id === "moon"`; Luna speaks via `speakPhase`. Not tied to real calendar or Earth sun-drag.
+- **Moon phases toy** — Interactive teacher on The Moon Place card in Space: photo gallery stays; **Phases** opens a full-card overlay (face + Earth–Moon–Sun diagram, shared turn `t`, eight names). Math and DOM in `moon-phases.js`; CardMedia mounts on button; Luna speaks via `speakPhase`. Not tied to real calendar or Earth sun-drag.

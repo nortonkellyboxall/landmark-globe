@@ -1,7 +1,7 @@
 # Moon phases toy — design
 
 **Date:** 2026-08-17  
-**Status:** approved for planning (pending user review of this file)  
+**Status:** approved — implementation plan at `docs/superpowers/plans/2026-08-17-moon-phases.md`  
 **Branch target:** feature work off `main`
 
 ## Goal
@@ -13,7 +13,7 @@ When a kid opens **The Moon** in Space, the usual Place card opens, but the phot
 | Choice | Decision |
 |--------|----------|
 | Where it opens | Space → tap The Moon → Place card |
-| Card chrome | Name, Hear, story, wow stay; **gallery replaced** by the toy |
+| Card chrome | Name, Hear, story, wow stay; **gallery stays**; **Phases** button opens a full-card overlay for the toy |
 | Play model | Both: orbit diagram + big moon face, one shared turn `t` |
 | Time model | Toy cycle — not real calendar, not tied to Earth sun-drag |
 | Default phase | Full Moon (`t = 0.5`) |
@@ -24,7 +24,7 @@ When a kid opens **The Moon** in Space, the usual Place card opens, but the phot
 
 1. Kid is in Space, taps **The Moon** (sizes strip or Solar3D pick).
 2. Place card opens with title “The Moon”, Hear, story, wow as today.
-3. Hero area shows:
+3. Hero area shows the usual photo gallery. A **Phases** action opens a full-card overlay with:
    - **Big moon face** — lit fraction follows `t`; dark terminator slides across.
    - **Phase name** (eight kid names) and **one short blurb** (why that bit is lit).
    - **Small top-down diagram** — Sun fixed, Earth center, Moon on a circle; drag the Moon or scrub a range input.

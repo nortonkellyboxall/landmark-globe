@@ -46,7 +46,7 @@ export function createCardMedia(els, deps) {
   let phaseSpeakTimer = 0;
   let lastSpokenPhaseId = null;
 
-  function destroyMoonToy() {
+  function closeMoonPhases() {
     if (phaseSpeakTimer) {
       clearTimeout(phaseSpeakTimer);
       phaseSpeakTimer = 0;
@@ -58,9 +58,20 @@ export function createCardMedia(els, deps) {
     }
     lastSpokenPhaseId = null;
     if (hadToy) stopSpeech();
+    if (els.moonPhaseHost) els.moonPhaseHost.innerHTML = "";
+    if (els.moonPhasePanel) {
+      els.moonPhasePanel.classList.remove("open");
+      els.moonPhasePanel.hidden = true;
+    }
     if (els.card) els.card.classList.remove("moon-phase-open");
-    if (els.photoCredit) els.photoCredit.hidden = false;
-    if (els.photoHint) els.photoHint.hidden = false;
+    if (els.moonPhaseBtn) {
+      els.moonPhaseBtn.setAttribute("aria-pressed", "false");
+      els.moonPhaseBtn.innerHTML = '<span class="icon">🌕</span> Phases';
+    }
+  }
+
+  function destroyMoonToy() {
+    closeMoonPhases();
   }
 
   function speakPhaseNow(phase) {
@@ -89,6 +100,29 @@ export function createCardMedia(els, deps) {
 
   function handlePhaseInteractEnd(phase) {
     speakPhaseNow(phase);
+  }
+
+  function openMoonPhases() {
+    if (!els.moonPhasePanel || !els.moonPhaseHost) return;
+    stopVideo();
+    closeMoonPhases();
+    els.moonPhasePanel.hidden = false;
+    els.moonPhasePanel.classList.add("open");
+    if (els.card) els.card.classList.add("moon-phase-open");
+    moonToy = createMoonPhaseToy(els.moonPhaseHost, {
+      onPhaseChange: handlePhaseChange,
+      onInteractEnd: handlePhaseInteractEnd,
+    });
+    if (els.moonPhaseBtn) {
+      els.moonPhaseBtn.setAttribute("aria-pressed", "true");
+      els.moonPhaseBtn.innerHTML = '<span class="icon">🌕</span> Hide phases';
+    }
+    playPop();
+  }
+
+  function toggleMoonPhases() {
+    if (els.card?.classList.contains("moon-phase-open")) closeMoonPhases();
+    else openMoonPhases();
   }
 
   function isCompact() {
@@ -149,22 +183,7 @@ export function createCardMedia(els, deps) {
 
   function buildGallery(lm) {
     els.cardHero.style.setProperty("--accent", lm.color === "#ffffff" ? "#c8d6e0" : lm.color);
-    destroyMoonToy();
-    if (lm.id === "moon") {
-      photoCount = 0;
-      photoIndex = 0;
-      els.photoTrack.innerHTML = "";
-      els.photoDots.innerHTML = "";
-      if (els.photoCredit) els.photoCredit.hidden = true;
-      if (els.photoHint) els.photoHint.hidden = true;
-      if (els.card) els.card.classList.add("moon-phase-open");
-      moonToy = createMoonPhaseToy(els.photoTrack, {
-        onPhaseChange: handlePhaseChange,
-        onInteractEnd: handlePhaseInteractEnd,
-      });
-      updatePhotoChrome();
-      return;
-    }
+    closeMoonPhases();
 
     const photos = (lm.photos && lm.photos.length ? lm.photos : []).slice(0, 6);
     photoCount = photos.length || 1;
@@ -362,6 +381,7 @@ export function createCardMedia(els, deps) {
   }
 
   function showMediaPanel(mode) {
+    closeMoonPhases();
     if (mode === "anthem") {
       if (!currentAnthemUrl) return;
       clearMediaSurface();
@@ -448,6 +468,7 @@ export function createCardMedia(els, deps) {
     currentAnthemUrl = place.anthem || null;
     els.watchBtn.hidden = !currentVideoId;
     els.anthemBtn.hidden = !currentAnthemUrl;
+    if (els.moonPhaseBtn) els.moonPhaseBtn.hidden = place.id !== "moon";
     const placeHits =
       place.kind === "continent" ? placesForContinent(place.id) : [];
     if (els.showPlacesBtn) {
@@ -472,7 +493,7 @@ export function createCardMedia(els, deps) {
 
   function close() {
     stopSpeech();
-    destroyMoonToy();
+    closeMoonPhases();
     stopVideo();
     setCardMoreOpen(false);
     els.overlay.classList.remove("open");
@@ -497,6 +518,10 @@ export function createCardMedia(els, deps) {
 
   /** Stop media if open, else close card. Returns true if something was dismissed. */
   function tryDismiss() {
+    if (els.card?.classList.contains("moon-phase-open")) {
+      closeMoonPhases();
+      return true;
+    }
     if (videoOpen) {
       stopVideo();
       return true;
@@ -514,6 +539,10 @@ export function createCardMedia(els, deps) {
 
     els.overlay.addEventListener("click", close);
     els.cardClose.addEventListener("click", () => {
+      if (els.card?.classList.contains("moon-phase-open")) {
+        closeMoonPhases();
+        return;
+      }
       if (videoOpen) {
         stopVideo();
         return;
@@ -523,6 +552,9 @@ export function createCardMedia(els, deps) {
     els.speakBtn.addEventListener("click", () => speak());
     els.watchBtn.addEventListener("click", toggleVideo);
     els.anthemBtn.addEventListener("click", toggleAnthem);
+    if (els.moonPhaseBtn) {
+      els.moonPhaseBtn.addEventListener("click", toggleMoonPhases);
+    }
     if (els.showPlacesBtn) {
       els.showPlacesBtn.addEventListener("click", () => {
         if (currentPlace) onShowPlaces(currentPlace);
