@@ -153,6 +153,10 @@ export function createMoonPhaseToy(container, opts) {
 
   const root = document.createElement("div");
   root.className = "moon-phase-toy";
+  const moonFaceSrc = new URL(
+    "./textures/planets/moon-face.jpg",
+    import.meta.url,
+  ).href;
   root.innerHTML = `
     <div class="moon-phase-face-wrap">
       <svg class="moon-phase-face" viewBox="0 0 100 100" aria-hidden="true">
@@ -160,12 +164,43 @@ export function createMoonPhaseToy(container, opts) {
           <clipPath id="moonPhaseDisk">
             <circle cx="50" cy="50" r="46" />
           </clipPath>
+          <mask id="moonPhaseLitMask" maskUnits="userSpaceOnUse">
+            <rect x="0" y="0" width="100" height="100" fill="#000" />
+            <circle cx="50" cy="50" r="46" fill="#fff" />
+            <g filter="url(#moonPhaseSoft)">
+              <rect class="moon-phase-shadow" x="0" y="0" width="0" height="100" fill="#000" />
+              <ellipse class="moon-phase-terminator" cx="50" cy="50" ry="46" rx="0" fill="#000" />
+            </g>
+          </mask>
+          <filter id="moonPhaseSoft" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="1.1" />
+          </filter>
+          <radialGradient id="moonPhaseSphere" cx="38%" cy="34%" r="62%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.22" />
+            <stop offset="45%" stop-color="#ffffff" stop-opacity="0" />
+            <stop offset="100%" stop-color="#000000" stop-opacity="0.42" />
+          </radialGradient>
         </defs>
-        <circle class="moon-phase-disk" cx="50" cy="50" r="46" />
-        <g clip-path="url(#moonPhaseDisk)">
-          <rect class="moon-phase-shadow" x="0" y="0" width="100" height="100" />
-          <ellipse class="moon-phase-terminator" cx="50" cy="50" ry="46" rx="0" />
-        </g>
+        <circle class="moon-phase-night" cx="50" cy="50" r="46" />
+        <image
+          class="moon-phase-tex"
+          href="${moonFaceSrc}"
+          x="4"
+          y="4"
+          width="92"
+          height="92"
+          preserveAspectRatio="xMidYMid slice"
+          clip-path="url(#moonPhaseDisk)"
+          mask="url(#moonPhaseLitMask)"
+        ></image>
+        <circle
+          class="moon-phase-sphere"
+          cx="50"
+          cy="50"
+          r="46"
+          fill="url(#moonPhaseSphere)"
+          clip-path="url(#moonPhaseDisk)"
+        />
         <circle class="moon-phase-rim" cx="50" cy="50" r="46" fill="none" />
       </svg>
       <p class="moon-phase-name" data-phase-name aria-live="polite"></p>
@@ -190,11 +225,29 @@ export function createMoonPhaseToy(container, opts) {
   `;
 
   const clip = root.querySelector("#moonPhaseDisk");
-  const clipId = `moonPhaseDisk-${Math.random().toString(36).slice(2, 8)}`;
-  if (clip) {
-    clip.id = clipId;
-    const g = root.querySelector("[clip-path]");
-    if (g) g.setAttribute("clip-path", `url(#${clipId})`);
+  const mask = root.querySelector("#moonPhaseLitMask");
+  const soft = root.querySelector("#moonPhaseSoft");
+  const sphere = root.querySelector("#moonPhaseSphere");
+  const uid = Math.random().toString(36).slice(2, 8);
+  const clipId = `moonPhaseDisk-${uid}`;
+  const maskId = `moonPhaseLitMask-${uid}`;
+  const softId = `moonPhaseSoft-${uid}`;
+  const sphereId = `moonPhaseSphere-${uid}`;
+  if (clip) clip.id = clipId;
+  if (mask) mask.id = maskId;
+  if (soft) soft.id = softId;
+  if (sphere) sphere.id = sphereId;
+  root.querySelectorAll("[clip-path]").forEach((el) => {
+    el.setAttribute("clip-path", `url(#${clipId})`);
+  });
+  const tex = root.querySelector(".moon-phase-tex");
+  if (tex) tex.setAttribute("mask", `url(#${maskId})`);
+  const softGroup = root.querySelector(`#${maskId} g`);
+  if (softGroup) softGroup.setAttribute("filter", `url(#${softId})`);
+  const sphereFill = root.querySelector(".moon-phase-sphere");
+  if (sphereFill) {
+    sphereFill.setAttribute("fill", `url(#${sphereId})`);
+    sphereFill.setAttribute("mask", `url(#${maskId})`);
   }
 
   const nameEl = root.querySelector("[data-phase-name]");
@@ -212,22 +265,27 @@ export function createMoonPhaseToy(container, opts) {
     if (blurbEl) blurbEl.textContent = phase.blurb;
     if (slider) slider.value = String(Math.round(t * 1000));
 
-    // Earth-facing disk (N. hemisphere): right lit while waxing, left while waning
+    // Earth-facing disk: photo masked so lit side matches N. hemisphere sky
     const face = earthViewFace(t);
     if (shadow) {
       shadow.setAttribute("x", String(face.shadowX));
       shadow.setAttribute("width", String(face.shadowWidth));
-      shadow.style.opacity = face.shadowWidth > 0 ? "1" : "0";
+      shadow.setAttribute("fill", "#000");
     }
     if (terminator) {
       terminator.setAttribute("rx", String(face.terminatorRx));
       terminator.setAttribute("cx", "50");
       if (face.terminatorFill === "hidden") {
+        terminator.setAttribute("rx", "0");
+        terminator.setAttribute("fill", "#000");
         terminator.style.opacity = "0";
       } else {
         terminator.style.opacity = "1";
-        terminator.style.fill =
-          face.terminatorFill === "dark" ? "#0b1220" : "#e8e0d0";
+        // Mask: black hides texture (crescent), white restores it (gibbous)
+        terminator.setAttribute(
+          "fill",
+          face.terminatorFill === "dark" ? "#000" : "#fff",
+        );
       }
     }
 

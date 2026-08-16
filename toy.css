@@ -521,24 +521,28 @@ body.deep-space .vignette {
 }
 
 .moon-phase-face {
-  width: min(48vw, 180px);
+  width: min(52vw, 200px);
   height: auto;
   display: block;
-  margin: 0 auto 0.4rem;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
+  margin: 0 auto 0.45rem;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
 }
 
-.moon-phase-disk {
-  fill: #e8e0d0;
+.moon-phase-night {
+  fill: #12161f;
 }
 
-.moon-phase-shadow {
-  fill: #0b1220;
+.moon-phase-tex {
+  pointer-events: none;
+}
+
+.moon-phase-sphere {
+  pointer-events: none;
 }
 
 .moon-phase-rim {
-  stroke: rgba(255, 255, 255, 0.35);
-  stroke-width: 1.5;
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 1.25;
 }
 
 .moon-phase-name {
