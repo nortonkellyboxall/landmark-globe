@@ -1,4 +1,5 @@
-import { speakCard, stopSpeech } from "./speak.js";
+import { speakCard, speakPhase, stopSpeech } from "./speak.js";
+import { createMoonPhaseToy } from "./moon-phases.js";
 
 /** CardMedia — place detail card: gallery, video/anthem, speech. */
 
@@ -41,6 +42,39 @@ export function createCardMedia(els, deps) {
   let currentPlace = null;
   let scrollSyncTimer = null;
   let listenersBound = false;
+  let moonToy = null;
+  let phaseSpeakTimer = 0;
+  let lastSpokenPhaseId = null;
+
+  function destroyMoonToy() {
+    if (phaseSpeakTimer) {
+      clearTimeout(phaseSpeakTimer);
+      phaseSpeakTimer = 0;
+    }
+    if (moonToy) {
+      moonToy.destroy();
+      moonToy = null;
+    }
+    lastSpokenPhaseId = null;
+    if (els.card) els.card.classList.remove("moon-phase-open");
+    if (els.photoCredit) els.photoCredit.hidden = false;
+    if (els.photoHint) els.photoHint.hidden = false;
+  }
+
+  function schedulePhaseSpeak(phase) {
+    if (!phase?.id) return;
+    if (phaseSpeakTimer) clearTimeout(phaseSpeakTimer);
+    phaseSpeakTimer = window.setTimeout(() => {
+      phaseSpeakTimer = 0;
+      if (phase.id === lastSpokenPhaseId) return;
+      lastSpokenPhaseId = phase.id;
+      speakPhase(phase.id);
+    }, 200);
+  }
+
+  function handlePhaseChange(phase) {
+    schedulePhaseSpeak(phase);
+  }
 
   function isCompact() {
     return compactMq.matches;
@@ -57,6 +91,13 @@ export function createCardMedia(els, deps) {
   }
 
   function updatePhotoChrome() {
+    if (!els.photoDots || !els.photoPrev || !els.photoNext) return;
+    if (photoCount <= 0) {
+      els.photoPrev.disabled = true;
+      els.photoNext.disabled = true;
+      if (els.photoHint) els.photoHint.textContent = "";
+      return;
+    }
     els.photoDots.querySelectorAll(".photo-dot").forEach((dot, i) => {
       dot.classList.toggle("active", i === photoIndex);
     });
@@ -92,10 +133,26 @@ export function createCardMedia(els, deps) {
   }
 
   function buildGallery(lm) {
+    els.cardHero.style.setProperty("--accent", lm.color === "#ffffff" ? "#c8d6e0" : lm.color);
+    destroyMoonToy();
+    if (lm.id === "moon") {
+      photoCount = 0;
+      photoIndex = 0;
+      els.photoTrack.innerHTML = "";
+      els.photoDots.innerHTML = "";
+      if (els.photoCredit) els.photoCredit.hidden = true;
+      if (els.photoHint) els.photoHint.hidden = true;
+      if (els.card) els.card.classList.add("moon-phase-open");
+      moonToy = createMoonPhaseToy(els.photoTrack, {
+        onPhaseChange: handlePhaseChange,
+      });
+      updatePhotoChrome();
+      return;
+    }
+
     const photos = (lm.photos && lm.photos.length ? lm.photos : []).slice(0, 6);
     photoCount = photos.length || 1;
     photoIndex = 0;
-    els.cardHero.style.setProperty("--accent", lm.color === "#ffffff" ? "#c8d6e0" : lm.color);
     els.photoTrack.innerHTML = "";
     els.photoDots.innerHTML = "";
 
@@ -399,6 +456,7 @@ export function createCardMedia(els, deps) {
 
   function close() {
     stopSpeech();
+    destroyMoonToy();
     stopVideo();
     setCardMoreOpen(false);
     els.overlay.classList.remove("open");
