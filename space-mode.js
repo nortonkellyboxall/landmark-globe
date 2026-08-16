@@ -1,7 +1,20 @@
 import { shouldEnterSpace } from "./orbit-look.js";
 
-export function planetDisplayPx(km, jupKm, maxPx) {
-  return Math.max(8, Math.round((km / jupKm) * maxPx));
+/**
+ * Ball diameter for the Space size chart.
+ * Scaled to Earth so Moon (~27%) stays distinct; gas giants clamp to maxPx.
+ * @param {number} km
+ * @param {number} earthKm
+ * @param {number} [earthPx=22]
+ * @param {number} [maxPx=54]
+ * @param {number} [minPx=6]
+ */
+export function planetDisplayPx(km, earthKm, earthPx = 22, maxPx = 54, minPx = 6) {
+  if (!Number.isFinite(km) || km <= 0 || !Number.isFinite(earthKm) || earthKm <= 0) {
+    return minPx;
+  }
+  const px = (km / earthKm) * earthPx;
+  return Math.max(minPx, Math.min(maxPx, Math.round(px)));
 }
 
 export function createSpaceMode(opts) {
@@ -34,13 +47,17 @@ export function createSpaceMode(opts) {
     const items = (opts.getSpaceItems() || []).filter((o) =>
       o.kind === "star" || o.kind === "planet" || o.kind === "moon"
     );
-    const jupKm = opts.spaceDiameterKm("jupiter");
+    const earthKm = opts.spaceDiameterKm("earth");
+    const earthPx = 22;
     const maxPlanetPx = 54;
     const sunMaxPx = 70;
 
     items.forEach((obj) => {
       const km = opts.spaceDiameterKm(obj);
-      const px = obj.kind === "star" ? sunMaxPx : planetDisplayPx(km, jupKm, maxPlanetPx);
+      const px =
+        obj.kind === "star"
+          ? sunMaxPx
+          : planetDisplayPx(km, earthKm, earthPx, maxPlanetPx);
 
       const btn = document.createElement("button");
       btn.type = "button";

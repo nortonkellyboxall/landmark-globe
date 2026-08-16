@@ -1,9 +1,17 @@
 import assert from "node:assert/strict";
 import { planetDisplayPx, createSpaceMode } from "../space-mode.js";
 import { SPACE_HANDOFF_ALT } from "../orbit-look.js";
+import { diameterKm } from "../space-catalog.js";
 
-assert.equal(planetDisplayPx(0, 140000, 54), 8);
-assert.ok(planetDisplayPx(140000, 140000, 54) >= 50);
+const EARTH = diameterKm("earth");
+const MOON = diameterKm("moon");
+const JUPITER = diameterKm("jupiter");
+
+assert.equal(planetDisplayPx(0, EARTH), 6);
+assert.equal(planetDisplayPx(EARTH, EARTH), 22);
+assert.equal(planetDisplayPx(MOON, EARTH), Math.round((MOON / EARTH) * 22));
+assert.ok(planetDisplayPx(MOON, EARTH) < planetDisplayPx(EARTH, EARTH));
+assert.equal(planetDisplayPx(JUPITER, EARTH), 54);
 
 const flags = { transitioning: false, pinchArmed: false, tab: "landmarks" };
 let stopped = 0;
