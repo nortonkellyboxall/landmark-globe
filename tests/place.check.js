@@ -8,6 +8,10 @@ assert.ok(LANDMARKS.find((p) => p.id === "eiffel"));
 assert.ok(WONDERS.find((p) => p.id === "grandcanyon"));
 assert.ok(CONTINENTS.find((p) => p.id === "africa"));
 assert.ok(COUNTRIES.find((p) => p.id === "usa"));
+assert.ok(COUNTRIES.find((p) => p.id === "norway"));
+assert.ok(COUNTRIES.find((p) => p.id === "vietnam"));
+assert.ok(COUNTRIES.find((p) => p.id === "fiji"));
+assert.ok(COUNTRIES.length >= 40);
 
 assert.equal(placeById("eiffel")?.name, "Eiffel Tower");
 assert.equal(placeById("grandcanyon")?.name, "Grand Canyon");
