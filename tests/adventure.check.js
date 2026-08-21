@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { placesForContinent, createAdventure } from "../adventure.js";
+import { LANDMARKS } from "../landmarks.js";
+import { placesForContinent, createAdventure, DATASETS } from "../adventure.js";
 
 const landmarks = [
   { id: "ny", continent: "Americas", lat: 40 },
@@ -47,6 +48,8 @@ const datasets = {
   space: { items: [{ id: "mars", kind: "planet" }], label: "S", hint: "", main: "space" },
 };
 let stopped = 0;
+const enters = [];
+const leaves = [];
 const adventure = createAdventure({
   datasets,
   els: {
@@ -64,8 +67,8 @@ const adventure = createAdventure({
   getGlobe: () => null,
   card: { close() {} },
   stopFind: () => { stopped += 1; },
-  spaceEnter() {},
-  spaceLeave() { return Promise.resolve(); },
+  spaceEnter(o) { enters.push(o || {}); },
+  spaceLeave(o) { leaves.push(o || {}); return Promise.resolve(); },
   diveMs: () => 400,
   setAmbient() {},
   playPop() {},
@@ -82,5 +85,19 @@ assert.ok(stopped >= 1);
 const before = adventure.getTab();
 adventure.switchTab("nope");
 assert.equal(adventure.getTab(), before);
+
+adventure.switchTab("space", { overview: true });
+assert.equal(adventure.getTab(), "space");
+assert.deepEqual(enters.at(-1), { fluid: false, overview: true });
+
+adventure.switchTab("landmarks", { quiet: true });
+assert.equal(adventure.getTab(), "landmarks");
+assert.deepEqual(leaves.at(-1), { quiet: true });
+
+adventure.switchTab("space", { fluid: true });
+assert.deepEqual(enters.at(-1), { fluid: true, overview: false });
+
+assert.equal(DATASETS.landmarks.items, LANDMARKS);
+assert.equal(DATASETS.space.main, "space");
 
 console.log("adventure.check.js OK");

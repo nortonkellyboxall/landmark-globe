@@ -96,13 +96,15 @@
     <div id="solarSystem" aria-label="Interactive solar system" hidden>
       <div class="ss-views">
         <div class="ss-view active" id="ssViewIso" data-view="spheres">
-          <div id="ss3d" class="ss-3d" role="application" aria-label="3D solar system"></div>
           <aside class="ss-sizes open" id="ssSizesPanel" aria-label="Planet sizes">
             <button type="button" class="ss-sizes-toggle" id="ssSizesToggle" aria-expanded="true" aria-controls="ssSizesPanel" title="Sizes" aria-label="Show or hide planet sizes">
               <span class="ss-sizes-toggle-emoji" aria-hidden="true">📏</span>
             </button>
             <div class="ss-sizes-body">
               <p class="ss-sizes-note" id="ssSizesNote">Real sizes · Sun shown smaller</p>
+              <button type="button" class="ss-orbit-mode" id="ssOrbitMode" aria-pressed="true" title="Toggle orbit spacing">
+                Real orbits
+              </button>
               <div class="ss-sizes-row" id="ssSizesRow"></div>
             </div>
           </aside>
@@ -240,10 +242,6 @@
     }
   }
   </script>
-  <script src="vendor/globe.gl.min.js"></script>
-  <script src="landmarks.js"></script>
-  <script src="wonders.js"></script>
-  <script src="geography.js"></script>
   <script type="module" src="boot.js?v=spacez"></script>
 </body>
 </html>

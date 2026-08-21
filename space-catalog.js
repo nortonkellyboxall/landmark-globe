@@ -45,6 +45,7 @@ export const SPACE_BODIES = [
     "visual": {
       "size": 1.35,
       "orbit": 12,
+      "eccentricity": 0.206,
       "speed": 1.6,
       "style": "rocky",
       "colorHex": 13682878
@@ -72,6 +73,7 @@ export const SPACE_BODIES = [
     "visual": {
       "size": 1.85,
       "orbit": 16,
+      "eccentricity": 0.007,
       "speed": 1.15,
       "style": "cloudy",
       "colorHex": 16044894
@@ -99,6 +101,7 @@ export const SPACE_BODIES = [
     "visual": {
       "size": 2,
       "orbit": 20.5,
+      "eccentricity": 0.017,
       "speed": 1,
       "style": "earth",
       "colorHex": 5032432
@@ -153,6 +156,7 @@ export const SPACE_BODIES = [
     "visual": {
       "size": 1.55,
       "orbit": 25,
+      "eccentricity": 0.093,
       "speed": 0.8,
       "style": "rocky",
       "colorHex": 15893596
@@ -203,6 +207,7 @@ export const SPACE_BODIES = [
     "visual": {
       "size": 4.6,
       "orbit": 35,
+      "eccentricity": 0.049,
       "speed": 0.42,
       "style": "gas",
       "colorHex": 16032353
@@ -230,6 +235,7 @@ export const SPACE_BODIES = [
     "visual": {
       "size": 4,
       "orbit": 43,
+      "eccentricity": 0.056,
       "speed": 0.32,
       "rings": true,
       "style": "gas",
@@ -258,6 +264,7 @@ export const SPACE_BODIES = [
     "visual": {
       "size": 2.8,
       "orbit": 50,
+      "eccentricity": 0.047,
       "speed": 0.22,
       "style": "ice",
       "colorHex": 9494767
@@ -285,6 +292,7 @@ export const SPACE_BODIES = [
     "visual": {
       "size": 2.7,
       "orbit": 56,
+      "eccentricity": 0.009,
       "speed": 0.18,
       "style": "ice",
       "colorHex": 5999871
@@ -323,6 +331,33 @@ export const SPACE_BODIES = [
 ];
 
 export const EARTH_YEAR_SECONDS = 22;
+
+/** Real AU scale (scene units). Larger = sun sits farther from Earth in shared-world Earth view. */
+export const REAL_AU_SCALE = 22;
+/** Playful √(AU) scale — keeps the outer system on-screen. */
+export const SQRT_AU_SCALE = 18;
+
+/**
+ * @param {number} au
+ * @param {"real"|"sqrt"} mode
+ */
+export function orbitLayoutRadius(au, mode) {
+  const a = Number(au);
+  if (!Number.isFinite(a) || a <= 0) return 20;
+  if (mode === "sqrt") return SQRT_AU_SCALE * Math.sqrt(a);
+  return REAL_AU_SCALE * a;
+}
+
+/**
+ * @param {number} eccentricity catalog value
+ * @param {"real"|"sqrt"} mode
+ */
+export function orbitLayoutEccentricity(eccentricity, mode) {
+  const e = Number(eccentricity);
+  const raw = Number.isFinite(e) ? Math.max(0, e) : 0;
+  if (mode === "sqrt") return Math.min(0.52, Math.max(raw, 0.18));
+  return Math.min(0.4, raw);
+}
 
 function getBody(id) {
   return SPACE_BODIES.find((b) => b.id === id) || null;

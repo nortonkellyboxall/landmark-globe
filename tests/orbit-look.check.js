@@ -2,11 +2,16 @@ import assert from "node:assert/strict";
 import {
   DEEP_SPACE_ALT,
   SPACE_HANDOFF_ALT,
+  SPACE_RETURN_ALT,
+  SUN_BLEND_START_ALT,
+  SUN_BLEND_END_ALT,
   diveMs,
   isDeepSpace,
   firefliesShouldTick,
   lookFromAltitude,
   shouldEnterSpace,
+  shouldLeaveSpace,
+  sunTargetBlend,
   subsolarPoint,
   latLngDirection,
   wrapLng,
@@ -20,6 +25,9 @@ import {
   MOON_RADIUS,
   dueThisFrame,
   GLOBE_TICK,
+  povAltitudeFromDistance,
+  distanceFromPovAltitude,
+  directionToLatLng,
 } from "../orbit-look.js";
 
 assert.equal(lookFromAltitude(11).band, "far");
@@ -41,6 +49,16 @@ assert.ok(diveMs(40, 1) <= 3400);
 assert.equal(shouldEnterSpace(SPACE_HANDOFF_ALT + 0.2, true), true);
 assert.equal(shouldEnterSpace(SPACE_HANDOFF_ALT + 0.2, false), false);
 assert.equal(shouldEnterSpace(2, true), false);
+
+assert.equal(shouldLeaveSpace(SPACE_RETURN_ALT - 0.2, true), true);
+assert.equal(shouldLeaveSpace(SPACE_RETURN_ALT - 0.2, false), false);
+assert.equal(shouldLeaveSpace(SPACE_HANDOFF_ALT + 1, true), false);
+
+assert.equal(sunTargetBlend(SUN_BLEND_START_ALT), 0);
+assert.equal(sunTargetBlend(SUN_BLEND_START_ALT - 1), 0);
+assert.equal(sunTargetBlend(SUN_BLEND_END_ALT), 1);
+assert.equal(sunTargetBlend(SUN_BLEND_END_ALT + 10), 1);
+assert.ok(Math.abs(sunTargetBlend((SUN_BLEND_START_ALT + SUN_BLEND_END_ALT) / 2) - 0.5) < 1e-9);
 
 assert.equal(wrapLng(190), -170);
 assert.equal(wrapLng(-190), 170);
@@ -81,5 +99,18 @@ assert.equal(dueThisFrame(3, 0), true);
 assert.equal(GLOBE_TICK.pov, 8);
 assert.ok(GLOBE_TICK.sun >= 4);
 assert.ok(GLOBE_TICK.aurora >= 2);
+
+assert.equal(povAltitudeFromDistance(6, 2), 2);
+assert.equal(distanceFromPovAltitude(2, 2), 6);
+assert.equal(povAltitudeFromDistance(distanceFromPovAltitude(11.2, 2), 2), 11.2);
+
+const eq = latLngDirection(0, 0);
+const back = directionToLatLng(eq[0], eq[1], eq[2]);
+assert.ok(Math.abs(back.lat) < 1e-9);
+assert.ok(Math.abs(back.lng) < 1e-9);
+const paris = latLngDirection(48.8584, 2.2945);
+const parisBack = directionToLatLng(paris[0], paris[1], paris[2]);
+assert.ok(Math.abs(parisBack.lat - 48.8584) < 1e-6);
+assert.ok(Math.abs(wrapLng(parisBack.lng - 2.2945)) < 1e-6);
 
 console.log("orbit-look.check.js OK");

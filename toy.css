@@ -106,16 +106,20 @@ html, body {
 }
 
 .guide {
-  position: absolute;
-  z-index: 7;
+  position: fixed;
+  z-index: 22;
   right: max(0.35rem, env(safe-area-inset-right));
-  bottom: 4%;
+  bottom: calc(6.4rem + var(--safe-bottom, 0px));
   width: 7.4rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.35rem;
   pointer-events: none;
+}
+
+body.space-mode .guide {
+  bottom: max(1.1rem, env(safe-area-inset-bottom));
 }
 
 .guide > * { pointer-events: auto; }

@@ -1,10 +1,8 @@
-import {
-  SPACE_BODIES,
-  diameterKm as spaceDiameterKm,
-} from "./space-catalog.js";
+import { SPACE_BODIES, diameterKm as spaceDiameterKm } from "./space-catalog.js";
+import { LANDMARKS, WONDERS, placeById } from "./place.js";
 import { createCardMedia } from "./card-media.js";
 import { createGlobe } from "./globe-app.js";
-import { diveMs, firefliesShouldTick, heatHint, isDeepSpace } from "./orbit-look.js";
+import { diveMs, firefliesShouldTick, heatHint, isDeepSpace, SPACE_HANDOFF_ALT } from "./orbit-look.js";
 import { weatherForPlace } from "./place-weather.js";
 import { ambientKind, createSound } from "./sound.js";
 import { createAdventure, placesForContinent as continentPlaces } from "./adventure.js";
@@ -15,39 +13,6 @@ import { speakName } from "./speak.js";
 
 const SPACE_SEL = ".ss-size-item.selected";
 const SPACE_SEL_BY_ID = (id) => `.ss-size-item[data-id="${id}"]`;
-
-const DATASETS = {
-  landmarks: {
-    items: window.LANDMARKS || [],
-    label: "🏛️ Landmarks",
-    hint: "",
-    main: "landmarks",
-  },
-  wonders: {
-    items: window.WONDERS || [],
-    label: "🌋 Natural wonders",
-    hint: "Nature’s wow places",
-    main: "wonders",
-  },
-  continents: {
-    items: window.CONTINENTS || [],
-    label: "🌍 Continents",
-    hint: "Earth’s giant pieces",
-    main: "continents",
-  },
-  countries: {
-    items: window.COUNTRIES || [],
-    label: "🚩 Countries",
-    hint: "Countries around the world",
-    main: "countries",
-  },
-  space: {
-    items: SPACE_BODIES,
-    label: "🚀 Space",
-    hint: "Meet the planets",
-    main: "space",
-  },
-};
 
 let adventure;
 let globe = null;
@@ -80,6 +45,7 @@ const els = {
   ssSizesPanel: document.getElementById("ssSizesPanel"),
   ssSizesToggle: document.getElementById("ssSizesToggle"),
   ssSizesRow: document.getElementById("ssSizesRow"),
+  ssOrbitMode: document.getElementById("ssOrbitMode"),
   ss3d: document.getElementById("ss3d"),
   stars: document.getElementById("stars"),
   sparkles: document.getElementById("sparkles"),
@@ -316,7 +282,7 @@ const card = createCardMedia(els, {
   playPop,
   playChime,
   placesForContinent: (id) =>
-    continentPlaces(id, DATASETS.landmarks.items, DATASETS.wonders.items),
+    continentPlaces(id, LANDMARKS, WONDERS),
   onShowPlaces(place) {
     adventure.showPlacesInContinent(place);
   },
@@ -331,14 +297,6 @@ const card = createCardMedia(els, {
     findGame.onCardClose();
   },
 });
-
-function placeById(id) {
-  for (const key of Object.keys(DATASETS)) {
-    const hit = DATASETS[key].items.find((p) => p.id === id);
-    if (hit) return hit;
-  }
-  return null;
-}
 
 const findGame = createFindGame({
   els,
@@ -369,7 +327,7 @@ const spaceMode = createSpaceMode({
   getGlobe: () => globe,
   getTab: () => adventure.getTab(),
   getNightMode: () => nightMode,
-  getSpaceItems: () => DATASETS.space.items,
+  getSpaceItems: () => SPACE_BODIES,
   spaceDiameterKm,
   diveMs,
   playFlyWhoosh,
@@ -381,13 +339,12 @@ const spaceMode = createSpaceMode({
 });
 
 adventure = createAdventure({
-  datasets: DATASETS,
   els,
   getGlobe: () => globe,
   card,
   stopFind: () => findGame.stop(),
-  spaceEnter: () => spaceMode.enter(),
-  spaceLeave: () => spaceMode.leave(),
+  spaceEnter: (o) => spaceMode.enter(o),
+  spaceLeave: (o) => spaceMode.leave(o),
   diveMs,
   setAmbient: setAmbientForMode,
   playPop,
@@ -508,7 +465,8 @@ function syncOrbitChrome(pov) {
   const alt = pov && pov.altitude;
   document.body.classList.toggle("deep-space", isDeepSpace(alt));
   findGame.syncHeat(pov);
-  if (spaceMode.shouldHandoff(alt)) adventure.switchTab("space");
+  if (spaceMode.shouldHandoff(alt)) adventure.switchTab("space", { fluid: true });
+  else if (spaceMode.shouldReturn(alt)) adventure.switchTab("landmarks", { quiet: true });
   syncFireflies();
 }
 
@@ -518,11 +476,12 @@ function markGlobeReady() {
   els.loader.classList.add("hide");
   if (!globe || adventure.getTab() === "space") return;
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const sky = globe.skyShowLook ? globe.skyShowLook() : { lat: 18, lng: -18, altitude: 2.45 };
-  globe.pointOfView(sky.lat, sky.lng, sky.altitude, reduce ? 0 : 4800);
+  // Shared world: stay close to Earth. (skyShowLook's alt ~10.2 is near handoff and auto-triggers Space.)
+  globe.pointOfView(18, -18, 2.45, reduce ? 0 : 1200);
   window.setTimeout(() => {
-    spaceMode.armPinch();
-  }, reduce ? 400 : 5200);
+    const pov = globe.pointOfView() || {};
+    if ((pov.altitude || 0) < SPACE_HANDOFF_ALT - 0.5) spaceMode.armPinch();
+  }, reduce ? 400 : 1600);
   spaceMode.preload();
 }
 
@@ -625,10 +584,16 @@ els.tabLandmarks.addEventListener("click", () => adventure.switchTab("landmarks"
 els.tabWonders.addEventListener("click", () => adventure.switchTab("wonders"));
 els.tabContinents.addEventListener("click", () => adventure.switchTab("continents"));
 els.tabCountries.addEventListener("click", () => adventure.switchTab("countries"));
-els.tabSpace.addEventListener("click", () => adventure.switchTab("space"));
+els.tabSpace.addEventListener("click", () => adventure.switchTab("space", { overview: true }));
 if (els.ssSizesToggle) {
   els.ssSizesToggle.addEventListener("click", () => {
     spaceMode.toggleSizes();
+    playPop();
+  });
+}
+if (els.ssOrbitMode) {
+  els.ssOrbitMode.addEventListener("click", () => {
+    spaceMode.toggleOrbitMode();
     playPop();
   });
 }

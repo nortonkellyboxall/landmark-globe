@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { planetDisplayPx, createSpaceMode } from "../space-mode.js";
-import { SPACE_HANDOFF_ALT } from "../orbit-look.js";
+import { SPACE_HANDOFF_ALT, SPACE_RETURN_ALT } from "../orbit-look.js";
 import { diameterKm } from "../space-catalog.js";
 
 const EARTH = diameterKm("earth");
@@ -19,7 +19,7 @@ const flags = { transitioning: false, pinchArmed: false, tab: "landmarks" };
 let stopped = 0;
 let selected = 0;
 const mode = createSpaceMode({
-  els: { ssSizesRow: null, ssSizesPanel: null, ss3d: null, solarSystem: { hidden: true, classList: { add() {}, remove() {} } }, globeViz: { classList: { add() {}, remove() {} } }, globeShadow: { classList: { add() {}, remove() {} } }, nightBtn: { style: {} }, autoNightBtn: { style: {} }, sunBtn: { hidden: false } },
+  els: { ssSizesRow: null, ssSizesPanel: null, ss3d: null, solarSystem: { hidden: true, classList: { add() {}, remove() {} } }, globeViz: { dataset: {}, classList: { add() {}, remove() {} } }, globeShadow: { classList: { add() {}, remove() {} } }, nightBtn: { style: {} }, autoNightBtn: { style: {} }, sunBtn: { hidden: false } },
   getGlobe: () => null,
   getTab: () => flags.tab,
   getNightMode: () => false,
@@ -32,6 +32,13 @@ const mode = createSpaceMode({
   onSelect() { selected += 1; },
   stopFind() { stopped += 1; },
   matchReduce: () => true,
+  loadSolar3D: async () => ({
+    init() {},
+    warmTextures() {},
+    resize() {},
+    isReady() { return false; },
+    setViewMode() { return Promise.resolve("solar"); },
+  }),
 });
 
 assert.equal(mode.isTransitioning(), false);
@@ -40,6 +47,10 @@ mode.armPinch();
 assert.equal(mode.shouldHandoff(SPACE_HANDOFF_ALT + 0.2), true);
 flags.tab = "space";
 assert.equal(mode.shouldHandoff(SPACE_HANDOFF_ALT + 0.2), false);
+
+assert.equal(mode.shouldReturn(SPACE_RETURN_ALT - 0.2), false, "no return until visited deep space");
+assert.equal(mode.shouldReturn(SPACE_HANDOFF_ALT + 0.2), false, "still deep — marks visit but no return");
+assert.equal(mode.shouldReturn(SPACE_RETURN_ALT - 0.2), true, "zoom back after deep visit");
 
 assert.equal(typeof mode.enter, "function");
 assert.equal(typeof mode.leave, "function");
@@ -50,6 +61,8 @@ assert.equal(typeof mode.highlight, "function");
 assert.equal(typeof mode.ensure, "function");
 assert.equal(typeof mode.preload, "function");
 assert.equal(typeof mode.resize, "function");
+assert.equal(typeof mode.setOrbitMode, "function");
+assert.equal(typeof mode.toggleOrbitMode, "function");
 
 mode.buildSizes();
 mode.setSizesOpen(true);
@@ -71,31 +84,39 @@ try {
 await mode.preload();
 assert.equal(selected, 0);
 
-const ss3d = { dataset: {} };
+const globeViz = { dataset: {}, classList: { add() {}, remove() {} }, getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) };
 let canvasSelected = 0;
 let solarLoads = 0;
 let solarWarms = 0;
 let solarInits = 0;
 const solarCalls = [];
 const globeActive = [];
-const handoff = [];
 const globe = {
   setAutoRotate() {},
   setPlaces() {},
   setWeather() {},
-  pointOfView() { return {}; },
-  setActive(on) { globeActive.push(on); handoff.push(["globe", on]); },
+  pointOfView() { return { lat: 18, lng: -18, altitude: 2.4 }; },
+  setActive(on) { globeActive.push(on); },
   setNight() {},
 };
+const whooshes = { n: 0 };
 const canvasMode = createSpaceMode({
-  els: { ss3d, solarSystem: { hidden: true, classList: { add() {}, remove() {} } }, globeViz: { classList: { add() {}, remove() {} } }, globeShadow: { classList: { add() {}, remove() {} } } },
+  els: {
+    globeViz,
+    ss3d: null,
+    solarSystem: { hidden: true, classList: { add() {}, remove() {} } },
+    globeShadow: { classList: { add() {}, remove() {} } },
+    nightBtn: { style: {} },
+    autoNightBtn: { style: {} },
+    sunBtn: { hidden: false },
+  },
   getGlobe: () => globe,
   getTab: () => "landmarks",
   getNightMode: () => false,
   getSpaceItems: () => [],
   spaceDiameterKm: () => 1,
   diveMs: () => 400,
-  playFlyWhoosh() {},
+  playFlyWhoosh() { whooshes.n += 1; },
   setAmbient() {},
   sparkAt() {},
   onSelect() { canvasSelected += 1; },
@@ -106,13 +127,24 @@ const canvasMode = createSpaceMode({
     return {
       init(_el, opts) {
         solarInits += 1;
-        solarCalls.push(["init", opts && opts.startActive]);
+        solarCalls.push(["init", opts && opts.viewMode]);
       },
+      isReady() { return solarInits > 0; },
       warmTextures() { solarWarms += 1; },
-      setActive(on) { solarCalls.push(["setActive", on]); handoff.push(["solar", on]); },
+      setActive(on) { solarCalls.push(["setActive", on]); },
+      setViewMode(mode, opts) {
+        solarCalls.push([
+          "setViewMode",
+          mode,
+          !!(opts && opts.fluid),
+          !!(opts && opts.animate),
+        ]);
+        return Promise.resolve(mode);
+      },
       resize() {},
       frameEarth() {},
-      playIntroZoom() {},
+      playIntroZoom() { solarCalls.push(["playIntroZoom"]); return Promise.resolve(); },
+      zoomToEarth() { solarCalls.push(["zoomToEarth"]); return Promise.resolve(); },
     };
   },
 });
@@ -121,33 +153,45 @@ assert.equal(solarLoads, 1);
 assert.equal(solarWarms, 1);
 assert.equal(solarInits, 0);
 assert.equal(solarCalls.length, 0);
-assert.equal(ss3d.dataset.ready, undefined);
+assert.equal(globeViz.dataset.ready, undefined);
 assert.equal(canvasSelected, 0);
 
 await canvasMode.ensure();
-assert.deepEqual(solarCalls, [["init", false]]);
+assert.deepEqual(solarCalls, [["init", "earth"]]);
 await canvasMode.ensure();
-assert.deepEqual(solarCalls, [["init", false]]);
+assert.deepEqual(solarCalls, [["init", "earth"]]);
 
 const prevDoc2 = globalThis.document;
 globalThis.document = { body: { classList: { add() {}, remove() {} } } };
 try {
-  canvasMode.enter();
+  whooshes.n = 0;
+  canvasMode.enter({ fluid: true });
   await new Promise((r) => setTimeout(r, 0));
   await Promise.resolve();
   await Promise.resolve();
 
-  assert.deepEqual(solarCalls.filter((c) => c[0] === "setActive").slice(-1), [["setActive", true]]);
-  assert.equal(globeActive.at(-1), false);
-  const solarOnAt = solarCalls.findIndex((c) => c[0] === "setActive" && c[1] === true);
-  assert.ok(solarOnAt >= 0);
-  assert.deepEqual(handoff.slice(-2), [["solar", true], ["globe", false]]);
+  assert.equal(whooshes.n, 0, "fluid pinch enter is quiet");
+  assert.ok(solarCalls.some((c) => c[0] === "setViewMode" && c[1] === "solar" && c[2] === true));
+  assert.equal(globeActive.length, 0, "shared world never pauses via setActive");
+  assert.ok(!solarCalls.some((c) => c[0] === "setActive"));
+  assert.ok(!solarCalls.some((c) => c[0] === "playIntroZoom"));
 
-  await canvasMode.leave();
-  const solarOffAt = solarCalls.findIndex((c, i) => i > solarOnAt && c[0] === "setActive" && c[1] === false);
-  assert.ok(solarOffAt >= 0, "leave must pause solar immediately");
-  assert.equal(globeActive.at(-1), true);
-  assert.deepEqual(handoff.slice(-2), [["solar", false], ["globe", true]]);
+  await canvasMode.leave({ quiet: true });
+  assert.equal(whooshes.n, 0, "quiet leave stays quiet");
+  assert.ok(solarCalls.some((c) => c[0] === "setViewMode" && c[1] === "earth" && c[2] === true));
+  assert.equal(globeActive.length, 0);
+
+  await new Promise((r) => setTimeout(r, 450));
+  solarCalls.length = 0;
+  canvasMode.enter({ overview: true });
+  await new Promise((r) => setTimeout(r, 0));
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(whooshes.n, 1, "tab overview whooshes");
+  assert.ok(
+    solarCalls.some((c) => c[0] === "setViewMode" && c[1] === "solar" && c[2] === false),
+    "overview is not fluid"
+  );
 } finally {
   globalThis.document = prevDoc2;
 }

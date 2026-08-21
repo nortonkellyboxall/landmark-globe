@@ -1,0 +1,3 @@
+# Third-party bundles and generated screenshots drown the app graph.
+vendor/
+output/

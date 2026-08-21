@@ -1,7 +1,8 @@
 /** Altitude bands and sun path. No Three.js — keep this testable. */
 
 export const DEEP_SPACE_ALT = 4.2;
-export const SPACE_HANDOFF_ALT = 11.2;
+/** Pinch-out past this altitude leaves Earth for the solar view. */
+export const SPACE_HANDOFF_ALT = 16;
 /** True moon radius in Earth radii. */
 export const MOON_RADIUS = 0.273;
 // ponytail: true moon dist 60.3R, sun 23455R. Compressed to fit under SPACE_HANDOFF with Earth still readable. Angular sizes matched (real sky both ~0.5°).
@@ -69,6 +70,29 @@ export function shouldEnterSpace(alt, armed) {
   return !!armed && (Number.isFinite(alt) ? alt : 0) > SPACE_HANDOFF_ALT;
 }
 
+/** Hysteresis below handoff so zoom-back does not flicker chrome. */
+export const SPACE_RETURN_ALT = SPACE_HANDOFF_ALT - 3;
+
+/** Pinch-in past this altitude returns from Space chrome to Earth. */
+export function shouldLeaveSpace(alt, inSpace) {
+  return !!inSpace && (Number.isFinite(alt) ? alt : 0) < SPACE_RETURN_ALT;
+}
+
+/**
+ * Soft blend of orbit target from Earth (0) toward the Sun (1) while zooming out.
+ * Starts at handoff so near-Earth stays locked; finishes far enough to pan the system.
+ */
+export const SUN_BLEND_START_ALT = SPACE_HANDOFF_ALT;
+export const SUN_BLEND_END_ALT = SPACE_HANDOFF_ALT + 24;
+
+/** @param {number} alt @returns {number} 0…1 */
+export function sunTargetBlend(alt) {
+  const a = Number.isFinite(alt) ? alt : 0;
+  if (a <= SUN_BLEND_START_ALT) return 0;
+  if (a >= SUN_BLEND_END_ALT) return 1;
+  return (a - SUN_BLEND_START_ALT) / (SUN_BLEND_END_ALT - SUN_BLEND_START_ALT);
+}
+
 /** Wrap degrees to [-180, 180]. */
 export function wrapLng(lng) {
   return ((((Number(lng) + 180) % 360) + 360) % 360) - 180;
@@ -99,6 +123,27 @@ export function latLngDirection(lat, lng) {
     Math.cos(phi),
     Math.sin(phi) * Math.sin(theta),
   ];
+}
+
+/** Inverse of latLngDirection. */
+export function directionToLatLng(x, y, z) {
+  const r = Math.hypot(Number(x), Number(y), Number(z)) || 1;
+  const lat = 90 - (Math.acos(Math.min(1, Math.max(-1, Number(y) / r))) * 180) / Math.PI;
+  const lng = 90 - (Math.atan2(Number(z), Number(x)) * 180) / Math.PI;
+  return { lat, lng: wrapLng(lng) };
+}
+
+/** globe.gl altitude: 0 = surface. `distance` is camera-to-center. */
+export function povAltitudeFromDistance(distance, radius) {
+  const r = Number(radius);
+  if (!Number.isFinite(r) || r <= 0) return 0;
+  return Number(distance) / r - 1;
+}
+
+export function distanceFromPovAltitude(altitude, radius) {
+  const r = Number(radius);
+  if (!Number.isFinite(r) || r <= 0) return 0;
+  return (Number(altitude) + 1) * r;
 }
 
 /** Great-circle degrees between two points. */

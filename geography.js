@@ -1,4 +1,4 @@
-window.CONTINENTS = [
+export const CONTINENTS = [
   {
     id: "africa",
     name: "Africa",
@@ -135,7 +135,7 @@ window.CONTINENTS = [
 ];
 
 
-window.COUNTRIES = [
+export const COUNTRIES = [
   {
     id: "usa",
     name: "United States",

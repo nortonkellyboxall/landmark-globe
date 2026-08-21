@@ -1,4 +1,4 @@
-window.WONDERS = [
+export const WONDERS = [
   {
     id: "grandcanyon",
     name: "Grand Canyon",

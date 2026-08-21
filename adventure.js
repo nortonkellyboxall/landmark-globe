@@ -1,3 +1,40 @@
+import { LANDMARKS, WONDERS, CONTINENTS, COUNTRIES } from "./place.js";
+import { SPACE_BODIES } from "./space-catalog.js";
+
+/** @type {Record<string, { items: import("./place.js").Place[], label: string, hint: string, main: string }>} */
+export const DATASETS = {
+  landmarks: {
+    items: LANDMARKS,
+    label: "🏛️ Landmarks",
+    hint: "",
+    main: "landmarks",
+  },
+  wonders: {
+    items: WONDERS,
+    label: "🌋 Natural wonders",
+    hint: "Nature’s wow places",
+    main: "wonders",
+  },
+  continents: {
+    items: CONTINENTS,
+    label: "🌍 Continents",
+    hint: "Earth’s giant pieces",
+    main: "continents",
+  },
+  countries: {
+    items: COUNTRIES,
+    label: "🚩 Countries",
+    hint: "Countries around the world",
+    main: "countries",
+  },
+  space: {
+    items: SPACE_BODIES,
+    label: "🚀 Space",
+    hint: "Meet the planets",
+    main: "space",
+  },
+};
+
 export function placesForContinent(continentId, landmarks, wonders) {
   const filterPack = (all) => {
     if (continentId === "northamerica") {
@@ -44,14 +81,14 @@ function staggerPinPlaces(items) {
 
 /**
  * @param {{
- *   datasets: Record<string, { items: object[], label: string, hint: string, main: string }>,
+ *   datasets?: Record<string, { items: import("./place.js").Place[], label: string, hint: string, main: string }>,
  *   els: Record<string, object|null>,
  *   getGlobe: () => object|null,
  *   globeSetPlaces?: (items: object[]) => void,
  *   card: { close: () => void },
  *   stopFind: () => void,
- *   spaceEnter: () => void,
- *   spaceLeave: () => Promise<void>|void,
+ *   spaceEnter: (opts?: { overview?: boolean, fluid?: boolean }) => void,
+ *   spaceLeave: (opts?: { quiet?: boolean }) => Promise<void>|void,
  *   diveMs: (fromAlt?: number, toAlt?: number) => number,
  *   setAmbient: () => void,
  *   playPop: () => void,
@@ -62,7 +99,7 @@ function staggerPinPlaces(items) {
  * }} opts
  */
 export function createAdventure(opts) {
-  const datasets = opts.datasets;
+  const datasets = opts.datasets || DATASETS;
   const els = opts.els;
   let activeTab = "landmarks";
   let places = datasets.landmarks.items;
@@ -160,7 +197,11 @@ export function createAdventure(opts) {
     opts.playPop();
   }
 
-  function switchTab(tab) {
+  /**
+   * @param {string} tab
+   * @param {{ fluid?: boolean, quiet?: boolean, overview?: boolean }} [tabOpts]
+   */
+  function switchTab(tab, tabOpts) {
     if (!datasets[tab] || (tab === activeTab && !(tab === "landmarks" && landmarkFilter))) return;
     opts.hideStickers();
     opts.stopFind();
@@ -209,9 +250,27 @@ export function createAdventure(opts) {
     }
 
     if (enteringSpace) {
-      opts.spaceEnter();
+      const fluid = !!(tabOpts && tabOpts.fluid);
+      opts.spaceEnter({
+        fluid,
+        overview: tabOpts && tabOpts.overview != null ? !!tabOpts.overview : !fluid,
+      });
     } else if (leavingSpace) {
-      Promise.resolve(opts.spaceLeave()).then(showEarthPins);
+      Promise.resolve(opts.spaceLeave({ quiet: !!(tabOpts && tabOpts.quiet) })).then(() => {
+        const globe = getGlobe();
+        if (!globe || activeTab === "space") return;
+        const pinData =
+          activeTab === "countries" || activeTab === "continents" ? staggerPinPlaces(places) : places;
+        setGlobePlaces(pinData);
+        // Fluid zoom-back: keep camera. Tab leave after overview may still restore pins only.
+        if (!(tabOpts && tabOpts.quiet)) {
+          const v = views[activeTab] || views.landmarks;
+          const from = (globe.pointOfView() || {}).altitude;
+          globe.pointOfView(v[0], v[1], v[2], opts.diveMs(from, v[2]));
+        }
+        globe.setAutoRotate(true);
+        opts.setAmbient();
+      });
     } else {
       showEarthPins();
     }

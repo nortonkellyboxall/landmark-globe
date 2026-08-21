@@ -1,4 +1,4 @@
-import { shouldEnterSpace } from "./orbit-look.js";
+import { shouldEnterSpace, shouldLeaveSpace } from "./orbit-look.js";
 
 /**
  * Ball diameter for the Space size chart.
@@ -26,10 +26,19 @@ export function createSpaceMode(opts) {
   let solar3dLoading = null;
   const loadSolar3D = opts.loadSolar3D || (() => import("./solar3d.js"));
 
+  /** True once the camera has been past handoff in this Space visit (enables zoom-back). */
+  let wasDeepSpace = false;
+
   function armPinch() { spacePinchArmed = true; }
   function shouldHandoff(alt) {
     return shouldEnterSpace(alt, spacePinchArmed)
       && opts.getTab() !== "space"
+      && !spaceTransitioning;
+  }
+  function shouldReturn(alt) {
+    if (shouldEnterSpace(alt, true)) wasDeepSpace = true;
+    return wasDeepSpace
+      && shouldLeaveSpace(alt, opts.getTab() === "space")
       && !spaceTransitioning;
   }
 
@@ -132,7 +141,8 @@ export function createSpaceMode(opts) {
   }
 
   async function ensure(ensureOpts) {
-    if (!els.ss3d) return;
+    const host = els.globeViz || els.ss3d;
+    if (!host) return;
     const introZoom = !!(ensureOpts && ensureOpts.introZoom);
     try {
       await loadSolar3DModule();
@@ -141,22 +151,54 @@ export function createSpaceMode(opts) {
       return;
     }
     if (!Solar3D) return;
-    if (els.ss3d.dataset.ready === "1") {
+    if (host.dataset.ready === "1" || (typeof Solar3D.isReady === "function" && Solar3D.isReady())) {
+      host.dataset.ready = "1";
       Solar3D.resize();
+      syncOrbitModeUi();
       return;
     }
-    Solar3D.init(els.ss3d, {
+    Solar3D.init(host, {
       introZoom,
-      startActive: false,
+      startActive: true,
+      viewMode: "earth",
       onSelect: (id) => {
         const obj = (opts.getSpaceItems() || []).find((p) => p.id === id);
         if (!obj) return;
         opts.onSelect(id);
-        const rect = els.ss3d.getBoundingClientRect();
+        const rect = host.getBoundingClientRect();
         opts.sparkAt(rect.left + rect.width / 2, rect.top + rect.height * 0.4);
       },
     });
-    els.ss3d.dataset.ready = "1";
+    host.dataset.ready = "1";
+    syncOrbitModeUi();
+  }
+
+  function syncOrbitModeUi() {
+    if (!els.ssOrbitMode || !Solar3D || typeof Solar3D.getOrbitMode !== "function") return;
+    const mode = Solar3D.getOrbitMode();
+    const isReal = mode === "real";
+    els.ssOrbitMode.setAttribute("aria-pressed", String(isReal));
+    els.ssOrbitMode.textContent = isReal ? "Real orbits" : "√ relative orbits";
+    els.ssOrbitMode.title = isReal
+      ? "Showing real AU spacing — tap for playful √ relative orbits"
+      : "Showing √ relative orbits — tap for real AU spacing";
+  }
+
+  function setOrbitMode(mode) {
+    return loadSolar3DModule().then((mod) => {
+      if (!mod || typeof mod.setOrbitMode !== "function") return "real";
+      const next = mod.setOrbitMode(mode);
+      syncOrbitModeUi();
+      return next;
+    });
+  }
+
+  function toggleOrbitMode() {
+    const cur =
+      Solar3D && typeof Solar3D.getOrbitMode === "function"
+        ? Solar3D.getOrbitMode()
+        : "real";
+    return setOrbitMode(cur === "real" ? "sqrt" : "real");
   }
 
   function highlight(id) {
@@ -167,8 +209,10 @@ export function createSpaceMode(opts) {
     if (Solar3D) Solar3D.resize();
   }
 
-  function enter() {
+  function enter(enterOpts = {}) {
     if (spaceTransitioning) return;
+    const overview = !!enterOpts.overview;
+    const quiet = !overview;
     opts.stopFind();
     spaceTransitioning = true;
     spacePinchArmed = false;
@@ -177,50 +221,50 @@ export function createSpaceMode(opts) {
     if (els.nightBtn) els.nightBtn.style.display = "none";
     if (els.autoNightBtn) els.autoNightBtn.style.display = "none";
     if (els.sunBtn) els.sunBtn.hidden = true;
-    opts.playFlyWhoosh();
+    if (!quiet) opts.playFlyWhoosh();
     opts.setAmbient();
     setSizesOpen(true);
 
     const reduce = opts.matchReduce();
     const globe = opts.getGlobe();
-    const pov = globe ? globe.pointOfView() || {} : {};
-    const outAlt = 12.6;
-    const ms = reduce ? 180 : Math.max(1600, opts.diveMs(pov.altitude, outAlt));
-
     if (globe) {
       globe.setAutoRotate(false);
       globe.setPlaces([]);
       globe.setWeather();
-      globe.pointOfView(pov.lat || 12, pov.lng || 20, outAlt, ms);
     }
 
     const primed = ensure({ introZoom: false }).catch(() => {});
 
-    setTimeout(() => {
-      primed.then(() => {
+    primed
+      .then(() => {
         if (Solar3D) {
           Solar3D.resize();
-          if (Solar3D.frameEarth) Solar3D.frameEarth();
-          Solar3D.setActive(true);
+          if (typeof Solar3D.setViewMode !== "function") return;
+          if (overview) {
+            return Solar3D.setViewMode("solar", { animate: !reduce, reduce });
+          }
+          // Pinch zoom: keep camera, open range into the system.
+          return Solar3D.setViewMode("solar", { fluid: true });
         }
-        if (globe) globe.setActive(false);
+      })
+      .then(() => {
         els.solarSystem.classList.add("show");
-        els.globeViz.classList.add("hidden-view");
         if (els.globeShadow) els.globeShadow.classList.add("hidden-view");
-        if (Solar3D && Solar3D.playIntroZoom && !reduce) Solar3D.playIntroZoom();
         spaceTransitioning = false;
       });
-    }, reduce ? 0 : Math.round(ms * 0.7));
   }
 
-  function leave() {
+  function leave(leaveOpts = {}) {
     spaceTransitioning = true;
     spacePinchArmed = false;
-    opts.playFlyWhoosh();
-    const reduce = opts.matchReduce();
-    const inbound = reduce || !Solar3D || !Solar3D.zoomToEarth
+    wasDeepSpace = false;
+    const quiet = !!(leaveOpts && leaveOpts.quiet);
+    if (!quiet) opts.playFlyWhoosh();
+    const inbound = !Solar3D
       ? Promise.resolve()
-      : Solar3D.zoomToEarth(1500);
+      : typeof Solar3D.setViewMode === "function"
+        ? Solar3D.setViewMode("earth", { fluid: true })
+        : Promise.resolve();
 
     return inbound.then(() => {
       document.body.classList.remove("space-mode");
@@ -228,14 +272,7 @@ export function createSpaceMode(opts) {
       if (els.sunBtn) els.sunBtn.hidden = false;
       if (els.autoNightBtn) els.autoNightBtn.style.display = "";
       const globe = opts.getGlobe();
-      if (Solar3D) Solar3D.setActive(false);
-      if (globe) {
-        globe.setActive(true);
-        globe.setNight(opts.getNightMode());
-        const pov = globe.pointOfView() || {};
-        globe.pointOfView(pov.lat || 18, pov.lng || -18, 11, 0);
-      }
-      els.globeViz.classList.remove("hidden-view");
+      if (globe) globe.setNight(opts.getNightMode());
       if (els.globeShadow) els.globeShadow.classList.remove("hidden-view");
       els.solarSystem.classList.remove("show");
       setTimeout(() => {
@@ -244,7 +281,7 @@ export function createSpaceMode(opts) {
         }
         spaceTransitioning = false;
         spacePinchArmed = true;
-      }, 800);
+      }, 400);
     });
   }
 
@@ -253,6 +290,7 @@ export function createSpaceMode(opts) {
     isPinchArmed: () => spacePinchArmed,
     armPinch,
     shouldHandoff,
+    shouldReturn,
     planetDisplayPx,
     enter,
     leave,
@@ -263,5 +301,7 @@ export function createSpaceMode(opts) {
     preload,
     ensure,
     resize,
+    setOrbitMode,
+    toggleOrbitMode,
   };
 }

@@ -24,19 +24,6 @@ const { loadNpz } = await import(
   pathToFileURL(join(root, "scripts/node_modules/kitten-tts-js/src/npz-loader.js")).href
 );
 
-function loadWindowArray(file, ident) {
-  const code = readFileSync(join(root, file), "utf8");
-  const window = {};
-  // Content packs assign window.X = [...]
-  Function("window", code)(window);
-  return window[ident] || [];
-}
-
-async function loadSpaceBodies() {
-  const mod = await import(pathToFileURL(join(root, "space-catalog.js")).href);
-  return mod.SPACE_BODIES || [];
-}
-
 function cardText(p) {
   return [`${p.name}.`, p.place, p.story, p.wow ? `Wow fact. ${p.wow}` : ""]
     .map((c) => String(c || "").trim())
@@ -93,13 +80,8 @@ async function bakeOne(tts, id, kind, text) {
 
 mkdirSync(clipsDir, { recursive: true });
 
-const places = [
-  ...loadWindowArray("landmarks.js", "LANDMARKS"),
-  ...loadWindowArray("wonders.js", "WONDERS"),
-  ...loadWindowArray("geography.js", "CONTINENTS"),
-  ...loadWindowArray("geography.js", "COUNTRIES"),
-  ...(await loadSpaceBodies()),
-];
+const { allPlaces } = await import(pathToFileURL(join(root, "place.js")).href);
+const places = allPlaces();
 
 const byId = new Map();
 for (const p of places) {

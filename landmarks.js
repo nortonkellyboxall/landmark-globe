@@ -1,4 +1,4 @@
-window.LANDMARKS = [
+export const LANDMARKS = [
   {
     id: "eiffel",
     name: "Eiffel Tower",
