@@ -2,7 +2,7 @@ import { SPACE_BODIES, diameterKm as spaceDiameterKm } from "./space-catalog.js"
 import { LANDMARKS, WONDERS, placeById } from "./place.js";
 import { createCardMedia } from "./card-media.js";
 import { createGlobe } from "./globe-app.js";
-import { diveMs, firefliesShouldTick, heatHint, isDeepSpace, SPACE_HANDOFF_ALT } from "./orbit-look.js";
+import { diveMs, firefliesShouldTick, heatHint, isDeepSpace, SPACE_HANDOFF_ALT, peekAltitudeForTab } from "./orbit-look.js";
 import { weatherForPlace } from "./place-weather.js";
 import { ambientKind, createSound } from "./sound.js";
 import { createAdventure, placesForContinent as continentPlaces } from "./adventure.js";
@@ -19,6 +19,7 @@ let globe = null;
 let nightMode = false;
 let autoNight = true;
 let globeReady = false;
+let peekDiveGen = 0;
 const sound = createSound();
 const progress = createFindProgress();
 
@@ -401,11 +402,15 @@ function openLandmark(id, sourceEl) {
     setTimeout(() => card.openPlaceCard(lm), 220);
   } else {
     const tab = adventure.getTab();
-    const alt = tab === "countries" ? 1.35 : tab === "continents" ? 1.9 : 1.55;
+    const alt = peekAltitudeForTab(tab);
     const from = (globe.pointOfView() || {}).altitude;
-    const ms = diveMs(from, alt);
-    globe.pointOfView(lm.lat, lm.lng, alt, ms);
-    setTimeout(() => card.openPlaceCard(lm), Math.min(ms - 180, Math.max(420, ms * 0.62)));
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const ms = reduce ? 0 : diveMs(from, alt);
+    const gen = ++peekDiveGen;
+    Promise.resolve(globe.pointOfView(lm.lat, lm.lng, alt, ms)).then(() => {
+      if (gen !== peekDiveGen) return;
+      card.openPlaceCard(lm);
+    });
   }
 
   adventure.scrollStripToId(id);

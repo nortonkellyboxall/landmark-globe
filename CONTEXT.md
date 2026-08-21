@@ -4,7 +4,7 @@
 
 - **Place** — A kid-facing record shown on the globe or in space (landmark, wonder, continent, country, or space body). Shape is the JSDoc typedef in `place.js`: `id`, `name`, optional `place`, `story`, `wow`, `photos`, `lat`/`lng`, `video`, `anthem`, `emoji`, `color`, `kind`, `continent`. Lookup: `placeById` / `allPlaces`. Space bodies may carry extra SpaceCatalog fields (`au`, `visual`, …); views still must not own body data.
 - **SpaceCatalog** — Single source of truth for solar-system bodies: kid copy plus AU, orbital years, diameters, and 3D visual params. Views only render; they do not own body data.
-- **Globe** — Earth look over the shared Solar3D world: pins, night mode, camera, clouds/bump/aurora, Find radar, place weather, sun-drag hours. Callers use a small interface; they never touch Three.js materials/scene directly. Space handoff is a camera view-mode change, not a second WebGL context.
+- **Globe** — Earth look over the shared Solar3D world: pins, night mode, camera, clouds/bump/aurora, Find radar, place weather, sun-drag hours. Earth pin taps **peek-dive** closer then open the Place card. Callers use a small interface; they never touch Three.js materials/scene directly. Space handoff is a camera view-mode change, not a second WebGL context.
 - **CardMedia** — Place detail card: gallery, video/anthem, speech. Selection/fly-to stays outside.
 - **Sound** — Ambient audio, whoosh, mute. WebAudio details stay inside the module.
 - **Content pack** — Shallow ES-module array (`LANDMARKS`, `WONDERS`, `CONTINENTS`, `COUNTRIES`). Re-exported from `place.js`. Not deepened.

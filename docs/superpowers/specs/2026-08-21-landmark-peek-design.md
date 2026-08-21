@@ -1,7 +1,7 @@
 # Landmark peek dive — design
 
 **Date:** 2026-08-21  
-**Status:** draft for review  
+**Status:** approved — implementation plan at `docs/superpowers/plans/2026-08-21-landmark-peek.md`  
 **Branch target:** feature work off `main`
 
 ## Goal

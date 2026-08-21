@@ -202,8 +202,7 @@ export function createGlobe(el, opts = {}) {
   function pointOfView(lat, lng, altitude, ms) {
     if (arguments.length === 0) return Solar3D.getEarthPov();
     if (ms > 400) pauseAutoRotateTemporarily(Math.max(4000, ms + 500));
-    Solar3D.setEarthLook(lat, lng, altitude, ms || 0);
-    return Solar3D.getEarthPov();
+    return Solar3D.setEarthLook(lat, lng, altitude, ms || 0);
   }
 
   function punch() {

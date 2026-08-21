@@ -182,3 +182,10 @@ export function diveMs(fromAlt, toAlt) {
   const to = Number.isFinite(toAlt) ? toAlt : 2;
   return Math.round(Math.min(3400, 720 + Math.abs(from - to) * 420));
 }
+
+/** Closer Earth fly-to altitude for landmark peek dives. */
+export function peekAltitudeForTab(tab) {
+  if (tab === "countries") return 0.95;
+  if (tab === "continents") return 1.25;
+  return 1.05;
+}

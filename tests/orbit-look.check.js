@@ -12,6 +12,7 @@ import {
   shouldEnterSpace,
   shouldLeaveSpace,
   sunTargetBlend,
+  peekAltitudeForTab,
   subsolarPoint,
   latLngDirection,
   wrapLng,
@@ -59,6 +60,13 @@ assert.equal(sunTargetBlend(SUN_BLEND_START_ALT - 1), 0);
 assert.equal(sunTargetBlend(SUN_BLEND_END_ALT), 1);
 assert.equal(sunTargetBlend(SUN_BLEND_END_ALT + 10), 1);
 assert.ok(Math.abs(sunTargetBlend((SUN_BLEND_START_ALT + SUN_BLEND_END_ALT) / 2) - 0.5) < 1e-9);
+
+assert.equal(peekAltitudeForTab("countries"), 0.95);
+assert.equal(peekAltitudeForTab("continents"), 1.25);
+assert.equal(peekAltitudeForTab("landmarks"), 1.05);
+assert.equal(peekAltitudeForTab("wonders"), 1.05);
+assert.equal(peekAltitudeForTab("space"), 1.05);
+assert.equal(peekAltitudeForTab("nope"), 1.05);
 
 assert.equal(wrapLng(190), -170);
 assert.equal(wrapLng(-190), 170);
