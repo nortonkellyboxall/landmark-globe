@@ -96,6 +96,10 @@ const _earthDelta = new THREE.Vector3();
 const _lookDir = new THREE.Vector3();
 const _sunOrigin = new THREE.Vector3(0, 0, 0);
 const _blendTarget = new THREE.Vector3();
+const _earthDir = new THREE.Vector3();
+const _earthLookLocal = new THREE.Vector3();
+const _earthLookPos = new THREE.Vector3();
+const _earthLookTarget = new THREE.Vector3();
 
 function hexToRgb(hex) {
   return {
@@ -755,6 +759,29 @@ function bodyWorldPos(id) {
   return p;
 }
 
+/** Unit direction in world space for an Earth lat/lng (respects mesh spin + root tilt). */
+function earthLatLngWorldDir(lat, lng, out = _earthDir) {
+  const entry = bodies.get("earth");
+  const [dx, dy, dz] = latLngDirection(lat, lng);
+  out.set(dx, dy, dz);
+  if (entry && entry.mesh) {
+    if (rootGroup) rootGroup.updateWorldMatrix(true, true);
+    out.transformDirection(entry.mesh.matrixWorld);
+  }
+  return out.normalize();
+}
+
+function earthLookPose(lat, lng, altitude) {
+  const R = earthRadius();
+  const alt = Number.isFinite(altitude) ? altitude : 2.2;
+  const dist = distanceFromPovAltitude(alt, R);
+  const earth = bodyWorldPos("earth");
+  const dir = earthLatLngWorldDir(lat, lng);
+  _earthLookPos.copy(earth).addScaledVector(dir, dist);
+  _earthLookTarget.copy(earth);
+  return { pos: _earthLookPos, target: _earthLookTarget };
+}
+
 function tweenCamera(toPos, toTarget, ms) {
   return new Promise((resolve) => {
     if (!camera || !controls) {
@@ -778,6 +805,42 @@ function tweenCamera(toPos, toTarget, ms) {
       controls.update();
       if (t < 1) requestAnimationFrame(step);
       else resolve();
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+/**
+ * Tween camera toward a moving pose (recomputed each frame — Earth spin-safe).
+ * @param {() => { pos: THREE.Vector3, target: THREE.Vector3 }} getPose
+ */
+function tweenCameraToPose(getPose, ms) {
+  return new Promise((resolve) => {
+    if (!camera || !controls) {
+      resolve();
+      return;
+    }
+    const id = ++camTween;
+    const from = camera.position.clone();
+    const fromTarget = controls.target.clone();
+    const start = performance.now();
+    const dur = Math.max(1, ms);
+    function step(now) {
+      if (id !== camTween || !camera || !controls) {
+        resolve();
+        return;
+      }
+      const t = Math.min(1, (now - start) / dur);
+      const e = 1 - Math.pow(1 - t, 3);
+      const { pos, target } = getPose();
+      camera.position.lerpVectors(from, pos, e);
+      controls.target.lerpVectors(fromTarget, target, e);
+      controls.update();
+      if (t < 1) requestAnimationFrame(step);
+      else {
+        lastEarthPos = bodyWorldPos("earth").clone();
+        resolve();
+      }
     }
     requestAnimationFrame(step);
   });
@@ -891,14 +954,14 @@ function setViewMode(mode, opts) {
 }
 
 function getEarthPov() {
-  if (!camera || !controls) return { lat: 16, lng: -22, altitude: 2.2 };
-  const earth = bodyWorldPos("earth");
-  _lookDir.subVectors(camera.position, earth);
-  const dist = _lookDir.length();
+  const entry = bodies.get("earth");
+  if (!camera || !entry || !entry.mesh) return { lat: 16, lng: -22, altitude: 2.2 };
+  if (rootGroup) rootGroup.updateWorldMatrix(true, true);
+  _earthLookLocal.copy(camera.position);
+  entry.mesh.worldToLocal(_earthLookLocal);
+  const dist = _earthLookLocal.length();
   if (dist < 1e-6) return { lat: 16, lng: -22, altitude: 2.2 };
-  _lookDir.normalize();
-  // Camera looks toward Earth; lat/lng is the surface point under the camera
-  const { lat, lng } = directionToLatLng(_lookDir.x, _lookDir.y, _lookDir.z);
+  const { lat, lng } = directionToLatLng(_earthLookLocal.x, _earthLookLocal.y, _earthLookLocal.z);
   return {
     lat,
     lng,
@@ -908,27 +971,24 @@ function getEarthPov() {
 
 function setEarthLook(lat, lng, altitude, ms) {
   if (!camera || !controls) return Promise.resolve();
-  const R = earthRadius();
-  const alt = Number.isFinite(altitude) ? altitude : 2.2;
-  const dist = distanceFromPovAltitude(alt, R);
-  const earth = bodyWorldPos("earth");
-  const [dx, dy, dz] = latLngDirection(lat, lng);
-  const pos = earth.clone().add(new THREE.Vector3(dx, dy, dz).multiplyScalar(dist));
   const dur = Number.isFinite(ms) ? ms : 0;
   applyEarthControls();
   viewMode = "earth";
-  lastEarthPos = earth.clone();
-  if (dur <= 0) {
+  followEarth = false;
+  const snap = () => {
+    const { pos, target } = earthLookPose(lat, lng, altitude);
     camera.position.copy(pos);
-    controls.target.copy(earth);
+    controls.target.copy(target);
+    lastEarthPos = bodyWorldPos("earth").clone();
     controls.autoRotate = false;
     controls.update();
+  };
+  if (dur <= 0) {
+    snap();
     return Promise.resolve();
   }
   controls.autoRotate = false;
-  return tweenCamera(pos, earth, dur).then(() => {
-    lastEarthPos = bodyWorldPos("earth").clone();
-  });
+  return tweenCameraToPose(() => earthLookPose(lat, lng, altitude), dur);
 }
 
 /**
