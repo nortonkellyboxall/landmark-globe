@@ -37,6 +37,7 @@ const els = {
   findPhoto: Object.assign(fakeEl(), { src: "", alt: "", removeAttribute(n) { delete this[n]; } }),
   findAgain: fakeEl(),
   findStars: Object.assign(fakeEl(), { innerHTML: "" }),
+  findTally: fakeEl(),
   stickersBtn: fakeEl(),
   stickerCount: fakeEl(),
   stickerSheet: fakeEl(),
@@ -97,12 +98,14 @@ game.start();
 assert.equal(game.isActive(), true);
 assert.equal(game.getTarget().id, "a"); // rand() => 0 picks first fresh
 assert.equal(els.findPrompt.hidden, false);
+assert.equal(els.findTally.textContent, "0 / 2");
 assert.equal(game.handlePinTap("b").correct, false);
 assert.equal(earthPin.classList._has("pin-wrong"), true);
 assert.equal(game.isActive(), true);
 const hit = game.handlePinTap("a");
 assert.equal(hit.correct, true);
 assert.equal(hit.skipFly, true);
+assert.equal(els.findTally.textContent, "1 / 2");
 assert.equal(game.isActive(), false);
 assert.equal(game.getTarget(), null);
 game.speakTarget();

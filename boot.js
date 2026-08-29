@@ -94,6 +94,7 @@ const els = {
   findExit: document.getElementById("findExit"),
   findCue: document.getElementById("findCue"),
   findStars: document.getElementById("findStars"),
+  findTally: document.getElementById("findTally"),
   findEmoji: document.getElementById("findEmoji"),
   findPhoto: document.getElementById("findPhoto"),
   findHear: document.getElementById("findHear"),

@@ -55,6 +55,12 @@ export function createFindProgress(opts = {}) {
     return { isNew, streak, foundCount: found.size };
   }
 
+  function foundInPool(pool) {
+    const ids = [...new Set((pool || []).filter((p) => p && p.id).map((p) => p.id))];
+    const n = ids.reduce((count, id) => count + (found.has(id) ? 1 : 0), 0);
+    return { found: n, total: ids.length, complete: ids.length > 0 && n === ids.length };
+  }
+
   return {
     isFound: (id) => found.has(id),
     foundIds: () => [...found],
@@ -63,6 +69,7 @@ export function createFindProgress(opts = {}) {
     starsShown: () => Math.min(streak, STAR_CAP),
     hotStreak: () => streak >= STAR_CAP,
     recordFind,
+    foundInPool,
     resetSession: () => {
       streak = 0;
     },

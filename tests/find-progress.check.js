@@ -74,4 +74,15 @@ const b = createFindProgress({ storage: persistStore });
 assert.equal(b.isFound("uluru"), true);
 assert.equal(b.streak(), 0);
 
+const tally = createFindProgress({ storage: memoryStorage() });
+tally.recordFind("eiffel");
+tally.recordFind("fuji");
+assert.deepEqual(tally.foundInPool(pool), { found: 2, total: 3, complete: false });
+tally.recordFind("uluru");
+assert.deepEqual(tally.foundInPool(pool), { found: 3, total: 3, complete: true });
+assert.deepEqual(tally.foundInPool([]), { found: 0, total: 0, complete: false });
+const outsider = createFindProgress({ storage: memoryStorage() });
+outsider.recordFind("iss");
+assert.deepEqual(outsider.foundInPool(pool), { found: 0, total: 3, complete: false });
+
 console.log("find-progress.check.js OK");

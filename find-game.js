@@ -52,6 +52,7 @@ export function createFindGame(opts) {
   let lastHeat = "";
   let resumeAfterCard = false;
   let lastPrompted = null;
+  let currentPool = [];
 
   function syncFindStars() {
     if (!els.findStars) return;
@@ -74,6 +75,13 @@ export function createFindGame(opts) {
     const n = progress.foundCount();
     els.stickersBtn.hidden = n === 0;
     if (els.stickerCount) els.stickerCount.textContent = n > 99 ? "★" : String(n);
+  }
+
+  function syncTally() {
+    if (!els.findTally) return;
+    const tally = progress.foundInPool(currentPool);
+    els.findTally.hidden = tally.total === 0;
+    els.findTally.textContent = tally.found + " / " + tally.total;
   }
 
   function syncChrome() {
@@ -172,6 +180,7 @@ export function createFindGame(opts) {
     if (els.findEmoji) els.findEmoji.textContent = target.emoji || "📍";
     if (els.findAgain) els.findAgain.hidden = true;
     syncFindStars();
+    syncTally();
     lastHeat = "";
     opts.setLunaMood("hunt", "🔎");
     if (els.findPhoto) {
@@ -187,10 +196,10 @@ export function createFindGame(opts) {
     }
   }
 
-  function markFindFound() {
+  function markFindFound(complete) {
     if (!els.findPrompt) return;
     els.findPrompt.classList.add("found");
-    if (els.findCue) els.findCue.textContent = "You found it!";
+    if (els.findCue) els.findCue.textContent = complete ? "You found them all!" : "You found it!";
     if (els.findAgain) els.findAgain.hidden = false;
     opts.setLunaMood("cheer", "🎉");
   }
@@ -235,7 +244,8 @@ export function createFindGame(opts) {
       stampFound(found.id);
       syncFindStars();
       syncStickersBtn();
-      markFindFound();
+      syncTally();
+      markFindFound(progress.foundInPool(currentPool).complete);
       resumeAfterCard = true;
       opts.flashFound();
       const globe = opts.getGlobe();
@@ -261,11 +271,11 @@ export function createFindGame(opts) {
   function start() {
     resumeAfterCard = false;
     hideStickers();
-    const pool = findPool(opts.getTab(), opts.getPlaces());
-    if (pool.length < 2) return;
+    currentPool = findPool(opts.getTab(), opts.getPlaces());
+    if (currentPool.length < 2) return;
     if (els.card && els.card.classList.contains("open")) opts.card.close();
     quiz.cancel();
-    const round = quiz.start(pool, {
+    const round = quiz.start(currentPool, {
       pickTarget: (list) => progress.pickTarget(list),
     });
     if (!round) return;

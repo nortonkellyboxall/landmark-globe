@@ -1487,6 +1487,13 @@ body.find-mode .horizon {
   justify-content: center;
 }
 
+.find-tally {
+  font-weight: 800;
+  font-size: 0.72rem;
+  color: var(--sky-deep);
+  margin: 0;
+}
+
 .find-star {
   font-size: 0.85rem;
   line-height: 1;
