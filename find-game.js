@@ -43,6 +43,7 @@ function makeEl(tag) {
  *   shootingStar: () => void,
  *   flashFound: () => void,
  *   onOpenPlace: (id: string) => void,
+ *   highlightTarget?: (id: string|null) => void,
  * }} opts
  */
 export function createFindGame(opts) {
@@ -132,6 +133,18 @@ export function createFindGame(opts) {
     }
   }
 
+  function cueSpaceTarget(id) {
+    queryAll(".ss-size-item.find-target").forEach((el) => {
+      el.classList.remove("find-target");
+    });
+    if (id) {
+      queryAll(`.ss-size-item[data-id="${id}"]`).forEach((el) => {
+        el.classList.add("find-target");
+      });
+    }
+    if (typeof opts.highlightTarget === "function") opts.highlightTarget(id || null);
+  }
+
   function hideFindPrompt() {
     if (!els.findPrompt) return;
     els.findPrompt.hidden = true;
@@ -142,6 +155,7 @@ export function createFindGame(opts) {
     if (els.findCue) els.findCue.textContent = "Find this!";
     lastPrompted = null;
     lastHeat = "";
+    cueSpaceTarget(null);
     opts.setLunaMood("idle");
     const globe = opts.getGlobe();
     if (globe) globe.lockRadar();
@@ -215,6 +229,7 @@ export function createFindGame(opts) {
       showFindPrompt(target);
     },
     onCorrect(found) {
+      cueSpaceTarget(null);
       opts.playFanfare();
       progress.recordFind(found.id);
       stampFound(found.id);
@@ -254,6 +269,7 @@ export function createFindGame(opts) {
       pickTarget: (list) => progress.pickTarget(list),
     });
     if (!round) return;
+    if (opts.getTab() === "space" && round.target) cueSpaceTarget(round.target.id);
     opts.playPop();
     syncFindStars();
     opts.shootingStar();

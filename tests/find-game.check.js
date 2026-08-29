@@ -47,6 +47,7 @@ const els = {
 const bodyClass = fakeClassList();
 const earthPin = fakeEl({ offsetWidth: 0 });
 const marsSizeItem = fakeEl({ offsetWidth: 0 });
+const sunSizeItem = fakeEl({ offsetWidth: 0 });
 const origBody = globalThis.document;
 globalThis.document = {
   body: { classList: bodyClass },
@@ -54,6 +55,11 @@ globalThis.document = {
     const matches = [];
     if (selector.includes('.pin[data-id="b"]')) matches.push(earthPin);
     if (selector.includes('.ss-size-item[data-id="mars"]')) matches.push(marsSizeItem);
+    if (selector.includes('.ss-size-item[data-id="sun"]')) matches.push(sunSizeItem);
+    if (selector.includes(".ss-size-item.find-target")) {
+      if (marsSizeItem.classList.contains("find-target")) matches.push(marsSizeItem);
+      if (sunSizeItem.classList.contains("find-target")) matches.push(sunSizeItem);
+    }
     return matches;
   },
 };
@@ -83,6 +89,7 @@ const game = createFindGame({
   shootingStar() {},
   flashFound() {},
   onOpenPlace() {},
+  highlightTarget() {},
 });
 
 assert.equal(game.isActive(), false);
@@ -118,6 +125,7 @@ const spacePlaces = [
   { id: "iss", kind: "station" },
   { id: "mars", kind: "planet" },
 ];
+const spaceHighlights = [];
 const spaceOpts = {
   els,
   getTab: () => "space",
@@ -140,13 +148,21 @@ const spaceOpts = {
   shootingStar() {},
   flashFound() {},
   onOpenPlace() {},
+  highlightTarget(id) { spaceHighlights.push(id); },
 };
 const spaceGame = createFindGame(spaceOpts);
 spaceGame.start();
 assert.ok(spaceGame.getTarget());
 assert.notEqual(spaceGame.getTarget().id, "iss");
+assert.equal(spaceGame.getTarget().id, "sun"); // rand() => 0, ISS filtered
+assert.equal(spaceHighlights[spaceHighlights.length - 1], "sun");
+assert.equal(sunSizeItem.classList._has("find-target"), true);
 assert.equal(spaceGame.handlePinTap("mars").correct, false);
 assert.equal(marsSizeItem.classList._has("pin-wrong"), true);
+
+spaceGame.stop();
+assert.equal(spaceHighlights[spaceHighlights.length - 1], null);
+assert.equal(sunSizeItem.classList._has("find-target"), false);
 
 globalThis.document = origBody;
 console.log("find-game.check.js OK");

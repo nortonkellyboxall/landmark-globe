@@ -300,6 +300,7 @@ const card = createCardMedia(els, {
   },
 });
 
+let spaceMode;
 const findGame = createFindGame({
   els,
   getTab: () => adventure.getTab(),
@@ -322,9 +323,10 @@ const findGame = createFindGame({
   shootingStar,
   flashFound,
   onOpenPlace: (id) => openLandmark(id),
+  highlightTarget: (id) => { if (spaceMode) spaceMode.highlight(id); },
 });
 
-const spaceMode = createSpaceMode({
+spaceMode = createSpaceMode({
   els,
   getGlobe: () => globe,
   getTab: () => adventure.getTab(),

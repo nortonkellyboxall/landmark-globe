@@ -1167,11 +1167,13 @@ body.find-mode .horizon {
 }
 
 .ss-size-item:hover .ss-size-ball,
-.ss-size-item.selected .ss-size-ball {
+.ss-size-item.selected .ss-size-ball,
+.ss-size-item.find-target .ss-size-ball {
   transform: scale(1.08);
 }
 
-.ss-size-item.selected .ss-size-ball {
+.ss-size-item.selected .ss-size-ball,
+.ss-size-item.find-target .ss-size-ball {
   box-shadow:
     0 0 0 3px #fff8ef,
     0 6px 16px rgba(0, 0, 0, 0.4);
