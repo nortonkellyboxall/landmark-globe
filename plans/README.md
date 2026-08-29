@@ -38,11 +38,11 @@ Source of task text: `docs/superpowers/plans/2026-08-29-improve-wave-2.md`. Exec
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 008 | One-command verify + CI | P1 | S | — | TODO |
-| 009 | Bake Luna clips + existence check | P1 | S | 008 | TODO |
-| 010 | Ambient mute restart + stale card opens | P1 | S | 008 | TODO |
-| 011 | Space Find size-strip highlight | P1 | M | 008 | TODO |
-| 012 | Collection tally found X of Y | P2 | M | 008 | TODO |
+| 008 | One-command verify + CI | P1 | S | — | DONE |
+| 009 | Bake Luna clips + existence check | P1 | S | 008 | DONE |
+| 010 | Ambient mute restart + stale card opens | P1 | S | 008 | DONE |
+| 011 | Space Find size-strip highlight | P1 | M | 008 | DONE |
+| 012 | Collection tally found X of Y | P2 | M | 008 | DONE |
 
 ## Findings considered and rejected
 
