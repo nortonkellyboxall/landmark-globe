@@ -10,6 +10,7 @@ import { createFindGame } from "./find-game.js";
 import { createFindProgress } from "./find-progress.js";
 import { createSpaceMode } from "./space-mode.js";
 import { speakName } from "./speak.js";
+import { scheduleOpen } from "./schedule-open.js";
 
 const SPACE_SEL = ".ss-size-item.selected";
 const SPACE_SEL_BY_ID = (id) => `.ss-size-item[data-id="${id}"]`;
@@ -389,8 +390,13 @@ function openLandmark(id, sourceEl) {
     setLunaMood("hunt", lm.emoji || "🌍");
   }
 
+  const gen = ++peekDiveGen;
+  const getGen = () => peekDiveGen;
+  const wait220 = () => new Promise((r) => setTimeout(r, 220));
+  const openCard = () => card.openPlaceCard(lm);
+
   if (adventure.getTab() === "space") {
-    setTimeout(() => card.openPlaceCard(lm), 220);
+    scheduleOpen(openCard, { gen, getGen, wait: wait220 });
     adventure.scrollStripToId(id);
     return;
   }
@@ -399,17 +405,17 @@ function openLandmark(id, sourceEl) {
   globe.setAutoRotate(false);
   globe.setWeather(lm.lat, lm.lng, weatherForPlace(lm));
   if (skipFly) {
-    setTimeout(() => card.openPlaceCard(lm), 220);
+    scheduleOpen(openCard, { gen, getGen, wait: wait220 });
   } else {
     const tab = adventure.getTab();
     const alt = peekAltitudeForTab(tab);
     const from = (globe.pointOfView() || {}).altitude;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const ms = reduce ? 0 : diveMs(from, alt);
-    const gen = ++peekDiveGen;
-    Promise.resolve(globe.pointOfView(lm.lat, lm.lng, alt, ms)).then(() => {
-      if (gen !== peekDiveGen) return;
-      card.openPlaceCard(lm);
+    scheduleOpen(openCard, {
+      gen,
+      getGen,
+      wait: () => Promise.resolve(globe.pointOfView(lm.lat, lm.lng, alt, ms)),
     });
   }
 
