@@ -32,6 +32,18 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED | REJECTED
 - 006 should land **after 003** so `preload()` can warm textures without starting the Solar3D render loop (`init` must support `startActive: false` from 003).
 - 007 does not touch 3D; it can land anytime.
 
+## Wave 2 (2026-08-29, `2f386a8`) — verify, clips, mute, Space Find, collection
+
+Source of task text: `docs/superpowers/plans/2026-08-29-improve-wave-2.md`. Execute Tasks 1–5 in order on `feature/improve-wave-2`.
+
+| Plan | Title | Priority | Effort | Depends on | Status |
+|------|-------|----------|--------|------------|--------|
+| 008 | One-command verify + CI | P1 | S | — | TODO |
+| 009 | Bake Luna clips + existence check | P1 | S | 008 | TODO |
+| 010 | Ambient mute restart + stale card opens | P1 | S | 008 | TODO |
+| 011 | Space Find size-strip highlight | P1 | M | 008 | TODO |
+| 012 | Collection tally found X of Y | P2 | M | 008 | TODO |
+
 ## Findings considered and rejected
 
 - Add a bundler / code-split Three: global constraint. Vendor JS is large but settled.
