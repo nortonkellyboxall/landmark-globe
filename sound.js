@@ -5,15 +5,19 @@ export function ambientKind(tab, selectedId) {
   return "duck";
 }
 
-export function createSound() {
+export function createSound(opts = {}) {
   let soundOn = true;
   let audioCtx = null;
   let ambientNodes = null;
 
   function ensureAudio() {
     if (!audioCtx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (AC) audioCtx = new AC();
+      if (opts.createAudioContext) {
+        audioCtx = opts.createAudioContext();
+      } else {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
     }
     if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
   }
@@ -137,6 +141,7 @@ export function createSound() {
   function stopAmbient() {
     if (!ambientNodes || !audioCtx) return;
     const { master, pads } = ambientNodes;
+    ambientNodes = null;
     const t0 = audioCtx.currentTime;
     master.gain.cancelScheduledValues(t0);
     master.gain.setValueAtTime(Math.max(master.gain.value, 0.0001), t0);
@@ -151,7 +156,6 @@ export function createSound() {
       try {
         master.disconnect();
       } catch (_) {}
-      ambientNodes = null;
     }, 900);
   }
 
