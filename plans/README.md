@@ -44,6 +44,19 @@ Source of task text: `docs/superpowers/plans/2026-08-29-improve-wave-2.md`. Exec
 | 011 | Space Find size-strip highlight | P1 | M | 008 | DONE |
 | 012 | Collection tally found X of Y | P2 | M | 008 | DONE |
 
+## Wave 3 (2026-08-29) — Space race, pin budget, aurora skip, serve denylist, ISS
+
+Source of task text: `docs/superpowers/plans/2026-08-29-improve-wave-3.md`. Execute Tasks 1–6 in order on `feature/improve-wave-3` **after** wave 2 is on `main`.
+
+| Plan | Title | Priority | Effort | Depends on | Status |
+|------|-------|----------|--------|------------|--------|
+| 013 | Space enter during leave | P1 | S | — | TODO |
+| 014 | Throttle Earth pin projection | P1 | S | — | TODO |
+| 015 | Skip aurora CPU in solar view | P1 | S | — | TODO |
+| 016 | serve.py refuse private paths | P1 | S | — | TODO |
+| 017 | ISS Place + Luna clips | P1 | M | — | TODO |
+| 018 | ISS mesh on Earth | P2 | M | 017 | TODO |
+
 ## Findings considered and rejected
 
 - Add a bundler / code-split Three: global constraint. Vendor JS is large but settled.
