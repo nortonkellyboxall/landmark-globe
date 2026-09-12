@@ -3,8 +3,19 @@
 const CLIPS_BASE = new URL("./vendor/tts/clips/", import.meta.url);
 
 let speakGen = 0;
+let speechMuted = false;
 /** @type {HTMLAudioElement|null} */
 let currentAudio = null;
+
+/** Mute gate shared with Sound mute (pads + speech + card media). */
+export function setSpeechMuted(muted) {
+  speechMuted = !!muted;
+  if (speechMuted) stopSpeech();
+}
+
+export function isSpeechMuted() {
+  return speechMuted;
+}
 
 /** Stop playback. */
 export function stopSpeech() {
@@ -32,6 +43,7 @@ function clipUrl(id, kind) {
  * @param {string} url
  */
 function playUrl(url) {
+  if (speechMuted) return;
   const my = ++speakGen;
   if (currentAudio) {
     try {

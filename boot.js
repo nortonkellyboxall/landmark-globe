@@ -9,7 +9,7 @@ import { createAdventure, placesForContinent as continentPlaces } from "./advent
 import { createFindGame } from "./find-game.js";
 import { createFindProgress } from "./find-progress.js";
 import { createSpaceMode } from "./space-mode.js";
-import { speakName } from "./speak.js";
+import { speakName, setSpeechMuted } from "./speak.js";
 import { scheduleOpen } from "./schedule-open.js";
 
 const SPACE_SEL = ".ss-size-item.selected";
@@ -640,12 +640,14 @@ if (els.ssOrbitMode) {
 els.muteBtn.addEventListener("click", () => {
   const nextOn = !sound.isSoundOn();
   sound.setSoundOn(nextOn);
+  setSpeechMuted(!nextOn);
   if (nextOn) {
     sound.ensureAudio();
     setAmbientForMode();
     playPop();
   } else {
     sound.stopAmbient();
+    card.silence();
   }
   els.muteBtn.setAttribute("aria-pressed", String(!nextOn));
   els.muteBtn.setAttribute("aria-label", nextOn ? "Sound on" : "Sound off");
