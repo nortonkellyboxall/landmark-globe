@@ -1,7 +1,7 @@
 {
   "voice": "Luna",
   "speed": 0.95,
-  "count": 114,
+  "count": 116,
   "ids": [
     "acropolis",
     "africa",
@@ -60,6 +60,7 @@
     "japan",
     "jupiter",
     "kenya",
+    "kilimanjaro",
     "lalibela",
     "liberty",
     "machu",
@@ -78,6 +79,7 @@
     "northamerica",
     "norway",
     "oceania",
+    "okavango",
     "opera",
     "peru",
     "petronas",
@@ -354,6 +356,10 @@
     "greatzimbabwe.card": "a219f7cea07a70203c04c2451bdf5d84b1f59b965e08cea21ce60b6fdaac60e6",
     "greatzimbabwe.name": "f4684241b7d5287a70e31252f5b3cfcf2480c56596790c92d93f489ee6c5ceb2",
     "lalibela.card": "ed1d0192c8bcffbc6dab21fed2950d8d55a4b0d658d3c252d0a141a83888752d",
-    "lalibela.name": "688f56981a729f93d1a8e824544c0b0fae41cc9f1a90438e295a6dc4f1196938"
+    "lalibela.name": "688f56981a729f93d1a8e824544c0b0fae41cc9f1a90438e295a6dc4f1196938",
+    "kilimanjaro.card": "5de69e475c22dd7af65273a0d72add2073543584315a7b16c4c94ac5cde0632a",
+    "kilimanjaro.name": "d51e831fe1b272d6e9f57d520e81e4eff291109fb44f9d746ed6cdf8723858ea",
+    "okavango.card": "2e61b5fd4660a975d240cbd999bc2a69f535d03dcc089214d512443401833444",
+    "okavango.name": "778e66c02ea8750844fc164519c6054d7da22da2f1f9b46ee06ad5ba950c7c85"
   }
 }
