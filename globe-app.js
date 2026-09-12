@@ -248,5 +248,8 @@ export function createGlobe(el, opts = {}) {
     skyShowLook() {
       return terminatorLook(subsolarPoint(new Date(Date.now() + sunHours * 3600000)));
     },
+    getIssPos() {
+      return { lat: traveler.lat, lng: traveler.lng };
+    },
   };
 }
