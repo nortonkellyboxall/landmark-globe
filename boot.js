@@ -1,5 +1,5 @@
 import { SPACE_BODIES, diameterKm as spaceDiameterKm } from "./space-catalog.js";
-import { LANDMARKS, WONDERS, placeById } from "./place.js";
+import { LANDMARKS, WONDERS, CONTINENTS, placeById } from "./place.js";
 import { createCardMedia } from "./card-media.js";
 import { createGlobe } from "./globe-app.js";
 import { diveMs, firefliesShouldTick, heatHint, isDeepSpace, SPACE_HANDOFF_ALT, peekAltitudeForTab } from "./orbit-look.js";
@@ -475,12 +475,37 @@ function applyAutoNightFromClock() {
 }
 
 /* —— Init globe —— */
+/** Earth tab (+ optional continent join) to restore after a Space pinch-return. */
+let earthTabBeforeSpace = "landmarks";
+let earthFilterBeforeSpace = null;
+
+function rememberEarthTab() {
+  const tab = adventure.getTab();
+  if (tab === "space") return;
+  earthTabBeforeSpace = tab;
+  earthFilterBeforeSpace = adventure.getLandmarkFilter ? adventure.getLandmarkFilter() : null;
+}
+
+function restoreEarthTabAfterSpace() {
+  const tab = earthTabBeforeSpace || "landmarks";
+  const filterId = earthFilterBeforeSpace;
+  adventure.switchTab(tab, { quiet: true });
+  if (filterId && tab === "landmarks") {
+    const continent = CONTINENTS.find((p) => p.id === filterId) || placeById(filterId);
+    if (continent) adventure.showPlacesInContinent(continent);
+  }
+}
+
 function syncOrbitChrome(pov) {
   const alt = pov && pov.altitude;
   document.body.classList.toggle("deep-space", isDeepSpace(alt));
   findGame.syncHeat(pov);
-  if (spaceMode.shouldHandoff(alt)) adventure.switchTab("space", { fluid: true });
-  else if (spaceMode.shouldReturn(alt)) adventure.switchTab("landmarks", { quiet: true });
+  if (spaceMode.shouldHandoff(alt)) {
+    rememberEarthTab();
+    adventure.switchTab("space", { fluid: true });
+  } else if (spaceMode.shouldReturn(alt)) {
+    restoreEarthTabAfterSpace();
+  }
   syncFireflies();
 }
 
@@ -598,7 +623,10 @@ els.tabLandmarks.addEventListener("click", () => adventure.switchTab("landmarks"
 els.tabWonders.addEventListener("click", () => adventure.switchTab("wonders"));
 els.tabContinents.addEventListener("click", () => adventure.switchTab("continents"));
 els.tabCountries.addEventListener("click", () => adventure.switchTab("countries"));
-els.tabSpace.addEventListener("click", () => adventure.switchTab("space", { overview: true }));
+els.tabSpace.addEventListener("click", () => {
+  rememberEarthTab();
+  adventure.switchTab("space", { overview: true });
+});
 if (els.ssSizesToggle) {
   els.ssSizesToggle.addEventListener("click", () => {
     spaceMode.toggleSizes();
@@ -656,6 +684,17 @@ document.addEventListener("keydown", (e) => {
   }
   const cardOpen = els.card.classList.contains("open");
   if (e.key === " " && !e.repeat && !cardOpen) {
+    const focus = document.activeElement;
+    if (
+      focus &&
+      (focus === els.muteBtn ||
+        focus.tagName === "BUTTON" ||
+        focus.tagName === "INPUT" ||
+        focus.tagName === "TEXTAREA" ||
+        focus.isContentEditable)
+    ) {
+      return;
+    }
     e.preventDefault();
     surprise();
   }
