@@ -463,6 +463,22 @@ function disposeIssMesh() {
   issMesh = null;
 }
 
+function createIssMesh(earthMesh, R) {
+  disposeIssMesh();
+  const craftR = R * 0.04;
+  issMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(craftR * 2.2, craftR * 0.7, craftR),
+    new THREE.MeshStandardMaterial({
+      color: 0xdfe7ee,
+      metalness: 0.55,
+      roughness: 0.35,
+    })
+  );
+  const [x, y, z] = issLocalPos(performance.now() / 1000, R);
+  issMesh.position.set(x, y, z);
+  earthMesh.add(issMesh);
+}
+
 function populateBodies() {
   if (earthSurface) {
     earthSurface.dispose();
@@ -522,20 +538,7 @@ function populateBodies() {
 
     if (def.id === "earth") {
       earthSurface = createEarthSurface(mesh, def.size);
-      disposeIssMesh();
-      const craftR = def.size * 0.04;
-      issMesh = new THREE.Mesh(
-        new THREE.BoxGeometry(craftR * 2.2, craftR * 0.7, craftR),
-        new THREE.MeshStandardMaterial({
-          color: 0xdfe7ee,
-          metalness: 0.55,
-          roughness: 0.35,
-        })
-      );
-      issMesh.name = "iss";
-      const [ix, iy, iz] = issLocalPos(performance.now() / 1000, def.size);
-      issMesh.position.set(ix, iy, iz);
-      mesh.add(issMesh);
+      createIssMesh(mesh, def.size);
       const moonBody = SPACE_BODIES.find((d) => d.id === "moon");
       const moonDef = toVisualDef(moonBody, orbitMode);
       const moonPivot = new THREE.Object3D();
@@ -650,16 +653,14 @@ function animate() {
 
   const earthAlt = trackingEarth && camera ? getEarthPov().altitude : 2.4;
   const blend = followEarth ? sunTargetBlend(earthAlt) : 0;
+  const showLocal = viewMode === "earth" || (followEarth && blend < 0.4);
   if (earthSurface) {
-    const showLocal = viewMode === "earth" || (followEarth && blend < 0.4);
     earthSurface.tick(dt, performance.now(), dt * spinRate, earthAlt, showLocal);
   }
   if (issMesh) {
-    const earth = bodies.get("earth");
-    const R = earth && earth.def ? earth.def.size : earthRadius();
-    const [ix, iy, iz] = issLocalPos(performance.now() / 1000, R);
+    const [ix, iy, iz] = issLocalPos(performance.now() / 1000, earthRadius());
     issMesh.position.set(ix, iy, iz);
-    issMesh.visible = viewMode === "earth" || (followEarth && blend < 0.55);
+    issMesh.visible = showLocal;
   }
 
   if (trackingEarth && camera && controls) {
