@@ -36,4 +36,5 @@ Preconditions:
 - Body cards still use `#cardTitle`; sizes-strip items use `.ss-size-item[data-id]` as an alternate entry — strip chips are enough for card proof.
 - Fluid handoff from globe zoom can enter Space without a tab click; doctor the selected tab before blaming the harness.
 - Rapid Space ↔ Earth during leave is covered by [space-reenter](./space-reenter.md), not this overview recipe.
+- Find while already on Space is covered by [space-find](./space-find.md) (sizes `.find-target`, win stays in Space).
 - The ISS opens a normal place card from its Earth pin ([iss-card](./iss-card.md)); it is not on the Space strip or sizes row — do not use `data-id="iss"` for Space body proofs.

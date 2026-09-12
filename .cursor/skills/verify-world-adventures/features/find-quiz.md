@@ -11,6 +11,7 @@ Find quiz asks the kid to find a prompted place in the current adventure pool, s
 - `find-again` starts another round with Find another after a successful find.
 - `find-exit` stops finding with the Stop finding control.
 - `find-no-iss` never prompts the ISS (Earth pools omit it; Space Find targets bodies only).
+- Space Find (sizes-strip highlight, stay in Space after win) is covered by [space-find](./space-find.md).
 
 ## How to get to it (user POV)
 
@@ -46,4 +47,4 @@ Preconditions:
 - Photo `alt` matches the place name (= strip `title`) when a photo cue is shown; otherwise match emoji text inside the chip.
 - Luna also starts Find — either entry is valid; record which one you used.
 - Leaving the tab or opening stickers mid-quiz changes chrome; stop Find before switching tabs for unrelated proofs.
-- On Space, Find highlights the target on the sizes strip (`.find-target`); Earth recipes do not need that chrome.
+- On Space, Find highlights the target on the sizes strip (`.find-target`); drive that path with [space-find](./space-find.md), not this Earth recipe.

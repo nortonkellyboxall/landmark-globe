@@ -47,7 +47,8 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 - [Open a place card](./place-card.md) covers strip and Surprise entry to the place dialog.
 - [Adventure tabs](./adventure-tabs.md) covers switching Landmarks, Wonders, Continents, Countries, and Space.
-- [Find quiz](./find-quiz.md) covers starting Find, tally chrome, correct strip tap, Find another, and ISS-free pools.
+- [Find quiz](./find-quiz.md) covers starting Find, tally chrome, correct strip tap, Find another, and ISS-free Earth pools.
+- [Space Find](./space-find.md) covers Find on the Space tab: sizes-strip `.find-target`, ISS-free body pool, win stays in `space-mode`.
 - [Space mode](./space-mode.md) covers Space overview (`body.space-mode` + sizes strip) and opening a solar-system body card.
 - [Space re-enter](./space-reenter.md) covers rapid Space ↔ Earth tab switches during the leave transition.
 - [Mid-orbit chrome](./mid-orbit-chrome.md) covers Earth pins and strip staying usable below Space handoff altitude.

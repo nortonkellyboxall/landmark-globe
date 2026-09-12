@@ -1,41 +1,57 @@
 /**
- * Bake static Luna Opus clips for every place (card + name).
+ * Bake static Luna MP3 clips for every place (card + name) and moon phases.
  * Usage: node scripts/bake-speech.mjs
- * Requires ffmpeg on PATH.
+ * Requires ffmpeg on PATH and npm install under scripts/ (not needed for --record-hashes-only).
+ *
+ * Skips a clip only when the MP3 exists and manifest.hashes[key] matches the
+ * current source-text SHA-256. Copy edits therefore rebake automatically.
  */
 import { spawnSync } from "node:child_process";
-import { createRequire } from "node:module";
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync, existsSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import * as ort from "onnxruntime-node";
+import {
+  VOICE,
+  SPEED,
+  PHASE_NAMES,
+  cardText,
+  nameText,
+  clipKey,
+  textHash,
+  expectedClipSources,
+} from "./speak-clip-hash.mjs";
 
-const require = createRequire(import.meta.url);
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const clipsDir = join(root, "vendor/tts/clips");
 const modelDir = join(root, "vendor/tts/model");
-const VOICE = "Luna";
-const SPEED = 0.95;
+const manifestPath = join(clipsDir, "manifest.json");
 
-const { KittenTTS } = await import(
-  pathToFileURL(join(root, "scripts/node_modules/kitten-tts-js/src/kitten-tts.js")).href
-);
-const { loadNpz } = await import(
-  pathToFileURL(join(root, "scripts/node_modules/kitten-tts-js/src/npz-loader.js")).href
-);
-
-function cardText(p) {
-  return [`${p.name}.`, p.place, p.story, p.wow ? `Wow fact. ${p.wow}` : ""]
-    .map((c) => String(c || "").trim())
-    .filter(Boolean)
-    .join(" ");
-}
-
-function nameText(p) {
-  return `${p.name}.`;
+function readManifest() {
+  if (!existsSync(manifestPath)) {
+    return { voice: VOICE, speed: SPEED, count: 0, ids: [], hashes: {} };
+  }
+  try {
+    const raw = JSON.parse(readFileSync(manifestPath, "utf8"));
+    return {
+      voice: raw.voice || VOICE,
+      speed: typeof raw.speed === "number" ? raw.speed : SPEED,
+      count: raw.count || 0,
+      ids: Array.isArray(raw.ids) ? raw.ids : [],
+      hashes: raw.hashes && typeof raw.hashes === "object" ? { ...raw.hashes } : {},
+    };
+  } catch {
+    return { voice: VOICE, speed: SPEED, count: 0, ids: [], hashes: {} };
+  }
 }
 
 async function loadTts() {
+  const ort = await import("onnxruntime-node");
+  const { KittenTTS } = await import(
+    pathToFileURL(join(root, "scripts/node_modules/kitten-tts-js/src/kitten-tts.js")).href
+  );
+  const { loadNpz } = await import(
+    pathToFileURL(join(root, "scripts/node_modules/kitten-tts-js/src/npz-loader.js")).href
+  );
   const config = JSON.parse(readFileSync(join(modelDir, "config.json"), "utf8"));
   const modelBuffer = readFileSync(join(modelDir, config.model_file));
   const voicesBuffer = readFileSync(join(modelDir, config.voices || "voices.npz"));
@@ -60,26 +76,48 @@ function wavToMp3(wavPath, mp3Path) {
   }
 }
 
-async function bakeOne(tts, id, kind, text) {
+/**
+ * @param {object | null} tts
+ * @param {string} id
+ * @param {"card"|"name"} kind
+ * @param {string} text
+ * @param {Record<string, string>} hashes
+ * @param {{ recordOnly?: boolean }} opts
+ */
+async function bakeOne(tts, id, kind, text, hashes, opts = {}) {
+  const key = clipKey(id, kind);
   const mp3 = join(clipsDir, `${id}.${kind}.mp3`);
-  if (existsSync(mp3)) {
-    console.log(`skip ${id}.${kind}`);
-    return;
+  const want = textHash(text);
+  const have = hashes[key];
+  if (existsSync(mp3) && have === want) {
+    console.log(`skip ${key}`);
+    return { baked: false, recorded: false };
   }
-  console.log(`bake ${id}.${kind} (${text.length} chars)`);
+  if (opts.recordOnly && existsSync(mp3)) {
+    hashes[key] = want;
+    console.log(`record ${key}`);
+    return { baked: false, recorded: true };
+  }
+  if (!tts) {
+    throw new Error(`need TTS to bake ${key} (missing or stale hash)`);
+  }
+  console.log(`bake ${key} (${text.length} chars)`);
   const audio = await tts.generate(text, { voice: VOICE, speed: SPEED });
   const wav = join(clipsDir, `${id}.${kind}.wav`);
   await audio.save(wav);
   wavToMp3(wav, mp3);
   try {
-    require("fs").unlinkSync(wav);
+    unlinkSync(wav);
   } catch {
     /* ignore */
   }
+  hashes[key] = want;
+  return { baked: true, recorded: false };
 }
 
 mkdirSync(clipsDir, { recursive: true });
 
+const recordOnly = process.argv.includes("--record-hashes-only");
 const { allPlaces } = await import(pathToFileURL(join(root, "place.js")).href);
 const places = allPlaces();
 
@@ -88,40 +126,66 @@ for (const p of places) {
   if (!p?.id || !p?.name) continue;
   byId.set(p.id, p);
 }
-console.log(`places: ${byId.size}`);
+console.log(`places: ${byId.size}${recordOnly ? " (record-hashes-only)" : ""}`);
 
-const tts = await loadTts();
-for (const p of byId.values()) {
-  await bakeOne(tts, p.id, "card", cardText(p));
-  await bakeOne(tts, p.id, "name", nameText(p));
+const manifest = readManifest();
+const hashes = manifest.hashes;
+const sources = expectedClipSources([...byId.values()]);
+
+let needTts = false;
+if (!recordOnly) {
+  for (const [key, text] of sources) {
+    const [id, kind] = key.split(/\.(?=[^.]+$)/);
+    const mp3 = join(clipsDir, `${id}.${kind}.mp3`);
+    if (!existsSync(mp3) || hashes[key] !== textHash(text)) {
+      needTts = true;
+      break;
+    }
+  }
 }
 
-const PHASE_NAMES = [
-  ["new", "New Moon."],
-  ["waxing-crescent", "Waxing Crescent."],
-  ["first-quarter", "First Quarter."],
-  ["waxing-gibbous", "Waxing Gibbous."],
-  ["full", "Full Moon."],
-  ["waning-gibbous", "Waning Gibbous."],
-  ["last-quarter", "Last Quarter."],
-  ["waning-crescent", "Waning Crescent."],
-];
+const tts = needTts ? await loadTts() : null;
+
+let baked = 0;
+let recorded = 0;
+let skipped = 0;
+
+for (const p of byId.values()) {
+  for (const [kind, text] of [
+    ["card", cardText(p)],
+    ["name", nameText(p)],
+  ]) {
+    const r = await bakeOne(tts, p.id, kind, text, hashes, { recordOnly });
+    if (r.baked) baked += 1;
+    else if (r.recorded) recorded += 1;
+    else skipped += 1;
+  }
+}
 
 for (const [id, text] of PHASE_NAMES) {
-  await bakeOne(tts, `phase-${id}`, "name", text);
+  const r = await bakeOne(tts, `phase-${id}`, "name", text, hashes, { recordOnly });
+  if (r.baked) baked += 1;
+  else if (r.recorded) recorded += 1;
+  else skipped += 1;
+}
+
+const expectedKeys = new Set(sources.keys());
+for (const key of Object.keys(hashes)) {
+  if (!expectedKeys.has(key)) delete hashes[key];
 }
 
 writeFileSync(
-  join(clipsDir, "manifest.json"),
+  manifestPath,
   JSON.stringify(
     {
       voice: VOICE,
       speed: SPEED,
       count: byId.size,
       ids: [...byId.keys()].sort(),
+      hashes,
     },
     null,
     2
-  )
+  ) + "\n"
 );
-console.log("done");
+console.log(`done (baked=${baked} recorded=${recorded} skipped=${skipped})`);
