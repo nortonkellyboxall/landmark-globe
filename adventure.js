@@ -57,6 +57,33 @@ export function placesForContinent(continentId, landmarks, wonders, countries) {
   return [...filterPack(landmarks || []), ...filterPack(wonders || []), ...countryHits];
 }
 
+/**
+ * Continent Place id for “Explore here” from a continent or country card.
+ * Country cards join via `place.continent` (already a continent Place id).
+ * @param {{ kind?: string, id?: string, continent?: string } | null | undefined} place
+ * @returns {string | null}
+ */
+export function continentIdForExplore(place) {
+  if (!place) return null;
+  if (place.kind === "continent" && place.id) return place.id;
+  if (place.kind === "country" && place.continent) return place.continent;
+  return null;
+}
+
+/**
+ * Resolve the continent Place used by Explore here (label + filter id).
+ * @param {{ kind?: string, id?: string, name?: string, continent?: string } | null | undefined} place
+ * @param {import("./place.js").Place[]} [continents]
+ * @returns {{ id: string, name: string, kind?: string } | null}
+ */
+export function continentPlaceForExplore(place, continents = CONTINENTS) {
+  const id = continentIdForExplore(place);
+  if (!id) return null;
+  if (place.kind === "continent") return place;
+  const hit = (continents || []).find((c) => c.id === id);
+  return hit || { id, name: id, kind: "continent" };
+}
+
 function staggerPinPlaces(items) {
   if (!items || items.length < 2) return items;
   // Nudge overlapping country/continent pins so taps are easier

@@ -1,5 +1,6 @@
 import { speakCard, speakPhase, stopSpeech } from "./speak.js";
 import { createMoonPhaseToy } from "./moon-phases.js";
+import { continentIdForExplore } from "./adventure.js";
 
 /** CardMedia — place detail card: gallery, video/anthem, speech. */
 
@@ -478,8 +479,8 @@ export function createCardMedia(els, deps) {
     els.watchBtn.hidden = !currentVideoId;
     els.anthemBtn.hidden = !currentAnthemUrl;
     if (els.moonPhaseBtn) els.moonPhaseBtn.hidden = place.id !== "moon";
-    const placeHits =
-      place.kind === "continent" ? placesForContinent(place.id) : [];
+    const exploreId = continentIdForExplore(place);
+    const placeHits = exploreId ? placesForContinent(exploreId) : [];
     if (els.showPlacesBtn) {
       els.showPlacesBtn.hidden = placeHits.length === 0;
     }

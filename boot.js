@@ -5,7 +5,11 @@ import { createGlobe } from "./globe-app.js";
 import { diveMs, firefliesShouldTick, heatHint, isDeepSpace, SPACE_HANDOFF_ALT, peekAltitudeForTab } from "./orbit-look.js";
 import { weatherForPlace } from "./place-weather.js";
 import { ambientKind, createSound } from "./sound.js";
-import { createAdventure, placesForContinent as continentPlaces } from "./adventure.js";
+import {
+  createAdventure,
+  placesForContinent as continentPlaces,
+  continentPlaceForExplore,
+} from "./adventure.js";
 import { createFindGame } from "./find-game.js";
 import { createFindProgress } from "./find-progress.js";
 import { createSpaceMode } from "./space-mode.js";
@@ -287,7 +291,8 @@ const card = createCardMedia(els, {
   placesForContinent: (id) =>
     continentPlaces(id, LANDMARKS, WONDERS, COUNTRIES),
   onShowPlaces(place) {
-    adventure.showPlacesInContinent(place);
+    const continent = continentPlaceForExplore(place);
+    if (continent) adventure.showPlacesInContinent(continent);
   },
   onClose() {
     adventure.setSelectedId(null);
