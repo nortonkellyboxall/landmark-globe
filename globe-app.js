@@ -3,6 +3,7 @@
 import * as Solar3D from "./solar3d.js";
 import { skyShowLook as terminatorLook, subsolarPoint, dueThisFrame, GLOBE_TICK } from "./orbit-look.js";
 import { travelerPos } from "./traveler-orbit.js";
+import { punchAllowed } from "./body-highlight.js";
 
 /**
  * @param {HTMLElement} el
@@ -211,6 +212,7 @@ export function createGlobe(el, opts = {}) {
   }
 
   function punch() {
+    if (!punchAllowed(Solar3D.getViewMode())) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const pov = Solar3D.getEarthPov();
     const alt = pov.altitude || 2.2;

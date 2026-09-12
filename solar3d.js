@@ -17,6 +17,7 @@ import {
 } from "./orbit-look.js";
 import { createEarthSurface } from "./earth-surface.js";
 import { issLocalPos } from "./traveler-orbit.js";
+import { highlightEmissiveIntensity } from "./body-highlight.js";
 
 /**
  * Interactive 3D solar system (spheres + orbits + camera controls).
@@ -1232,16 +1233,17 @@ function setActive(active) {
 }
 
 function highlight(id) {
+  const bodyIds = bodies;
   bodies.forEach((entry, key) => {
     const mesh = entry.mesh;
     if (!mesh || !mesh.material || mesh.isGroup) return;
     const mat = mesh.material;
     if (!mat || mat.emissiveIntensity == null) return;
-    if (key === id) {
-      mat.emissiveIntensity = key === "sun" ? 1.15 : 0.35;
-    } else {
-      mat.emissiveIntensity = key === "sun" ? 0.85 : 0.12;
-    }
+    mat.emissiveIntensity = highlightEmissiveIntensity(key, id, {
+      earthNight,
+      hasEmissiveMap: !!mat.emissiveMap,
+      bodyIds,
+    });
   });
 }
 
