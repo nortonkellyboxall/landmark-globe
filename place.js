@@ -2,6 +2,7 @@ import { LANDMARKS } from "./landmarks.js";
 import { WONDERS } from "./wonders.js";
 import { CONTINENTS, COUNTRIES } from "./geography.js";
 import { SPACE_BODIES } from "./space-catalog.js";
+import { TRAVELERS } from "./travelers.js";
 
 /**
  * @typedef {object} Place
@@ -21,9 +22,9 @@ import { SPACE_BODIES } from "./space-catalog.js";
  * @property {string} [continent]
  */
 
-export { LANDMARKS, WONDERS, CONTINENTS, COUNTRIES };
+export { LANDMARKS, WONDERS, CONTINENTS, COUNTRIES, TRAVELERS };
 
-const PACKS = [LANDMARKS, WONDERS, CONTINENTS, COUNTRIES, SPACE_BODIES];
+const PACKS = [LANDMARKS, WONDERS, CONTINENTS, COUNTRIES, SPACE_BODIES, TRAVELERS];
 
 /** @param {string} id @returns {Place | null} */
 export function placeById(id) {

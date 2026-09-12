@@ -13,4 +13,7 @@ for (const p of allPlaces()) {
   }
 }
 
+assert.equal(existsSync(join(root, "vendor/tts/clips", "iss.name.mp3")), true);
+assert.equal(existsSync(join(root, "vendor/tts/clips", "iss.card.mp3")), true);
+
 console.log("speak-clips.check.js OK");
