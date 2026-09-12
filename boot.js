@@ -11,6 +11,7 @@ import { createFindProgress } from "./find-progress.js";
 import { createSpaceMode } from "./space-mode.js";
 import { speakName, setSpeechMuted } from "./speak.js";
 import { scheduleOpen } from "./schedule-open.js";
+import { focusStealsSpace } from "./keys.js";
 
 const SPACE_SEL = ".ss-size-item.selected";
 const SPACE_SEL_BY_ID = (id) => `.ss-size-item[data-id="${id}"]`;
@@ -683,17 +684,7 @@ document.addEventListener("keydown", (e) => {
   }
   const cardOpen = els.card.classList.contains("open");
   if (e.key === " " && !e.repeat && !cardOpen) {
-    const focus = document.activeElement;
-    if (
-      focus &&
-      (focus === els.muteBtn ||
-        focus.tagName === "BUTTON" ||
-        focus.tagName === "INPUT" ||
-        focus.tagName === "TEXTAREA" ||
-        focus.isContentEditable)
-    ) {
-      return;
-    }
+    if (focusStealsSpace(document.activeElement)) return;
     e.preventDefault();
     surprise();
   }
