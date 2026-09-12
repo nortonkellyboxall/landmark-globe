@@ -1,4 +1,6 @@
-.cursor/
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**
 .playwright-cli/
 .DS_Store
 *.log
