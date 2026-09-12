@@ -70,6 +70,7 @@ Harness: Playwright Chromium via `control-world-adventures browser …`. The fir
 | `#card` dialog, `#cardTitle`, `#cardPlace` | Place card |
 | `role=button` name `Find this place` | Start Find quiz |
 | `#findPrompt` / `#findCue` / `#findTally` | Find prompt chrome |
+| `#ssSizesRow .ss-size-item.find-target` | Space Find highlighted body on the sizes strip |
 | `role=button` name `Find another` | Next Find round after a win |
 | `role=button` name `Surprise me` | Random place |
 | `#moonPhaseBtn` text `Phases` | Moon phases (only on The Moon) |
