@@ -181,17 +181,18 @@ try {
   assert.ok(solarCalls.some((c) => c[0] === "setViewMode" && c[1] === "earth" && c[2] === true));
   assert.equal(globeActive.length, 0);
 
-  await new Promise((r) => setTimeout(r, 450));
   solarCalls.length = 0;
+  whooshes.n = 0;
   canvasMode.enter({ overview: true });
   await new Promise((r) => setTimeout(r, 0));
   await Promise.resolve();
   await Promise.resolve();
-  assert.equal(whooshes.n, 1, "tab overview whooshes");
+  assert.equal(whooshes.n, 1, "immediate re-enter after leave whooshes");
   assert.ok(
     solarCalls.some((c) => c[0] === "setViewMode" && c[1] === "solar" && c[2] === false),
-    "overview is not fluid"
+    "immediate re-enter still calls setViewMode solar"
   );
+  assert.equal(canvasMode.isTransitioning(), false);
 } finally {
   globalThis.document = prevDoc2;
 }

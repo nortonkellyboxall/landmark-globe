@@ -21,6 +21,8 @@ export function planetDisplayPx(km, earthKm, earthPx = 26, maxPx = 96, minPx = 7
 export function createSpaceMode(opts) {
   const els = opts.els;
   let spaceTransitioning = false;
+  /** Bumps on every enter/leave so overlapping async continuations become no-ops. */
+  let transitionGen = 0;
   let spacePinchArmed = false;
   let Solar3D = null;
   let solar3dLoading = null;
@@ -210,7 +212,7 @@ export function createSpaceMode(opts) {
   }
 
   function enter(enterOpts = {}) {
-    if (spaceTransitioning) return;
+    const myGen = ++transitionGen;
     const overview = !!enterOpts.overview;
     const quiet = !overview;
     opts.stopFind();
@@ -237,6 +239,7 @@ export function createSpaceMode(opts) {
 
     primed
       .then(() => {
+        if (myGen !== transitionGen) return;
         if (Solar3D) {
           Solar3D.resize();
           if (typeof Solar3D.setViewMode !== "function") return;
@@ -248,6 +251,7 @@ export function createSpaceMode(opts) {
         }
       })
       .then(() => {
+        if (myGen !== transitionGen) return;
         els.solarSystem.classList.add("show");
         if (els.globeShadow) els.globeShadow.classList.add("hidden-view");
         spaceTransitioning = false;
@@ -255,6 +259,7 @@ export function createSpaceMode(opts) {
   }
 
   function leave(leaveOpts = {}) {
+    const myGen = ++transitionGen;
     spaceTransitioning = true;
     spacePinchArmed = false;
     wasDeepSpace = false;
@@ -267,6 +272,7 @@ export function createSpaceMode(opts) {
         : Promise.resolve();
 
     return inbound.then(() => {
+      if (myGen !== transitionGen) return;
       document.body.classList.remove("space-mode");
       if (els.nightBtn) els.nightBtn.style.display = "";
       if (els.sunBtn) els.sunBtn.hidden = false;
@@ -276,6 +282,7 @@ export function createSpaceMode(opts) {
       if (els.globeShadow) els.globeShadow.classList.remove("hidden-view");
       els.solarSystem.classList.remove("show");
       setTimeout(() => {
+        if (myGen !== transitionGen) return;
         if (opts.getTab() !== "space") {
           els.solarSystem.hidden = true;
         }

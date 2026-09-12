@@ -6,8 +6,27 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 PORT = int(os.environ.get("PORT", "8000"))
 HOST = os.environ.get("HOST", "0.0.0.0")
 
+BLOCKED_PREFIXES = ("/.git", "/.scratch", "/.cursor")
+
+
+def path_is_blocked(url_path: str) -> bool:
+    p = url_path.split("?", 1)[0]
+    return any(p == prefix or p.startswith(prefix + "/") for prefix in BLOCKED_PREFIXES)
+
 
 class NoCacheHandler(SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if path_is_blocked(self.path):
+            self.send_error(403, "Forbidden")
+            return
+        super().do_GET()
+
+    def do_HEAD(self):
+        if path_is_blocked(self.path):
+            self.send_error(403, "Forbidden")
+            return
+        super().do_HEAD()
+
     def end_headers(self):
         path = self.path.split("?", 1)[0]
         if path.endswith((".html", ".js", ".css", ".mjs", "")) or path == "/":
