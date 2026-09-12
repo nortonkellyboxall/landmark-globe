@@ -2,6 +2,9 @@
 /**
  * Verification harness for World Adventures!
  * Invocation examples are documented in ../SKILL.md.
+ *
+ * Browser commands talk to a long-lived daemon over a Unix socket so page
+ * state survives across separate CLI invocations.
  */
 import { spawn } from "node:child_process";
 import {
@@ -15,7 +18,7 @@ import {
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createConnection } from "node:net";
+import { createConnection, createServer } from "node:net";
 import { chromium } from "playwright";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -24,6 +27,7 @@ const REPO_ROOT = resolve(SKILL_ROOT, "../../..");
 const DEFAULT_STATE_DIR = process.env.WA_STATE_DIR || "/tmp/wa-verify";
 const DEFAULT_PORT = Number(process.env.WA_PORT || process.env.PORT || 8765);
 const ARTIFACTS_ROOT = join(SKILL_ROOT, "artifacts");
+const SELF = fileURLToPath(import.meta.url);
 
 function usage(code = 1) {
   process.stderr.write(`control-world-adventures — drive World Adventures for verification
@@ -56,6 +60,7 @@ function statePaths() {
     meta: join(dir, "meta.json"),
     serverLog: join(dir, "server.log"),
     browser: join(dir, "browser.json"),
+    sock: join(dir, "browser.sock"),
   };
 }
 
@@ -194,6 +199,16 @@ async function cmdLaunch(args) {
     fail(err.message);
   }
 
+  await sleep(200);
+  if (!isAlive(child.pid)) {
+    const logTail = existsSync(paths.serverLog)
+      ? readFileSync(paths.serverLog, "utf8").trim().slice(-800)
+      : "";
+    fail(
+      `serve.py exited immediately after bind (pid ${child.pid}). Often the port is already taken.${logTail ? `\n${logTail}` : ""}`
+    );
+  }
+
   const probe = await httpGet(url);
   if (probe.status !== 200 || !probe.text.includes("World Adventures")) {
     try {
@@ -274,53 +289,202 @@ function resolveArtifactPath(pathArg) {
   return resolve(ARTIFACTS_ROOT, pathArg);
 }
 
-async function ensureBrowser() {
-  const meta = readMeta();
+function rpcCall(payload, timeoutMs = 90000) {
+  const { sock } = statePaths();
+  return new Promise((resolveRpc, reject) => {
+    const client = createConnection(sock);
+    let buf = "";
+    const timer = setTimeout(() => {
+      client.destroy();
+      reject(new Error(`browser daemon timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+    client.on("connect", () => {
+      client.write(`${JSON.stringify(payload)}\n`);
+    });
+    client.on("data", (chunk) => {
+      buf += chunk.toString("utf8");
+      const nl = buf.indexOf("\n");
+      if (nl === -1) return;
+      clearTimeout(timer);
+      client.end();
+      try {
+        resolveRpc(JSON.parse(buf.slice(0, nl)));
+      } catch (err) {
+        reject(err);
+      }
+    });
+    client.on("error", (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+  });
+}
+
+async function ensureDaemon() {
   const paths = statePaths();
+  const meta = readMeta();
+  mkdirSync(paths.dir, { recursive: true });
 
   if (existsSync(paths.browser)) {
     try {
       const saved = JSON.parse(readFileSync(paths.browser, "utf8"));
-      const browser = await chromium.connect(saved.wsEndpoint);
-      const context = browser.contexts()[0];
-      const page = context?.pages()?.[0];
-      if (page) return { browser, page, meta, paths };
+      if (saved.pid && isAlive(saved.pid) && existsSync(paths.sock)) {
+        const ping = await rpcCall({ action: "ping" }, 5000);
+        if (ping && ping.ok) return meta;
+      }
     } catch {
-      /* relaunch below */
+      /* restart below */
     }
   }
 
-  const server = await chromium.launchServer({
-    headless: true,
-    args: ["--use-gl=angle", "--use-angle=swiftshader"],
-  });
-  const browser = await chromium.connect(server.wsEndpoint());
-  const context = await browser.newContext({
-    viewport: { width: 1280, height: 800 },
-    reducedMotion: "reduce",
-  });
-  const page = await context.newPage();
-  await page.goto(meta.url, { waitUntil: "domcontentloaded", timeout: 60000 });
-  writeFileSync(
-    paths.browser,
-    `${JSON.stringify(
-      {
-        wsEndpoint: server.wsEndpoint(),
-        pid: server.process().pid,
-      },
-      null,
-      2
-    )}\n`
+  unlinkQuiet(paths.sock);
+  unlinkQuiet(paths.browser);
+
+  const child = spawn(
+    process.execPath,
+    [SELF, "_browser-daemon"],
+    {
+      cwd: REPO_ROOT,
+      env: { ...process.env, WA_STATE_DIR: paths.dir },
+      stdio: "ignore",
+      detached: true,
+    }
   );
-  return { browser, page, meta, paths };
+  child.unref();
+
+  const start = Date.now();
+  while (Date.now() - start < 60000) {
+    if (existsSync(paths.sock) && existsSync(paths.browser)) {
+      try {
+        const ping = await rpcCall({ action: "ping" }, 5000);
+        if (ping && ping.ok) return meta;
+      } catch {
+        /* retry */
+      }
+    }
+    await sleep(200);
+  }
+  fail("Timed out starting browser daemon");
+}
+
+async function runBrowserAction(action, args) {
+  if (action === "ready") {
+    return rpcCall({ action: "ready" });
+  }
+  if (action === "click") {
+    if (args.selector) return rpcCall({ action: "click", selector: args.selector });
+    if (args.role && args.name) {
+      return rpcCall({ action: "click", role: args.role, name: args.name });
+    }
+    fail("click requires --selector or --role and --name");
+  }
+  if (action === "wait") {
+    if (!args.selector) fail("wait requires --selector");
+    return rpcCall({
+      action: "wait",
+      selector: args.selector,
+      state: args.state || "visible",
+    });
+  }
+  if (action === "text") {
+    if (!args.selector) fail("text requires --selector");
+    return rpcCall({ action: "text", selector: args.selector });
+  }
+  if (action === "eval") {
+    if (!args.js) fail("eval requires --js");
+    return rpcCall({ action: "eval", js: args.js });
+  }
+  if (action === "snapshot") {
+    if (!args.aria) fail("snapshot currently supports --aria only");
+    return rpcCall({
+      action: "snapshot",
+      path: resolveArtifactPath(args.path),
+    });
+  }
+  if (action === "screenshot") {
+    return rpcCall({
+      action: "screenshot",
+      path: resolveArtifactPath(args.path),
+    });
+  }
+  fail(`Unknown browser action: ${action}`);
 }
 
 async function cmdBrowser(args) {
   const action = args._[1];
   if (!action) usage(1);
+  await ensureDaemon();
+  const result = await runBrowserAction(action, args);
+  if (result && result.error) fail(result.error);
+  ok(result);
+}
 
-  const { page } = await ensureBrowser();
+async function captureAria(page) {
+  return page.evaluate(() => {
+    const lines = [];
+    const push = (indent, role, name, extra = "") => {
+      const label = name ? `: ${name}` : "";
+      lines.push(`${"  ".repeat(indent)}${role}${label}${extra}`);
+    };
+    const h1 = document.querySelector("h1");
+    if (h1) push(0, "heading", h1.textContent.trim(), " [level=1]");
+    document.querySelectorAll('[role="tab"]').forEach((el) => {
+      push(
+        0,
+        "tab",
+        el.getAttribute("aria-label") || el.textContent.trim(),
+        el.getAttribute("aria-selected") === "true" ? " [selected]" : ""
+      );
+    });
+    const globe = document.querySelector('#globeViz[role="application"]');
+    if (globe) push(0, "application", globe.getAttribute("aria-label") || "");
+    const solar = document.querySelector("#solarSystem");
+    if (solar && !solar.hidden) {
+      push(0, "region", solar.getAttribute("aria-label") || "solar system");
+    }
+    const card = document.querySelector("#card");
+    if (card && !card.hidden) {
+      push(
+        0,
+        "dialog",
+        document.querySelector("#cardTitle")?.textContent?.trim() || "card"
+      );
+      const place = document.querySelector("#cardPlace")?.textContent?.trim();
+      if (place) push(1, "text", place);
+      const story = document.querySelector("#cardStory")?.textContent?.trim();
+      if (story) push(1, "text", story.slice(0, 120));
+      document.querySelectorAll(".card-actions .btn").forEach((btn) => {
+        if (btn.hidden) return;
+        push(1, "button", btn.textContent.replace(/\s+/g, " ").trim());
+      });
+    }
+    const findPrompt = document.querySelector("#findPrompt");
+    if (findPrompt && !findPrompt.hidden) {
+      push(0, "region", "Find prompt");
+      const cue = document.querySelector("#findCue")?.textContent?.trim();
+      if (cue) push(1, "text", cue);
+      const emoji = document.querySelector("#findEmoji")?.textContent?.trim();
+      if (emoji) push(1, "text", emoji);
+    }
+    const strip = [...document.querySelectorAll("#strip .thumb")].slice(0, 8);
+    if (strip.length) {
+      push(0, "region", "Place shortcuts");
+      strip.forEach((t) =>
+        push(
+          1,
+          "button",
+          t.title || t.textContent.trim(),
+          t.classList.contains("active") ? " [active]" : ""
+        )
+      );
+    }
+    return lines.join("\n");
+  });
+}
 
+async function handleDaemonRequest(page, req) {
+  const { action } = req;
+  if (action === "ping") return { ok: true };
   if (action === "ready") {
     await page.waitForFunction(
       () => document.getElementById("loader")?.classList.contains("hide"),
@@ -329,129 +493,117 @@ async function cmdBrowser(args) {
     await page.waitForSelector("#strip .thumb", { timeout: 30000 });
     const brand = await page.locator("h1").innerText();
     const strip = await page.locator("#strip .thumb").count();
-    ok({ ready: true, brand, stripThumbs: strip });
-    return;
+    return { ready: true, brand, stripThumbs: strip };
   }
-
   if (action === "click") {
-    if (args.selector) {
-      await page.locator(args.selector).first().click({ timeout: 15000 });
-      ok({ clicked: args.selector });
-      return;
+    if (req.selector) {
+      await page.locator(req.selector).first().click({ timeout: 15000 });
+      return { clicked: req.selector };
     }
-    if (args.role && args.name) {
-      await page
-        .getByRole(args.role, { name: args.name })
-        .first()
-        .click({ timeout: 15000 });
-      ok({ clicked: { role: args.role, name: args.name } });
-      return;
-    }
-    fail("click requires --selector or --role and --name");
+    await page
+      .getByRole(req.role, { name: req.name })
+      .first()
+      .click({ timeout: 15000 });
+    return { clicked: { role: req.role, name: req.name } };
   }
-
   if (action === "wait") {
-    if (!args.selector) fail("wait requires --selector");
-    const state = args.state || "visible";
-    await page.waitForSelector(args.selector, { state, timeout: 30000 });
-    ok({ waited: args.selector, state });
-    return;
+    await page.waitForSelector(req.selector, {
+      state: req.state || "visible",
+      timeout: 30000,
+    });
+    return { waited: req.selector, state: req.state || "visible" };
   }
-
   if (action === "text") {
-    if (!args.selector) fail("text requires --selector");
-    const text = await page.locator(args.selector).first().innerText({
+    const text = await page.locator(req.selector).first().innerText({
       timeout: 15000,
     });
-    ok({ selector: args.selector, text: text.trim() });
-    return;
+    return { selector: req.selector, text: text.trim() };
   }
-
   if (action === "eval") {
-    if (!args.js) fail("eval requires --js");
-    const value = await page.evaluate(args.js);
-    ok({ value });
-    return;
+    const value = await page.evaluate(req.js);
+    return { value };
   }
-
   if (action === "snapshot") {
-    if (!args.aria) fail("snapshot currently supports --aria only");
-    const path = resolveArtifactPath(args.path);
-    mkdirSync(dirname(path), { recursive: true });
-    const snapshot = await page.evaluate(() => {
-      const lines = [];
-      const push = (indent, role, name, extra = "") => {
-        const label = name ? `: ${name}` : "";
-        lines.push(`${"  ".repeat(indent)}${role}${label}${extra}`);
-      };
-      const h1 = document.querySelector("h1");
-      if (h1) push(0, "heading", h1.textContent.trim(), " [level=1]");
-      document.querySelectorAll('[role="tab"]').forEach((el) => {
-        push(
-          0,
-          "tab",
-          el.getAttribute("aria-label") || el.textContent.trim(),
-          el.getAttribute("aria-selected") === "true" ? " [selected]" : ""
-        );
-      });
-      const globe = document.querySelector('#globeViz[role="application"]');
-      if (globe) push(0, "application", globe.getAttribute("aria-label") || "");
-      const solar = document.querySelector("#solarSystem");
-      if (solar && !solar.hidden) {
-        push(0, "region", solar.getAttribute("aria-label") || "solar system");
-      }
-      const card = document.querySelector("#card");
-      if (card && !card.hidden) {
-        push(
-          0,
-          "dialog",
-          document.querySelector("#cardTitle")?.textContent?.trim() || "card"
-        );
-        const place = document.querySelector("#cardPlace")?.textContent?.trim();
-        if (place) push(1, "text", place);
-        const story = document.querySelector("#cardStory")?.textContent?.trim();
-        if (story) push(1, "text", story.slice(0, 120));
-        document.querySelectorAll(".card-actions .btn").forEach((btn) => {
-          if (btn.hidden) return;
-          push(1, "button", btn.textContent.replace(/\s+/g, " ").trim());
-        });
-      }
-      const findPrompt = document.querySelector("#findPrompt");
-      if (findPrompt && !findPrompt.hidden) {
-        push(0, "region", "Find prompt");
-        const cue = document.querySelector("#findCue")?.textContent?.trim();
-        if (cue) push(1, "text", cue);
-        const emoji = document.querySelector("#findEmoji")?.textContent?.trim();
-        if (emoji) push(1, "text", emoji);
-      }
-      const strip = [...document.querySelectorAll("#strip .thumb")].slice(0, 8);
-      if (strip.length) {
-        push(0, "region", "Place shortcuts");
-        strip.forEach((t) =>
-          push(
-            1,
-            "button",
-            t.title || t.textContent.trim(),
-            t.classList.contains("active") ? " [active]" : ""
-          )
-        );
-      }
-      return lines.join("\n");
-    });
-    writeFileSync(path, `${snapshot}\n`);
-    ok({ path, bytes: Buffer.byteLength(snapshot) });
-    return;
+    mkdirSync(dirname(req.path), { recursive: true });
+    const snapshot = await captureAria(page);
+    writeFileSync(req.path, `${snapshot}\n`);
+    return { path: req.path, bytes: Buffer.byteLength(snapshot) };
   }
-
   if (action === "screenshot") {
-    const path = resolveArtifactPath(args.path);
-    mkdirSync(dirname(path), { recursive: true });
-    await page.screenshot({ path, fullPage: false });
-    ok({ path });
-    return;
+    mkdirSync(dirname(req.path), { recursive: true });
+    await page.screenshot({ path: req.path, fullPage: false });
+    return { path: req.path };
   }
+  if (action === "shutdown") {
+    return { shutdown: true };
+  }
+  return { error: `Unknown daemon action: ${action}` };
+}
 
-  fail(`Unknown browser action: ${action}`);
+async function runBrowserDaemon() {
+  const paths = statePaths();
+  const meta = readMeta();
+  unlinkQuiet(paths.sock);
+
+  const browser = await chromium.launch({
+    headless: true,
+    args: ["--use-gl=angle", "--use-angle=swiftshader"],
+  });
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 800 },
+    reducedMotion: "reduce",
+  });
+  const page = await context.newPage();
+  await page.goto(meta.url, { waitUntil: "domcontentloaded", timeout: 60000 });
+
+  writeFileSync(
+    paths.browser,
+    `${JSON.stringify({ pid: process.pid, sock: paths.sock }, null, 2)}\n`
+  );
+
+  const server = createServer((socket) => {
+    let buf = "";
+    socket.on("data", async (chunk) => {
+      buf += chunk.toString("utf8");
+      const nl = buf.indexOf("\n");
+      if (nl === -1) return;
+      const line = buf.slice(0, nl);
+      buf = buf.slice(nl + 1);
+      let req;
+      try {
+        req = JSON.parse(line);
+      } catch (err) {
+        socket.write(`${JSON.stringify({ error: err.message })}\n`);
+        return;
+      }
+      try {
+        const result = await handleDaemonRequest(page, req);
+        socket.write(`${JSON.stringify(result)}\n`);
+        if (req.action === "shutdown") {
+          socket.end();
+          server.close();
+          await browser.close();
+          process.exit(0);
+        }
+      } catch (err) {
+        socket.write(
+          `${JSON.stringify({ error: err.stack || err.message })}\n`
+        );
+      }
+    });
+  });
+
+  server.listen(paths.sock);
+  // Keep alive.
+  process.on("SIGTERM", async () => {
+    try {
+      await browser.close();
+    } catch {
+      /* ignore */
+    }
+    unlinkQuiet(paths.sock);
+    process.exit(0);
+  });
 }
 
 async function cmdCleanup() {
@@ -461,6 +613,16 @@ async function cmdCleanup() {
     killedBrowser: false,
     evidenceKept: ARTIFACTS_ROOT,
   };
+
+  if (existsSync(paths.browser) && existsSync(paths.sock)) {
+    try {
+      await rpcCall({ action: "shutdown" }, 5000);
+      result.killedBrowser = true;
+      await sleep(200);
+    } catch {
+      /* fall through to kill */
+    }
+  }
 
   if (existsSync(paths.browser)) {
     try {
@@ -476,6 +638,7 @@ async function cmdCleanup() {
     }
     unlinkQuiet(paths.browser);
   }
+  unlinkQuiet(paths.sock);
 
   if (existsSync(paths.meta)) {
     try {
@@ -501,6 +664,7 @@ async function main() {
   const cmd = args._[0];
   if (!cmd || cmd === "help" || args.help) usage(cmd ? 0 : 1);
 
+  if (cmd === "_browser-daemon") return runBrowserDaemon();
   if (cmd === "launch") return cmdLaunch(args);
   if (cmd === "doctor") return cmdDoctor();
   if (cmd === "browser") return cmdBrowser(args);

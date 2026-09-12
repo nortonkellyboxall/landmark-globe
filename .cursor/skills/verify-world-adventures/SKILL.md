@@ -48,7 +48,7 @@ If anything looks off after a failed drive, run doctor before retrying. Never dr
 
 ## Drive
 
-Harness: Playwright Chromium via `control-world-adventures browser …`. Prefer stable handles from this app:
+Harness: Playwright Chromium via `control-world-adventures browser …`. The first browser command starts a long-lived daemon (Unix socket under `$WA_STATE_DIR`) so page state survives across separate CLI invocations; `cleanup` stops that daemon. Prefer stable handles from this app:
 
 | Handle | Meaning |
 | --- | --- |
