@@ -552,7 +552,13 @@ async function handleDaemonRequest(page, req) {
   }
   if (action === "click") {
     if (req.selector) {
-      await page.locator(req.selector).first().click({
+      const loc = page.locator(req.selector).first();
+      await loc.evaluate((el) => {
+        if (el && typeof el.scrollIntoView === "function") {
+          el.scrollIntoView({ block: "nearest", inline: "center" });
+        }
+      });
+      await loc.click({
         timeout: 15000,
         force: !!req.force,
       });
