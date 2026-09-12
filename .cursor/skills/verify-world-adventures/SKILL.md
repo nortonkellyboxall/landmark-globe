@@ -46,17 +46,31 @@ Require `healthy: true` with:
 
 If anything looks off after a failed drive, run doctor before retrying. Never drive an instance this run did not launch.
 
+## HTTP (serve denylist)
+
+Probe paths on the launched server (uses meta host/port):
+
+```bash
+control-world-adventures http --path /.git/config
+control-world-adventures http --method HEAD --path /.git
+control-world-adventures http --path /index.html
+```
+
+Expect `403` for `/.git`, `/.scratch`, and `/.cursor` prefixes; `200` for app assets. See [`features/serve-path-403.md`](features/serve-path-403.md).
+
 ## Drive
 
 Harness: Playwright Chromium via `control-world-adventures browser …`. The first browser command starts a long-lived daemon (Unix socket under `$WA_STATE_DIR`) so page state survives across separate CLI invocations; `cleanup` stops that daemon. Prefer stable handles from this app:
 
 | Handle | Meaning |
 | --- | --- |
-| `role=tab` name `Landmarks` / `Wonders` / `Continents` / `Countries` / `Space` | Adventure dock |
+| `role=tab` name `Landmarks` / `Natural wonders` / `Continents` / `Countries` / `Space` | Adventure dock |
 | `#strip .thumb[data-id="<id>"]` | Place shortcut chip (`title` = place name) |
+| `.pin[data-id="iss"]` / aria-label `Space station` | ISS traveler pin (not on strip) |
 | `#card` dialog, `#cardTitle`, `#cardPlace` | Place card |
 | `role=button` name `Find this place` | Start Find quiz |
-| `#findPrompt` / `#findCue` | Find prompt chrome |
+| `#findPrompt` / `#findCue` / `#findTally` | Find prompt chrome |
+| `role=button` name `Find another` | Next Find round after a win |
 | `role=button` name `Surprise me` | Random place |
 | `#moonPhaseBtn` text `Phases` | Moon phases (only on The Moon) |
 
@@ -74,12 +88,14 @@ Common actions:
 ```bash
 control-world-adventures browser click --role tab --name "Space"
 control-world-adventures browser click --selector '#strip .thumb[data-id="eiffel"]'
+control-world-adventures browser click --selector '.pin[data-id="iss"]' --force
 control-world-adventures browser wait --selector '#card:not([hidden])'
 control-world-adventures browser text --selector '#cardTitle'
 control-world-adventures browser eval --js 'document.body.className'
+control-world-adventures browser pov --lat 18 --lng -18 --altitude 10 --ms 0
 ```
 
-Feature recipes live under [`features/`](features/README.md). Drive the real user path (strip / tabs / Find button), not internal module setters.
+`browser pov` sets Earth camera look via Solar3D (for mid-orbit chrome). Feature recipes live under [`features/`](features/README.md). Drive the real user path (strip / tabs / Find / pin), not internal card setters.
 
 ## Evidence
 
@@ -117,7 +133,7 @@ Do not `pkill -f serve.py` or kill by process name — only what this run starte
 | Command | Role |
 | --- | --- |
 | `bin/control-world-adventures` | Bash wrapper (ensures `npm install`, runs the Node CLI) |
-| `bin/control-world-adventures.mjs` | Launch / doctor / browser / cleanup |
+| `bin/control-world-adventures.mjs` | Launch / doctor / http / browser / cleanup |
 
 Put `bin/` on `PATH` as shown in Launch. Every invocation above is literal.
 

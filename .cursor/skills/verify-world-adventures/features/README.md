@@ -4,7 +4,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 ## Baseline preconditions
 
-- Launch with `control-world-adventures launch` so the app is at `http://127.0.0.1:8765/` (or the `WA_PORT` you chose).
+- Launch with `control-world-adventures launch` so the app is at `http://127.0.0.1:8765/` (or the `WA_PORT` you chose). Prefer an isolated port when another session already owns `:8765`.
 - Set a disposable `WA_STATE_DIR=/tmp/wa-verify-$RUN_ID` so concurrent runs do not share meta.
 - Put `.cursor/skills/verify-world-adventures/bin` on `PATH`.
 - Run `control-world-adventures doctor` and require `healthy: true` for the expected URL.
@@ -15,7 +15,10 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 - Start every recipe from the baseline state unless its preconditions say otherwise.
 - Prefer ARIA roles and accessible names (`Landmarks`, `Find this place`, `Surprise me`) over coordinates.
-- Use `#strip .thumb[data-id="…"]` when the strip chip is the user control (chips use `title` = place name, not an accessible name).
+- Use `#strip .thumb[data-id="…"]` when the strip chip is the user control (chips use `title` = place name).
+- Use `.pin[data-id="iss"]` (aria-label `Space station`) for the ISS pin — it is not on the strip.
+- Use `control-world-adventures browser pov --altitude N` to set Earth camera altitude for mid-orbit chrome proofs.
+- Use `control-world-adventures http --path /.git/config` for serve denylist status proofs.
 - Treat every command as literal. Keep quoted names and flags unchanged.
 - Run browser actions through `control-world-adventures browser`.
 - Cleanup removes the server and browser only. Do not remove proof artifacts.
@@ -24,6 +27,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 - Capture the user action and the resulting state, not only the final screen.
 - UI proof includes an ARIA snapshot and a screenshot with the brand `World Adventures!` visible.
+- HTTP proof includes method, path, and status code (JSON from `http` or a sibling `proof.json`).
 - Record the feature ID and entry point used with every artifact.
 - Report an unreachable path with the attempted command and the unmet precondition.
 - Do not report a skipped entry point as verified through a different path.
@@ -43,6 +47,10 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 - [Open a place card](./place-card.md) covers strip and Surprise entry to the place dialog.
 - [Adventure tabs](./adventure-tabs.md) covers switching Landmarks, Wonders, Continents, Countries, and Space.
-- [Find quiz](./find-quiz.md) covers starting Find, seeing a prompt, and completing one correct strip tap.
+- [Find quiz](./find-quiz.md) covers starting Find, tally chrome, correct strip tap, Find another, and ISS-free pools.
 - [Space mode](./space-mode.md) covers Space overview (`body.space-mode` + sizes strip) and opening a solar-system body card.
+- [Space re-enter](./space-reenter.md) covers rapid Space ↔ Earth tab switches during the leave transition.
+- [Mid-orbit chrome](./mid-orbit-chrome.md) covers Earth pins and strip staying usable below Space handoff altitude.
+- [ISS card and mesh](./iss-card.md) covers opening The ISS from its pin and Earth-local craft visibility.
 - [Moon phases](./moon-phases.md) covers opening the Phases toy on The Moon.
+- [Serve path 403](./serve-path-403.md) covers blocked `/.git`, `/.scratch`, and `/.cursor` HTTP paths.
