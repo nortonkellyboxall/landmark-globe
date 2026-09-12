@@ -881,6 +881,7 @@ export const COUNTRIES = [
     color: "#02529c",
     kind: "country",
     continent: "europe",
+    weather: "snow",
     story:
       "Iceland is a volcanic island with geysers, waterfalls, glaciers, and black-sand beaches.",
     wow: "In Iceland you can stand between two tectonic plates pulling apart!",

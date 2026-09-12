@@ -158,6 +158,7 @@ export const WONDERS = [
     lat: -3.4653,
     lng: -62.2159,
     continent: "Americas",
+    weather: "rain",
     emoji: "🌳",
     color: "#2d6a4f",
     story:
