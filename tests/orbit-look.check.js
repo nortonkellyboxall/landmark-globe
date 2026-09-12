@@ -36,7 +36,8 @@ assert.equal(lookFromAltitude(5).band, "mid");
 assert.equal(lookFromAltitude(2).band, "near");
 assert.ok(lookFromAltitude(11).atmosphereAltitude < lookFromAltitude(2).atmosphereAltitude);
 
-assert.equal(isDeepSpace(DEEP_SPACE_ALT + 0.01), true);
+assert.equal(isDeepSpace(SPACE_HANDOFF_ALT + 0.01), true);
+assert.equal(isDeepSpace(DEEP_SPACE_ALT + 0.01), false, "mid-orbit below handoff keeps Earth chrome");
 assert.equal(isDeepSpace(2), false);
 
 assert.equal(firefliesShouldTick({ reduceMotion: true, deepSpace: false, pageHidden: false }), false);

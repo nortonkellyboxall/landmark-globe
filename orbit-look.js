@@ -56,9 +56,13 @@ export function lookFromAltitude(alt) {
   };
 }
 
-/** @param {number} alt */
+/**
+ * Pin/strip deep-space chrome. Uses Space handoff altitude so mid-orbit Earth
+ * stays usable; lookFromAltitude still uses DEEP_SPACE_ALT for atmosphere bands.
+ * @param {number} alt
+ */
 export function isDeepSpace(alt) {
-  return (Number.isFinite(alt) ? alt : 2) > DEEP_SPACE_ALT;
+  return (Number.isFinite(alt) ? alt : 2) > SPACE_HANDOFF_ALT;
 }
 
 export function firefliesShouldTick({ reduceMotion, deepSpace, pageHidden }) {
