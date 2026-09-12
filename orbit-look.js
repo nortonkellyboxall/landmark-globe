@@ -11,7 +11,7 @@ export const SUN_RADII_OUT = 7.4;
 export const SUN_RADIUS = SUN_RADII_OUT * (MOON_RADIUS / MOON_RADII_OUT);
 
 /** Frame periods for createGlobe's companion rAF. 1 = every frame. */
-export const GLOBE_TICK = { sun: 8, aurora: 2, weather: 2, pov: 8 };
+export const GLOBE_TICK = { sun: 8, aurora: 2, weather: 2, pov: 8, pins: 8 };
 
 export function dueThisFrame(frame, period) {
   const p = Number(period);
@@ -56,9 +56,13 @@ export function lookFromAltitude(alt) {
   };
 }
 
-/** @param {number} alt */
+/**
+ * Pin/strip deep-space chrome. Uses Space handoff altitude so mid-orbit Earth
+ * stays usable; lookFromAltitude still uses DEEP_SPACE_ALT for atmosphere bands.
+ * @param {number} alt
+ */
 export function isDeepSpace(alt) {
-  return (Number.isFinite(alt) ? alt : 2) > DEEP_SPACE_ALT;
+  return (Number.isFinite(alt) ? alt : 2) > SPACE_HANDOFF_ALT;
 }
 
 export function firefliesShouldTick({ reduceMotion, deepSpace, pageHidden }) {
