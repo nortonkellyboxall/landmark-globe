@@ -23,6 +23,13 @@ assert.deepEqual(
 );
 assert.equal(findPool("landmarks", pool).length, geoPool(pool).length);
 assert.equal(findPool("wonders", pool).length, 4);
+assert.deepEqual(
+  findPool("landmarks", [
+    { id: "iss", kind: "station", lat: 1, lng: 2 },
+    { id: "eiffel", lat: 48, lng: 2 },
+  ]).map((p) => p.id),
+  ["iss", "eiffel"]
+);
 
 let prompted = null;
 let correctId = null;

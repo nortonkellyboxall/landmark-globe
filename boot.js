@@ -366,13 +366,7 @@ function openLandmark(id, sourceEl) {
   if (result.handled && !result.correct) return;
   if (result.handled && result.correct) skipFly = true;
 
-  if (id === "iss") {
-    playPop();
-    setLunaMood("cheer", "🛰️");
-    return;
-  }
-
-  const lm = adventure.getPlaces().find((l) => l.id === id);
+  const lm = adventure.getPlaces().find((l) => l.id === id) || placeById(id);
   if (!lm) return;
 
   adventure.setSelectedId(id);
@@ -405,8 +399,11 @@ function openLandmark(id, sourceEl) {
   }
 
   if (!globe) return;
+  const issPos = id === "iss" ? globe.getIssPos() : null;
+  const lat = issPos ? issPos.lat : lm.lat;
+  const lng = issPos ? issPos.lng : lm.lng;
   globe.setAutoRotate(false);
-  globe.setWeather(lm.lat, lm.lng, weatherForPlace(lm));
+  globe.setWeather(lat, lng, weatherForPlace(lm));
   if (skipFly) {
     scheduleOpen(openCard, { gen, getGen, wait: wait220 });
   } else {
@@ -418,7 +415,7 @@ function openLandmark(id, sourceEl) {
     scheduleOpen(openCard, {
       gen,
       getGen,
-      wait: () => Promise.resolve(globe.pointOfView(lm.lat, lm.lng, alt, ms)),
+      wait: () => Promise.resolve(globe.pointOfView(lat, lng, alt, ms)),
     });
   }
 
