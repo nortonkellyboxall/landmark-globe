@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { LANDMARKS } from "../landmarks.js";
-import { placesForContinent, createAdventure, DATASETS } from "../adventure.js";
+import {
+  placesForContinent,
+  continentIdForExplore,
+  continentPlaceForExplore,
+  createAdventure,
+  DATASETS,
+} from "../adventure.js";
 
 const landmarks = [
   { id: "ny", continent: "Americas", lat: 40 },
@@ -40,6 +46,33 @@ assert.deepEqual(
   placesForContinent("europe", landmarks, wonders).map((p) => p.id),
   ["paris", "alps"],
   "countries arg optional"
+);
+
+assert.equal(continentIdForExplore({ kind: "continent", id: "europe" }), "europe");
+assert.equal(
+  continentIdForExplore({ kind: "country", id: "france", continent: "europe" }),
+  "europe"
+);
+assert.equal(continentIdForExplore({ kind: "landmark", id: "eiffel" }), null);
+assert.equal(continentIdForExplore(null), null);
+
+const europeCard = { id: "europe", name: "Europe", kind: "continent" };
+assert.equal(continentPlaceForExplore(europeCard), europeCard);
+assert.equal(
+  continentPlaceForExplore(
+    { kind: "country", id: "france", continent: "europe" },
+    [{ id: "europe", name: "Europe", kind: "continent" }]
+  ).id,
+  "europe"
+);
+assert.ok(
+  placesForContinent(
+    continentIdForExplore({ kind: "country", id: "france", continent: "europe" }),
+    landmarks,
+    wonders,
+    countries
+  ).some((p) => p.id === "paris"),
+  "country Explore joins europe pool"
 );
 function fakeClassList() {
   const s = new Set();
