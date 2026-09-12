@@ -33,7 +33,7 @@ Preconditions:
 
 ## Gotchas
 
-- Strip chips are `<button class="thumb" title="…">` without an accessible name matching the place; use `data-id` selectors, not `getByRole` by place name.
+- Strip chips are `<button class="thumb" title="…">` with visible name text; still prefer `data-id` selectors over `getByRole` by place name for stable scripts.
 - Reduced motion still opens the card after a short schedule delay; wait on `#card:not([hidden])`, not a fixed sleep alone.
 - Globe pin taps are valid user paths but are unstable under headless WebGL — do not require pin hits for a passing proof when the strip path works.
 - Surprise picks a random place; assert a non-empty title from the Landmarks pool, or re-open `eiffel` for deterministic screenshot proof.

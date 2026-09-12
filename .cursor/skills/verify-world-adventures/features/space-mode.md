@@ -13,7 +13,7 @@ Space mode swaps the earth adventure for the interactive solar system, with a si
 ## How to get to it (user POV)
 
 - Choose the `Space` tab in `Pick an adventure`.
-- Pinch the globe out until the space handoff triggers (prefer the tab for scripts).
+- Pinch the globe out until the space handoff triggers (prefer the tab for scripts; see also mid-orbit chrome).
 
 ## Driving it with control-world-adventures
 
@@ -23,7 +23,7 @@ Preconditions:
 - `control-world-adventures browser ready` has succeeded.
 
 - **Enter Space.** Choose Space. Run `control-world-adventures browser click --role tab --name "Space"`. Run `control-world-adventures browser eval --js '({selected:document.getElementById("tabSpace").getAttribute("aria-selected"), solarHidden:document.getElementById("solarSystem").hidden, spaceMode:document.body.classList.contains("space-mode")})'`. Expect `selected` `true`, `solarHidden` `false`, and `spaceMode` `true`.
-- **Confirm sizes strip.** Run `control-world-adventures browser wait --selector '#ssSizesRow .ss-size-item'`. Then run `control-world-adventures browser eval --js 'document.querySelectorAll("#ssSizesRow .ss-size-item").length'`. Expect a positive count of body rows.
+- **Confirm sizes strip.** Run `control-world-adventures browser wait --selector '#ssSizesRow .ss-size-item'`. Then run `control-world-adventures browser eval --js 'document.querySelectorAll("#ssSizesRow .ss-size-item").length'`. Expect a positive count of body rows (no ISS row).
 - **Overview proof.** Run `control-world-adventures browser snapshot --aria --path space-mode/overview.aria.txt` and `control-world-adventures browser screenshot --path space-mode/overview.png`. The snapshot shows Space selected and a sizes region; the screenshot shows Space chrome with the sizes strip.
 - **Open The Moon.** Choose the Moon chip. Run `control-world-adventures browser click --selector '#strip .thumb[data-id="moon"]'`, then `control-world-adventures browser wait --selector '#card:not([hidden])'`, then `control-world-adventures browser text --selector '#cardTitle'`. The title is `The Moon`.
 - **Leave Space.** Choose Landmarks. Run `control-world-adventures browser click --role tab --name "Landmarks"`. Wait for `#strip .thumb[data-id="eiffel"]`. `tabLandmarks` is selected and `document.body.classList.contains("space-mode")` is `false`.
@@ -32,7 +32,8 @@ Preconditions:
 ## Gotchas
 
 - `#solarSystem` uses the `hidden` attribute; assert that, not only CSS visibility.
-- `body.space-mode` is the chrome class for Space overview; do not treat deep-space Earth zoom as Space.
+- `body.space-mode` is the chrome class for Space overview; do not treat mid-orbit Earth zoom (`browser pov`) as Space until handoff altitude is crossed.
 - Body cards still use `#cardTitle`; sizes-strip items use `.ss-size-item[data-id]` as an alternate entry — strip chips are enough for card proof.
 - Fluid handoff from globe zoom can enter Space without a tab click; doctor the selected tab before blaming the harness.
-- ISS is a special strip/pin case that does not open a normal card — avoid `data-id="iss"` for card proofs.
+- Rapid Space ↔ Earth during leave is covered by [space-reenter](./space-reenter.md), not this overview recipe.
+- The ISS opens a normal place card from its Earth pin ([iss-card](./iss-card.md)); it is not on the Space strip or sizes row — do not use `data-id="iss"` for Space body proofs.

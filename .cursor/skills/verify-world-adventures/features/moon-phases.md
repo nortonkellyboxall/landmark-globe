@@ -32,5 +32,6 @@ Preconditions:
 
 - The Phases button stays hidden on every place except `data-id="moon"` — opening Eiffel first will not show it.
 - You must be on Space (or otherwise have The Moon in the active pool) to open the Moon card from the strip.
+- Space strip chips can sit off-screen horizontally; scroll the chip into view then click, or `browser eval` `scrollIntoView` + `.click()` / use `#ssSizesRow .ss-size-item[data-id="moon"]`.
 - Closing the place card also tears down the phases toy; reopen The Moon before another phases proof.
 - Phase speech clips need network/audio; visual panel open is sufficient proof without asserting spoken audio.

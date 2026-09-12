@@ -35,12 +35,14 @@ function usage(code = 1) {
 Usage:
   control-world-adventures launch [--port N] [--run-id ID]
   control-world-adventures doctor
+  control-world-adventures http --path <url-path> [--method GET|HEAD]
   control-world-adventures browser ready
-  control-world-adventures browser click --selector <css>
+  control-world-adventures browser click --selector <css> [--force]
   control-world-adventures browser click --role <role> --name <name>
   control-world-adventures browser wait --selector <css> [--state visible|hidden|attached]
   control-world-adventures browser text --selector <css>
   control-world-adventures browser eval --js <expression>
+  control-world-adventures browser pov [--lat N] [--lng N] --altitude N [--ms N]
   control-world-adventures browser snapshot --aria --path <file>
   control-world-adventures browser screenshot --path <file>
   control-world-adventures cleanup
@@ -153,6 +155,38 @@ async function httpGet(url) {
   const res = await fetch(url);
   const text = await res.text();
   return { status: res.status, text };
+}
+
+async function httpRequest(url, method = "GET") {
+  const res = await fetch(url, { method, redirect: "manual" });
+  let body = "";
+  if (method !== "HEAD") {
+    try {
+      body = await res.text();
+    } catch {
+      body = "";
+    }
+  }
+  return { status: res.status, method, url, bodyBytes: Buffer.byteLength(body) };
+}
+
+async function cmdHttp(args) {
+  const meta = readMeta();
+  const method = String(args.method || "GET").toUpperCase();
+  if (method !== "GET" && method !== "HEAD") {
+    fail("http --method must be GET or HEAD");
+  }
+  let path = args.path;
+  if (path == null || path === true) fail("http requires --path");
+  path = String(path);
+  if (!path.startsWith("/")) path = `/${path}`;
+  const url = new URL(path, meta.url).toString();
+  try {
+    const result = await httpRequest(url, method);
+    ok(result);
+  } catch (err) {
+    fail(err.message);
+  }
 }
 
 async function cmdLaunch(args) {
@@ -372,7 +406,13 @@ async function runBrowserAction(action, args) {
     return rpcCall({ action: "ready" });
   }
   if (action === "click") {
-    if (args.selector) return rpcCall({ action: "click", selector: args.selector });
+    if (args.selector) {
+      return rpcCall({
+        action: "click",
+        selector: args.selector,
+        force: !!args.force,
+      });
+    }
     if (args.role && args.name) {
       return rpcCall({ action: "click", role: args.role, name: args.name });
     }
@@ -393,6 +433,21 @@ async function runBrowserAction(action, args) {
   if (action === "eval") {
     if (!args.js) fail("eval requires --js");
     return rpcCall({ action: "eval", js: args.js });
+  }
+  if (action === "pov") {
+    if (args.altitude == null || args.altitude === true) {
+      fail("pov requires --altitude");
+    }
+    const altitude = Number(args.altitude);
+    if (!Number.isFinite(altitude)) fail("--altitude must be a number");
+    const lat = args.lat == null || args.lat === true ? 18 : Number(args.lat);
+    const lng = args.lng == null || args.lng === true ? -18 : Number(args.lng);
+    const ms = args.ms == null || args.ms === true ? 0 : Number(args.ms);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      fail("--lat and --lng must be numbers when set");
+    }
+    if (!Number.isFinite(ms) || ms < 0) fail("--ms must be a non-negative number");
+    return rpcCall({ action: "pov", lat, lng, altitude, ms });
   }
   if (action === "snapshot") {
     if (!args.aria) fail("snapshot currently supports --aria only");
@@ -497,8 +552,17 @@ async function handleDaemonRequest(page, req) {
   }
   if (action === "click") {
     if (req.selector) {
-      await page.locator(req.selector).first().click({ timeout: 15000 });
-      return { clicked: req.selector };
+      const loc = page.locator(req.selector).first();
+      await loc.evaluate((el) => {
+        if (el && typeof el.scrollIntoView === "function") {
+          el.scrollIntoView({ block: "nearest", inline: "center" });
+        }
+      });
+      await loc.click({
+        timeout: 15000,
+        force: !!req.force,
+      });
+      return { clicked: req.selector, force: !!req.force };
     }
     await page
       .getByRole(req.role, { name: req.name })
@@ -522,6 +586,27 @@ async function handleDaemonRequest(page, req) {
   if (action === "eval") {
     const value = await page.evaluate(req.js);
     return { value };
+  }
+  if (action === "pov") {
+    const value = await page.evaluate(async ({ lat, lng, altitude, ms }) => {
+      const mod = await import("/solar3d.js");
+      await mod.setEarthLook(lat, lng, altitude, ms);
+      // onPov syncs deep-space chrome on a throttled tick; wait a few frames.
+      await new Promise((r) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 120)))
+      );
+      const pov = mod.getEarthPov();
+      return {
+        lat: pov.lat,
+        lng: pov.lng,
+        altitude: pov.altitude,
+        viewMode: mod.getViewMode(),
+        deepSpace: document.body.classList.contains("deep-space"),
+        spaceMode: document.body.classList.contains("space-mode"),
+        stripVisible: !document.body.classList.contains("deep-space"),
+      };
+    }, req);
+    return value;
   }
   if (action === "snapshot") {
     mkdirSync(dirname(req.path), { recursive: true });
@@ -667,6 +752,7 @@ async function main() {
   if (cmd === "_browser-daemon") return runBrowserDaemon();
   if (cmd === "launch") return cmdLaunch(args);
   if (cmd === "doctor") return cmdDoctor();
+  if (cmd === "http") return cmdHttp(args);
   if (cmd === "browser") return cmdBrowser(args);
   if (cmd === "cleanup") return cmdCleanup();
   usage(1);
