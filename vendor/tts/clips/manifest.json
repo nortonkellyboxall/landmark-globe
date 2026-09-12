@@ -1,7 +1,7 @@
 {
   "voice": "Luna",
   "speed": 0.95,
-  "count": 117,
+  "count": 119,
   "ids": [
     "acropolis",
     "africa",
@@ -19,6 +19,7 @@
     "brazil",
     "burj",
     "canada",
+    "chichenitza",
     "chile",
     "china",
     "cntower",
@@ -102,6 +103,7 @@
     "southkorea",
     "spain",
     "sphinx",
+    "stonehenge",
     "sun",
     "sweden",
     "switzerland",
@@ -363,6 +365,10 @@
     "okavango.card": "2e61b5fd4660a975d240cbd999bc2a69f535d03dcc089214d512443401833444",
     "okavango.name": "778e66c02ea8750844fc164519c6054d7da22da2f1f9b46ee06ad5ba950c7c85",
     "emperors.card": "47f581e1a3f2db2d1b99c2b693dfd864506a7b71f82224c74149d52ff45399ae",
-    "emperors.name": "531d03819a2685b4289036e957b5a1758f4e237b60baf52dce60035702d13486"
+    "emperors.name": "531d03819a2685b4289036e957b5a1758f4e237b60baf52dce60035702d13486",
+    "stonehenge.card": "f853a0b07fb7402033bbefaf2e23863055d3685ad3aae997b182fddc120490a3",
+    "stonehenge.name": "f0ef1342b77818036f13886566458516c687ae21bb9436a74b75781d0a50a429",
+    "chichenitza.card": "f352dd161c31d2dffeccb555adb321b8a0805678f64bda51a44fb649044c001c",
+    "chichenitza.name": "70f40896ccbd7c8a61f6cc1fc81e82817ecca9bb70927ec4d908e6bc81f7b20f"
   }
 }
