@@ -20,6 +20,7 @@ import { TRAVELERS } from "./travelers.js";
  * @property {string} [color]
  * @property {string} [kind]
  * @property {string} [continent]
+ * @property {"snow"|"rain"} [weather]
  */
 
 export { LANDMARKS, WONDERS, CONTINENTS, COUNTRIES, TRAVELERS };
