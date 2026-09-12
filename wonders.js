@@ -419,5 +419,25 @@ export const WONDERS = [
       "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/PXL_20241002_064304134.MP_Twelve_Apostles_at_Sunset_Victoria%2C_Australia_Great_Ocean_Road_Trip_07.jpg/960px-PXL_20241002_064304134.MP_Twelve_Apostles_at_Sunset_Victoria%2C_Australia_Great_Ocean_Road_Trip_07.jpg"
     ],
     video: "buwMGiEbEKY",
+  },
+  {
+    id: "emperors",
+    name: "Emperor Penguin Colony",
+    place: "Antarctica",
+    lat: -75.5667,
+    lng: -26.5,
+    continent: "Antarctica",
+    emoji: "🐧",
+    color: "#8eb4d8",
+    weather: "snow",
+    story:
+      "On the sea ice near Antarctica, tall black-and-white penguins huddle together to stay warm. Chicks snuggle on a parent’s feet under a cozy flap of feathers.",
+    wow: "Emperor penguins are the biggest penguins in the world — taller than many five-year-olds!",
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Halley_Emperor_Penguin_Colony_in_1999.jpg/960px-Halley_Emperor_Penguin_Colony_in_1999.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/The_Dawson-Lambton_penguin_colony%2C_Antarctica.jpg/960px-The_Dawson-Lambton_penguin_colony%2C_Antarctica.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Brunt_Ice_Shelf%2C_Antarctica_-_11_December_2022_%2852559137901%29.jpg/960px-Brunt_Ice_Shelf%2C_Antarctica_-_11_December_2022_%2852559137901%29.jpg"
+    ],
+    video: "QLn4_J1fD7g",
   }
 ];

@@ -15,7 +15,11 @@ assert.ok(WONDERS.find((p) => p.id === "kilimanjaro"));
 assert.ok(WONDERS.find((p) => p.id === "okavango"));
 assert.equal(placeById("kilimanjaro")?.weather, "snow");
 assert.equal(placeById("okavango")?.weather, "rain");
+assert.ok(WONDERS.find((p) => p.id === "emperors"));
+assert.equal(placeById("emperors")?.continent, "Antarctica");
+assert.equal(placeById("emperors")?.weather, "snow");
 assert.ok(CONTINENTS.find((p) => p.id === "africa"));
+
 assert.ok(COUNTRIES.find((p) => p.id === "usa"));
 assert.ok(COUNTRIES.find((p) => p.id === "norway"));
 assert.ok(COUNTRIES.find((p) => p.id === "vietnam"));
