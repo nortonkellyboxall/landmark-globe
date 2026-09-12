@@ -12,6 +12,7 @@ import {
   sunYawRadians,
   auroraNightLng,
   fxScale,
+  auroraShouldTick,
 } from "./earth-fx.js";
 
 const EARTH_BUMP = "textures/earth/earth-topology.png";
@@ -401,7 +402,7 @@ export function createEarthSurface(earthMesh, R) {
    * @param {number} nowMs
    * @param {number} spinDelta axial spin this frame (before sun yaw)
    * @param {number} alt camera altitude
-   * @param {boolean} showLocal weather/radar visibility
+   * @param {boolean} showLocal weather/radar/aurora visibility
    */
   function tick(dt, nowMs, spinDelta, alt, showLocal) {
     axialSpin += spinDelta;
@@ -409,7 +410,8 @@ export function createEarthSurface(earthMesh, R) {
     if (cloudsMesh) cloudsMesh.rotation.y += 0.00045;
     fxFrame += 1;
     weatherDt += dt * 1000;
-    if (dueThisFrame(fxFrame, GLOBE_TICK.aurora)) tickAurora(nowMs);
+    if (auroraGroup) auroraGroup.visible = !!showLocal;
+    if (auroraShouldTick(showLocal, fxFrame)) tickAurora(nowMs);
     if (dueThisFrame(fxFrame, GLOBE_TICK.weather)) {
       tickWeather(weatherDt);
       weatherDt = 0;
