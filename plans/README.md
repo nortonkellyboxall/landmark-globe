@@ -46,16 +46,16 @@ Source of task text: `docs/superpowers/plans/2026-08-29-improve-wave-2.md`. Exec
 
 ## Wave 3 (2026-08-29) — Space race, pin budget, aurora skip, serve denylist, ISS
 
-Source of task text: `docs/superpowers/plans/2026-08-29-improve-wave-3.md`. Execute Tasks 1–6 in order on `feature/improve-wave-3` **after** wave 2 is on `main`.
+Source of task text: `docs/superpowers/plans/2026-08-29-improve-wave-3.md`. Product work landed on `main` via World Adventures stack replays (WA-02…07 / PRs `#8`+`#15`), not the original `feature/improve-wave-3` branch.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 013 | Space enter during leave | P1 | S | — | TODO |
-| 014 | Throttle Earth pin projection | P1 | S | — | TODO |
-| 015 | Skip aurora CPU in solar view | P1 | S | — | TODO |
-| 016 | serve.py refuse private paths | P1 | S | — | TODO |
-| 017 | ISS Place + Luna clips | P1 | M | — | TODO |
-| 018 | ISS mesh on Earth | P2 | M | 017 | TODO |
+| 013 | Space enter during leave | P1 | S | — | DONE |
+| 014 | Throttle Earth pin projection | P1 | S | — | DONE |
+| 015 | Skip aurora CPU in solar view | P1 | S | — | DONE |
+| 016 | serve.py refuse private paths | P1 | S | — | DONE |
+| 017 | ISS Place + Luna clips | P1 | M | — | DONE |
+| 018 | ISS mesh on Earth | P2 | M | 017 | DONE |
 
 ## Findings considered and rejected
 
