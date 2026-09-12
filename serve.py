@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Dev server: bind LAN + never cache HTML/JS/CSS (module imports have no ?v=)."""
+import os
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-PORT = 8000
-HOST = "0.0.0.0"
+PORT = int(os.environ.get("PORT", "8000"))
+HOST = os.environ.get("HOST", "0.0.0.0")
 
 
 class NoCacheHandler(SimpleHTTPRequestHandler):
@@ -16,6 +17,6 @@ class NoCacheHandler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     httpd = ThreadingHTTPServer((HOST, PORT), NoCacheHandler)
-    print(f"Serving on http://0.0.0.0:{PORT} (no-cache for html/js/css)")
+    print(f"Serving on http://{HOST}:{PORT} (no-cache for html/js/css)")
     print("On other devices use this Mac's LAN IP, e.g. http://192.168.x.x:8000")
     httpd.serve_forever()

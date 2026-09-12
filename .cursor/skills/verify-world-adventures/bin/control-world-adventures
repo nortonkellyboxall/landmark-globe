@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Wrapper so agents can run `control-world-adventures` from the skill bin/.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+SKILL_ROOT="$(cd "$ROOT/.." && pwd)"
+if [[ ! -d "$SKILL_ROOT/node_modules/playwright" ]]; then
+  (cd "$SKILL_ROOT" && npm install --silent)
+fi
+exec node "$ROOT/control-world-adventures.mjs" "$@"
