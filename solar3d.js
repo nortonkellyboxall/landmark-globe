@@ -16,6 +16,7 @@ import {
   sunTargetBlend,
 } from "./orbit-look.js";
 import { createEarthSurface } from "./earth-surface.js";
+import { issLocalPos } from "./traveler-orbit.js";
 
 /**
  * Interactive 3D solar system (spheres + orbits + camera controls).
@@ -88,6 +89,8 @@ let earthPovFrame = 0;
 let followEarth = false;
 /** @type {ReturnType<typeof createEarthSurface>|null} */
 let earthSurface = null;
+/** @type {THREE.Mesh|null} */
+let issMesh = null;
 const EARTH_MARBLE = "textures/earth/earth-blue-marble.jpg";
 const _projWorld = new THREE.Vector3();
 const _projLocal = new THREE.Vector3();
@@ -452,11 +455,36 @@ function clearRootBodies() {
   sunMesh = null;
 }
 
+function disposeIssMesh() {
+  if (!issMesh) return;
+  if (issMesh.parent) issMesh.parent.remove(issMesh);
+  if (issMesh.geometry) issMesh.geometry.dispose();
+  if (issMesh.material) issMesh.material.dispose();
+  issMesh = null;
+}
+
+function createIssMesh(earthMesh, R) {
+  disposeIssMesh();
+  const craftR = R * 0.04;
+  issMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(craftR * 2.2, craftR * 0.7, craftR),
+    new THREE.MeshStandardMaterial({
+      color: 0xdfe7ee,
+      metalness: 0.55,
+      roughness: 0.35,
+    })
+  );
+  const [x, y, z] = issLocalPos(performance.now() / 1000, R);
+  issMesh.position.set(x, y, z);
+  earthMesh.add(issMesh);
+}
+
 function populateBodies() {
   if (earthSurface) {
     earthSurface.dispose();
     earthSurface = null;
   }
+  disposeIssMesh();
   clearRootBodies();
   const defs = SPACE_BODIES.map((b) => toVisualDef(b, orbitMode));
   defs.forEach((def) => {
@@ -510,6 +538,7 @@ function populateBodies() {
 
     if (def.id === "earth") {
       earthSurface = createEarthSurface(mesh, def.size);
+      createIssMesh(mesh, def.size);
       const moonBody = SPACE_BODIES.find((d) => d.id === "moon");
       const moonDef = toVisualDef(moonBody, orbitMode);
       const moonPivot = new THREE.Object3D();
@@ -624,9 +653,14 @@ function animate() {
 
   const earthAlt = trackingEarth && camera ? getEarthPov().altitude : 2.4;
   const blend = followEarth ? sunTargetBlend(earthAlt) : 0;
+  const showLocal = viewMode === "earth" || (followEarth && blend < 0.4);
   if (earthSurface) {
-    const showLocal = viewMode === "earth" || (followEarth && blend < 0.4);
     earthSurface.tick(dt, performance.now(), dt * spinRate, earthAlt, showLocal);
+  }
+  if (issMesh) {
+    const [ix, iy, iz] = issLocalPos(performance.now() / 1000, earthRadius());
+    issMesh.position.set(ix, iy, iz);
+    issMesh.visible = showLocal;
   }
 
   if (trackingEarth && camera && controls) {
@@ -722,6 +756,7 @@ function destroy() {
     earthSurface.dispose();
     earthSurface = null;
   }
+  disposeIssMesh();
   if (renderer) {
     renderer.domElement.removeEventListener("pointerdown", onPointerDown);
     renderer.domElement.removeEventListener("pointermove", onPointerMove);
