@@ -399,6 +399,44 @@ export const LANDMARKS = [
     video: "46UFTpVKuBg",
   },
   {
+    id: "greatzimbabwe",
+    name: "Great Zimbabwe",
+    place: "Masvingo, Zimbabwe",
+    lat: -20.2686,
+    lng: 30.9336,
+    emoji: "🏰",
+    color: "#a67c52",
+    continent: "Africa",
+    story:
+      "Long ago, people built a stone city with tall walls and a tower — without using cement! The walls curve like ribbons of rock.",
+    wow: "Some walls are taller than a two-storey house and still stand after hundreds of years!",
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Great-zim-aerial-looking-West.JPG/960px-Great-zim-aerial-looking-West.JPG",
+      "https://upload.wikimedia.org/wikipedia/commons/1/19/Great-Zimbabwe-6.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/d/d6/Great_zimbabwe_2.jpg"
+    ],
+    video: "mYYbtiX6h48",
+  },
+  {
+    id: "lalibela",
+    name: "Rock Churches of Lalibela",
+    place: "Lalibela, Ethiopia",
+    lat: 12.0317,
+    lng: 39.0473,
+    emoji: "⛪",
+    color: "#c4785a",
+    continent: "Africa",
+    story:
+      "Here, whole churches were carved down into solid rock. One famous church is shaped like a cross and sits in a deep pit you can walk around.",
+    wow: "Builders dug the churches out of the mountain — like sculpting giant buildings from the ground!",
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Bete_Giyorgis_03.jpg/960px-Bete_Giyorgis_03.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Bete_Giyorgis_01.jpg/960px-Bete_Giyorgis_01.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Bete_Giyorgis-Lalibela_%289%29.jpg/960px-Bete_Giyorgis-Lalibela_%289%29.jpg"
+    ],
+    video: "KYgmUC8lRyc",
+  },
+  {
     id: "burj",
     name: "Burj Khalifa",
     place: "Dubai, United Arab Emirates",
