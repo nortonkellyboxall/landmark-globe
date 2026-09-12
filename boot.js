@@ -1,5 +1,5 @@
 import { SPACE_BODIES, diameterKm as spaceDiameterKm } from "./space-catalog.js";
-import { LANDMARKS, WONDERS, CONTINENTS, placeById } from "./place.js";
+import { LANDMARKS, WONDERS, CONTINENTS, COUNTRIES, placeById } from "./place.js";
 import { createCardMedia } from "./card-media.js";
 import { createGlobe } from "./globe-app.js";
 import { diveMs, firefliesShouldTick, heatHint, isDeepSpace, SPACE_HANDOFF_ALT, peekAltitudeForTab } from "./orbit-look.js";
@@ -285,7 +285,7 @@ const card = createCardMedia(els, {
   playPop,
   playChime,
   placesForContinent: (id) =>
-    continentPlaces(id, LANDMARKS, WONDERS),
+    continentPlaces(id, LANDMARKS, WONDERS, COUNTRIES),
   onShowPlaces(place) {
     adventure.showPlacesInContinent(place);
   },

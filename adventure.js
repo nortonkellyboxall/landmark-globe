@@ -35,7 +35,7 @@ export const DATASETS = {
   },
 };
 
-export function placesForContinent(continentId, landmarks, wonders) {
+export function placesForContinent(continentId, landmarks, wonders, countries) {
   const filterPack = (all) => {
     if (continentId === "northamerica") {
       return all.filter((l) => l.continent === "Americas" && l.lat >= 7);
@@ -53,7 +53,8 @@ export function placesForContinent(continentId, landmarks, wonders) {
     if (!label) return [];
     return all.filter((l) => l.continent === label);
   };
-  return [...filterPack(landmarks || []), ...filterPack(wonders || [])];
+  const countryHits = (countries || []).filter((c) => c.continent === continentId);
+  return [...filterPack(landmarks || []), ...filterPack(wonders || []), ...countryHits];
 }
 
 function staggerPinPlaces(items) {
@@ -160,7 +161,8 @@ export function createAdventure(opts) {
     const hits = placesForContinent(
       place.id,
       datasets.landmarks.items,
-      datasets.wonders.items
+      datasets.wonders.items,
+      datasets.countries.items
     );
     if (!hits.length) return;
     opts.stopFind();

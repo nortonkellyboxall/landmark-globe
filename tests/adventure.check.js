@@ -12,21 +12,35 @@ const wonders = [
   { id: "patagonia", continent: "Americas", lat: -50 },
   { id: "alps", continent: "Europe", lat: 46 },
 ];
+const countries = [
+  { id: "usa", continent: "northamerica", lat: 39 },
+  { id: "brazil", continent: "southamerica", lat: -14 },
+  { id: "france", continent: "europe", lat: 46 },
+  { id: "egypt", continent: "africa", lat: 26 },
+];
 
 assert.deepEqual(
-  placesForContinent("northamerica", landmarks, wonders).map((p) => p.id),
-  ["ny", "grandcanyon"]
+  placesForContinent("northamerica", landmarks, wonders, countries).map((p) => p.id),
+  ["ny", "grandcanyon", "usa"]
 );
 assert.deepEqual(
-  placesForContinent("southamerica", landmarks, wonders).map((p) => p.id),
-  ["lima", "patagonia"]
+  placesForContinent("southamerica", landmarks, wonders, countries).map((p) => p.id),
+  ["lima", "patagonia", "brazil"]
 );
+assert.deepEqual(
+  placesForContinent("europe", landmarks, wonders, countries).map((p) => p.id),
+  ["paris", "alps", "france"]
+);
+assert.deepEqual(
+  placesForContinent("africa", landmarks, wonders, countries).map((p) => p.id),
+  ["egypt"]
+);
+assert.deepEqual(placesForContinent("nope", landmarks, wonders, countries), []);
 assert.deepEqual(
   placesForContinent("europe", landmarks, wonders).map((p) => p.id),
-  ["paris", "alps"]
+  ["paris", "alps"],
+  "countries arg optional"
 );
-assert.deepEqual(placesForContinent("nope", landmarks, wonders), []);
-
 function fakeClassList() {
   const s = new Set();
   return {
