@@ -5,3 +5,8 @@
 node_modules/
 scripts/node_modules/
 graphify-out/
+
+# Verification harness deps and proof artifacts (evidence is local to a run)
+.cursor/skills/verify-world-adventures/node_modules/
+.cursor/skills/verify-world-adventures/package-lock.json
+.cursor/skills/verify-world-adventures/artifacts/
