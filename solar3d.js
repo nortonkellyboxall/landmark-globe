@@ -16,6 +16,7 @@ import {
   sunTargetBlend,
 } from "./orbit-look.js";
 import { createEarthSurface } from "./earth-surface.js";
+import { issLocalPos } from "./traveler-orbit.js";
 
 /**
  * Interactive 3D solar system (spheres + orbits + camera controls).
@@ -88,6 +89,8 @@ let earthPovFrame = 0;
 let followEarth = false;
 /** @type {ReturnType<typeof createEarthSurface>|null} */
 let earthSurface = null;
+/** @type {THREE.Mesh|null} */
+let issMesh = null;
 const EARTH_MARBLE = "textures/earth/earth-blue-marble.jpg";
 const _projWorld = new THREE.Vector3();
 const _projLocal = new THREE.Vector3();
@@ -452,11 +455,20 @@ function clearRootBodies() {
   sunMesh = null;
 }
 
+function disposeIssMesh() {
+  if (!issMesh) return;
+  if (issMesh.parent) issMesh.parent.remove(issMesh);
+  if (issMesh.geometry) issMesh.geometry.dispose();
+  if (issMesh.material) issMesh.material.dispose();
+  issMesh = null;
+}
+
 function populateBodies() {
   if (earthSurface) {
     earthSurface.dispose();
     earthSurface = null;
   }
+  disposeIssMesh();
   clearRootBodies();
   const defs = SPACE_BODIES.map((b) => toVisualDef(b, orbitMode));
   defs.forEach((def) => {
@@ -510,6 +522,20 @@ function populateBodies() {
 
     if (def.id === "earth") {
       earthSurface = createEarthSurface(mesh, def.size);
+      disposeIssMesh();
+      const craftR = def.size * 0.04;
+      issMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(craftR * 2.2, craftR * 0.7, craftR),
+        new THREE.MeshStandardMaterial({
+          color: 0xdfe7ee,
+          metalness: 0.55,
+          roughness: 0.35,
+        })
+      );
+      issMesh.name = "iss";
+      const [ix, iy, iz] = issLocalPos(performance.now() / 1000, def.size);
+      issMesh.position.set(ix, iy, iz);
+      mesh.add(issMesh);
       const moonBody = SPACE_BODIES.find((d) => d.id === "moon");
       const moonDef = toVisualDef(moonBody, orbitMode);
       const moonPivot = new THREE.Object3D();
@@ -628,6 +654,13 @@ function animate() {
     const showLocal = viewMode === "earth" || (followEarth && blend < 0.4);
     earthSurface.tick(dt, performance.now(), dt * spinRate, earthAlt, showLocal);
   }
+  if (issMesh) {
+    const earth = bodies.get("earth");
+    const R = earth && earth.def ? earth.def.size : earthRadius();
+    const [ix, iy, iz] = issLocalPos(performance.now() / 1000, R);
+    issMesh.position.set(ix, iy, iz);
+    issMesh.visible = viewMode === "earth" || (followEarth && blend < 0.55);
+  }
 
   if (trackingEarth && camera && controls) {
     const earth = bodyWorldPos("earth");
@@ -722,6 +755,7 @@ function destroy() {
     earthSurface.dispose();
     earthSurface = null;
   }
+  disposeIssMesh();
   if (renderer) {
     renderer.domElement.removeEventListener("pointerdown", onPointerDown);
     renderer.domElement.removeEventListener("pointermove", onPointerMove);
