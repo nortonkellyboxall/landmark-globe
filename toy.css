@@ -507,7 +507,7 @@ body.deep-space .vignette {
 .moon-phase-host {
   min-height: 100%;
   box-sizing: border-box;
-  padding: 2.6rem 0.75rem 1rem;
+  padding: 2.6rem 0.75rem 5.5rem;
 }
 
 .moon-phase-toy {
@@ -636,12 +636,25 @@ body.deep-space .vignette {
   background: rgba(255, 183, 3, 0.35);
 }
 
-.card.moon-phase-open .card-actions,
 .card.moon-phase-open .card-more {
   visibility: hidden;
 }
 
-.card-actions .btn.phases {
-  background: #2a3550;
-  color: #fff8ef;
+.card.moon-phase-open .card-actions {
+  position: relative;
+  z-index: 11;
+  visibility: visible;
+  background: linear-gradient(180deg, transparent 0%, #0b1220 28%);
+  padding-top: 0.85rem;
 }
+
+.card.moon-phase-open .card-actions .btn.watch,
+.card.moon-phase-open .card-actions .btn.anthem,
+.card.moon-phase-open .card-actions .btn.ghost {
+  display: none;
+}
+
+.card.moon-phase-open .card-close {
+  z-index: 12;
+}
+
