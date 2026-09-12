@@ -1,5 +1,7 @@
 /** Sound — ambient audio, whoosh, mute. WebAudio details stay inside. */
 
+export const AMBIENT_GAIN = { on: 0.045, duck: 0.028 };
+
 export function ambientKind(tab, selectedId) {
   if (tab === "space" || selectedId) return "on";
   return "duck";
@@ -102,7 +104,20 @@ export function createSound(opts = {}) {
     osc.stop(t0 + 0.55);
   }
 
-  function startAmbient() {
+  function ambientTarget(kind) {
+    return kind === "on" ? AMBIENT_GAIN.on : AMBIENT_GAIN.duck;
+  }
+
+  function rampMaster(target) {
+    if (!ambientNodes?.master || !audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    const master = ambientNodes.master;
+    master.gain.cancelScheduledValues(t0);
+    master.gain.setValueAtTime(Math.max(master.gain.value, 0.0001), t0);
+    master.gain.setTargetAtTime(target, t0, 0.4);
+  }
+
+  function startAmbient(kind = "on") {
     ensureAudio();
     if (!soundOn || !audioCtx || ambientNodes) return;
     const master = audioCtx.createGain();
@@ -135,7 +150,7 @@ export function createSound(opts = {}) {
       ],
     };
     const t0 = audioCtx.currentTime;
-    master.gain.exponentialRampToValueAtTime(0.045, t0 + 2.2);
+    master.gain.exponentialRampToValueAtTime(ambientTarget(kind), t0 + 2.2);
   }
 
   function stopAmbient() {
@@ -164,12 +179,11 @@ export function createSound(opts = {}) {
       stopAmbient();
       return;
     }
-    if (kind === "on") startAmbient();
-    else if (ambientNodes && ambientNodes.master) {
-      ambientNodes.master.gain.setTargetAtTime(0.028, audioCtx.currentTime, 0.4);
-    } else {
-      startAmbient();
+    if (!ambientNodes) {
+      startAmbient(kind);
+      return;
     }
+    rampMaster(ambientTarget(kind));
   }
 
   function setSoundOn(on) {

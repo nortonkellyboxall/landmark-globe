@@ -519,6 +519,12 @@ export function createCardMedia(els, deps) {
     onClose();
   }
 
+  /** Stop speech + video/anthem without closing the card (mute bus). */
+  function silence() {
+    stopSpeech();
+    stopVideo();
+  }
+
   function speak(place) {
     const lm = place || currentPlace;
     if (!lm) return;
@@ -627,5 +633,6 @@ export function createCardMedia(els, deps) {
     openPlaceCard,
     close,
     tryDismiss,
+    silence,
   };
 }
