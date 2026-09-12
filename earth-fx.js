@@ -1,6 +1,6 @@
 /** Pure Earth-surface FX helpers (no Three.js). */
 
-import { latLngDirection, wrapLng, subsolarPoint } from "./orbit-look.js";
+import { dueThisFrame, GLOBE_TICK, latLngDirection, wrapLng, subsolarPoint } from "./orbit-look.js";
 
 /** Hours → Earth yaw radians (15° per hour). */
 export function sunYawRadians(hours) {
@@ -36,4 +36,8 @@ export function fxScale(R, oldUnits) {
   const r = Number(R);
   if (!Number.isFinite(r) || r <= 0) return 0;
   return (r / 100) * Number(oldUnits);
+}
+
+export function auroraShouldTick(showLocal, frame, period = GLOBE_TICK.aurora) {
+  return !!showLocal && dueThisFrame(frame, period);
 }

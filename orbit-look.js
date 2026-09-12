@@ -11,7 +11,7 @@ export const SUN_RADII_OUT = 7.4;
 export const SUN_RADIUS = SUN_RADII_OUT * (MOON_RADIUS / MOON_RADII_OUT);
 
 /** Frame periods for createGlobe's companion rAF. 1 = every frame. */
-export const GLOBE_TICK = { sun: 8, aurora: 2, weather: 2, pov: 8 };
+export const GLOBE_TICK = { sun: 8, aurora: 2, weather: 2, pov: 8, pins: 8 };
 
 export function dueThisFrame(frame, period) {
   const p = Number(period);

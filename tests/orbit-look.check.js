@@ -107,6 +107,9 @@ assert.equal(dueThisFrame(3, 0), true);
 assert.equal(GLOBE_TICK.pov, 8);
 assert.ok(GLOBE_TICK.sun >= 4);
 assert.ok(GLOBE_TICK.aurora >= 2);
+assert.equal(GLOBE_TICK.pins, 8);
+assert.equal(dueThisFrame(7, GLOBE_TICK.pins), false);
+assert.equal(dueThisFrame(8, GLOBE_TICK.pins), true);
 
 assert.equal(povAltitudeFromDistance(6, 2), 2);
 assert.equal(distanceFromPovAltitude(2, 2), 6);

@@ -1,7 +1,7 @@
 /** Globe — Earth look adapter over the shared Solar3D world. */
 
 import * as Solar3D from "./solar3d.js";
-import { skyShowLook as terminatorLook, subsolarPoint } from "./orbit-look.js";
+import { skyShowLook as terminatorLook, subsolarPoint, dueThisFrame, GLOBE_TICK } from "./orbit-look.js";
 import { travelerPos } from "./traveler-orbit.js";
 
 /**
@@ -29,6 +29,7 @@ export function createGlobe(el, opts = {}) {
   let ready = false;
   let resumeTimer = null;
   let pinRaf = 0;
+  let pinFrame = 0;
   const pinEls = new Map();
 
   const traveler = {
@@ -100,6 +101,7 @@ export function createGlobe(el, opts = {}) {
       pinLayer.appendChild(pinEl);
       pinEls.set(lm.id, { el: pinEl, place: lm });
     });
+    pinFrame = 0;
   }
 
   function syncPins() {
@@ -111,20 +113,23 @@ export function createGlobe(el, opts = {}) {
     const solarMode = typeof Solar3D.getViewMode === "function" && Solar3D.getViewMode() === "solar";
     pinLayer.style.display = solarMode || !places.length ? "none" : "";
     if (solarMode) return;
-    pinEls.forEach((entry) => {
-      const lm = entry.place.id === "iss" ? traveler : entry.place;
-      const alt = lm.kind === "traveler" ? 0.16 : 0.02;
-      const projected = Solar3D.projectEarthLatLng(lm.lat, lm.lng, alt);
-      if (!projected || !projected.visible) {
-        entry.el.style.opacity = "0";
-        entry.el.style.pointerEvents = "none";
-        return;
-      }
-      entry.el.style.opacity = "1";
-      entry.el.style.pointerEvents = "auto";
-      entry.el.style.left = projected.x + "px";
-      entry.el.style.top = projected.y + "px";
-    });
+    if (dueThisFrame(pinFrame, GLOBE_TICK.pins)) {
+      pinEls.forEach((entry) => {
+        const lm = entry.place.id === "iss" ? traveler : entry.place;
+        const alt = lm.kind === "traveler" ? 0.16 : 0.02;
+        const projected = Solar3D.projectEarthLatLng(lm.lat, lm.lng, alt);
+        if (!projected || !projected.visible) {
+          entry.el.style.opacity = "0";
+          entry.el.style.pointerEvents = "none";
+          return;
+        }
+        entry.el.style.opacity = "1";
+        entry.el.style.pointerEvents = "auto";
+        entry.el.style.left = projected.x + "px";
+        entry.el.style.top = projected.y + "px";
+      });
+    }
+    pinFrame += 1;
   }
 
   function stopPinLoop() {

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { earthLocalPos, sunYawRadians, auroraNightLng, fxScale } from "../earth-fx.js";
+import { earthLocalPos, sunYawRadians, auroraNightLng, fxScale, auroraShouldTick } from "../earth-fx.js";
 import { latLngDirection, wrapLng, subsolarPoint } from "../orbit-look.js";
 
 assert.equal(sunYawRadians(0), 0);
@@ -26,5 +26,9 @@ assert.ok(Math.abs(auroraNightLng(noon, 12) - wrapLng(sun.lng + 180 + 180)) < 1e
 assert.equal(fxScale(2, 100), 2);
 assert.equal(fxScale(2, 50), 1);
 assert.equal(fxScale(0, 50), 0);
+
+assert.equal(auroraShouldTick(false, 0, 2), false);
+assert.equal(auroraShouldTick(true, 1, 2), false);
+assert.equal(auroraShouldTick(true, 2, 2), true);
 
 console.log("earth-fx.check.js OK");
