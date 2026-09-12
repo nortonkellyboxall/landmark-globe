@@ -43,6 +43,6 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 - [Open a place card](./place-card.md) covers strip and Surprise entry to the place dialog.
 - [Adventure tabs](./adventure-tabs.md) covers switching Landmarks, Wonders, Continents, Countries, and Space.
-- [Find quiz](./find-quiz.md) covers starting Find and seeing a prompt for the current pool.
-- [Space mode](./space-mode.md) covers entering Space and opening a solar-system body card.
+- [Find quiz](./find-quiz.md) covers starting Find, seeing a prompt, and completing one correct strip tap.
+- [Space mode](./space-mode.md) covers Space overview (`body.space-mode` + sizes strip) and opening a solar-system body card.
 - [Moon phases](./moon-phases.md) covers opening the Phases toy on The Moon.
