@@ -15,5 +15,6 @@ assert.equal(weatherForPlace({ id: "paris", weather: "snow" }), "snow");
 assert.equal(weatherForPlace({ id: "paris", weather: "fog" }), null);
 assert.equal(weatherForPlace({ id: "kilimanjaro", weather: "snow" }), "snow");
 assert.equal(weatherForPlace({ id: "okavango", weather: "rain" }), "rain");
+assert.equal(weatherForPlace({ id: "emperors", weather: "snow" }), "snow");
 
 console.log("place-weather.check.js OK");

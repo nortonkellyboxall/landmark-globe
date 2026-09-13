@@ -1,7 +1,7 @@
 {
   "voice": "Luna",
   "speed": 0.95,
-  "count": 116,
+  "count": 117,
   "ids": [
     "acropolis",
     "africa",
@@ -31,6 +31,7 @@
     "earth",
     "egypt",
     "eiffel",
+    "emperors",
     "ethiopia",
     "europe",
     "everest",
@@ -360,6 +361,8 @@
     "kilimanjaro.card": "5de69e475c22dd7af65273a0d72add2073543584315a7b16c4c94ac5cde0632a",
     "kilimanjaro.name": "d51e831fe1b272d6e9f57d520e81e4eff291109fb44f9d746ed6cdf8723858ea",
     "okavango.card": "2e61b5fd4660a975d240cbd999bc2a69f535d03dcc089214d512443401833444",
-    "okavango.name": "778e66c02ea8750844fc164519c6054d7da22da2f1f9b46ee06ad5ba950c7c85"
+    "okavango.name": "778e66c02ea8750844fc164519c6054d7da22da2f1f9b46ee06ad5ba950c7c85",
+    "emperors.card": "47f581e1a3f2db2d1b99c2b693dfd864506a7b71f82224c74149d52ff45399ae",
+    "emperors.name": "531d03819a2685b4289036e957b5a1758f4e237b60baf52dce60035702d13486"
   }
 }
