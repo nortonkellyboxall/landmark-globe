@@ -38,6 +38,25 @@ export const LANDMARKS = [
     video: "fKmpld1PoPQ",
   },
   {
+    id: "stonehenge",
+    name: "Stonehenge",
+    place: "Wiltshire, England",
+    lat: 51.1789,
+    lng: -1.8262,
+    emoji: "🪨",
+    color: "#8a8f7a",
+    continent: "Europe",
+    story:
+      "Giant stones stand in a circle on a green field. Long ago, people raised them somehow — and they still face the sunrise on special days.",
+    wow: "Some stones weigh as much as several elephants — and they were moved without trucks!",
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Stonehenge%2C_Condado_de_Wiltshire%2C_Inglaterra%2C_2014-08-12%2C_DD_09.JPG/960px-Stonehenge%2C_Condado_de_Wiltshire%2C_Inglaterra%2C_2014-08-12%2C_DD_09.JPG",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Stonehenge_from_the_north.jpg/960px-Stonehenge_from_the_north.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Summer_Solstice_Sunrise_over_Stonehenge_2005.jpg/960px-Summer_Solstice_Sunrise_over_Stonehenge_2005.jpg"
+    ],
+    video: "SXDGIPoXGbE",
+  },
+  {
     id: "colosseum",
     name: "Colosseum",
     place: "Rome, Italy",
@@ -131,6 +150,25 @@ export const LANDMARKS = [
       "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Liberty_Island_photo_Don_Ramey_Logan.jpg/960px-Liberty_Island_photo_Don_Ramey_Logan.jpg"
     ],
     video: "usHRc7G0gVo",
+  },
+  {
+    id: "chichenitza",
+    name: "Chichén Itzá",
+    place: "Yucatán, Mexico",
+    lat: 20.6843,
+    lng: -88.5678,
+    emoji: "🛕",
+    color: "#c4a35a",
+    continent: "Americas",
+    story:
+      "A tall stone pyramid rises from the jungle. Long ago it was a busy city with temples, ball courts, and careful stone carvings.",
+    wow: "On special days, sunlight makes a snake of shadow wriggle down the pyramid steps!",
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Chichen_Itza_3.jpg/960px-Chichen_Itza_3.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/El_Castillo_Stitch_2008_Edit_2.jpg/960px-El_Castillo_Stitch_2008_Edit_2.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Chichen_Itza_2.jpg/960px-Chichen_Itza_2.jpg"
+    ],
+    video: "JQxq04LEh7o",
   },
   {
     id: "goldengate",
