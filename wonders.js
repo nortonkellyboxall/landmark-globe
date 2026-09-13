@@ -267,6 +267,46 @@ export const WONDERS = [
     video: "tNHBkVKqJsg",
   },
   {
+    id: "kilimanjaro",
+    name: "Mount Kilimanjaro",
+    place: "Tanzania",
+    lat: -3.0674,
+    lng: 37.3556,
+    continent: "Africa",
+    emoji: "🏔️",
+    color: "#7eb6d9",
+    weather: "snow",
+    story:
+      "Africa’s tallest mountain rises from warm grasslands to a snowy top. You can see green forests, rocky slopes, and a white crown in one climb.",
+    wow: "Even though it sits near the equator, the summit stays cold enough for snow and ice!",
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Kilimanjaro_from_Amboseli.jpg/960px-Kilimanjaro_from_Amboseli.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Mount_Kilimanjaro.jpg/960px-Mount_Kilimanjaro.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Mount_Kilimanjaro_Dec_2009_edit1.jpg/960px-Mount_Kilimanjaro_Dec_2009_edit1.jpg"
+    ],
+    video: "S0CPdiIzl3U",
+  },
+  {
+    id: "okavango",
+    name: "Okavango Delta",
+    place: "Botswana",
+    lat: -19.2845,
+    lng: 22.8655,
+    continent: "Africa",
+    emoji: "🐘",
+    color: "#3d9a7a",
+    weather: "rain",
+    story:
+      "A huge fan of river water spreads across the desert, making islands and watery highways for elephants, hippos, and birds.",
+    wow: "It is one of the biggest inland deltas on Earth — a river that never reaches the sea!",
+    photos: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Scenic_flight_over_the_Okavango_Delta_-_Botswana_-_panoramio.jpg/960px-Scenic_flight_over_the_Okavango_Delta_-_Botswana_-_panoramio.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/A_view_down_into_the_Okavango_Delta.jpg/960px-A_view_down_into_the_Okavango_Delta.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Cebras_de_Burchell_%28Equus_quagga_burchellii%29%2C_vista_a%C3%A9rea_del_delta_del_Okavango%2C_Botsuana%2C_2018-08-01%2C_DD_30.jpg/960px-Cebras_de_Burchell_%28Equus_quagga_burchellii%29%2C_vista_a%C3%A9rea_del_delta_del_Okavango%2C_Botsuana%2C_2018-08-01%2C_DD_30.jpg"
+    ],
+    video: "nEMxUlkQkxA",
+  },
+  {
     id: "galapagos",
     name: "Galápagos Islands",
     place: "Ecuador",
