@@ -1,7 +1,7 @@
 {
   "voice": "Luna",
   "speed": 0.95,
-  "count": 112,
+  "count": 114,
   "ids": [
     "acropolis",
     "africa",
@@ -47,6 +47,7 @@
     "greatbarrier",
     "greatocean",
     "greatwall",
+    "greatzimbabwe",
     "greece",
     "halong",
     "iceland",
@@ -59,6 +60,7 @@
     "japan",
     "jupiter",
     "kenya",
+    "lalibela",
     "liberty",
     "machu",
     "mars",
@@ -348,6 +350,10 @@
     "phase-full.name": "8c6a6ebee229902d1ed8342ef092a34a63cb15d2e7b34a841cc6a04606c69ca8",
     "phase-waning-gibbous.name": "f227e780bed8076fb90b206d492bba1ae8fff8025733afc721a118ff3b00b62f",
     "phase-last-quarter.name": "e4f8b62310203a41bbf88e6cace232d42548b23d90b119d56bd3bde99f2b75e4",
-    "phase-waning-crescent.name": "62c4313cec0c9a0059ac10f583efd023dd2fdb74a9c6e08718fe73d97f6d8ff5"
+    "phase-waning-crescent.name": "62c4313cec0c9a0059ac10f583efd023dd2fdb74a9c6e08718fe73d97f6d8ff5",
+    "greatzimbabwe.card": "a219f7cea07a70203c04c2451bdf5d84b1f59b965e08cea21ce60b6fdaac60e6",
+    "greatzimbabwe.name": "f4684241b7d5287a70e31252f5b3cfcf2480c56596790c92d93f489ee6c5ceb2",
+    "lalibela.card": "ed1d0192c8bcffbc6dab21fed2950d8d55a4b0d658d3c252d0a141a83888752d",
+    "lalibela.name": "688f56981a729f93d1a8e824544c0b0fae41cc9f1a90438e295a6dc4f1196938"
   }
 }

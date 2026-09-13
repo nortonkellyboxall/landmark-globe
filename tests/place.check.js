@@ -6,6 +6,10 @@ import { DATASETS } from "../adventure.js";
 import { placeById, allPlaces } from "../place.js";
 
 assert.ok(LANDMARKS.find((p) => p.id === "eiffel"));
+assert.ok(LANDMARKS.find((p) => p.id === "greatzimbabwe"));
+assert.ok(LANDMARKS.find((p) => p.id === "lalibela"));
+assert.equal(placeById("greatzimbabwe")?.continent, "Africa");
+assert.equal(placeById("lalibela")?.continent, "Africa");
 assert.ok(WONDERS.find((p) => p.id === "grandcanyon"));
 assert.ok(CONTINENTS.find((p) => p.id === "africa"));
 assert.ok(COUNTRIES.find((p) => p.id === "usa"));
