@@ -1587,6 +1587,148 @@ body.find-mode .horizon {
   100% { transform: translateY(-50%) scale(1); }
 }
 
+/* —— Choice quiz prompt —— */
+.choice-prompt {
+  position: absolute;
+  top: 50%;
+  right: max(0.65rem, env(safe-area-inset-right, 0px));
+  left: auto;
+  transform: translateY(-50%);
+  z-index: 18;
+  width: min(14.5rem, 42vw);
+  max-height: min(78%, 34rem);
+  overflow: auto;
+  padding: 0.75rem 0.7rem 0.65rem;
+  border-radius: 1.25rem;
+  background: rgba(255, 248, 239, 0.95);
+  color: var(--ink);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  pointer-events: auto;
+}
+
+.choice-prompt[hidden] {
+  display: none !important;
+}
+
+.choice-prompt.found .find-cue {
+  color: var(--leaf);
+}
+
+.choice-prompt.found {
+  animation: foundPop 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.choice-prompt.oops .find-cue {
+  color: #c45c3a;
+}
+
+.choice-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+  margin-top: 0.15rem;
+}
+
+.choice-option {
+  appearance: none;
+  border: 2px solid rgba(26, 43, 52, 0.12);
+  background: #fff;
+  color: var(--ink);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  text-align: left;
+  border-radius: 0.85rem;
+  padding: 0.45rem 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  min-height: 2.55rem;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.choice-option:hover:not(:disabled) {
+  border-color: var(--sky);
+  background: #fffdf8;
+}
+
+.choice-option:focus-visible {
+  outline: 2px solid var(--sun);
+  outline-offset: 2px;
+}
+
+.choice-option:disabled {
+  cursor: default;
+  opacity: 0.95;
+}
+
+.choice-option.correct {
+  border-color: var(--leaf);
+  background: rgba(42, 157, 143, 0.14);
+}
+
+.choice-option.wrong {
+  animation: choiceWrong 0.45s ease;
+}
+
+@keyframes choiceWrong {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-3px); }
+}
+
+.choice-emoji {
+  font-size: 1.15rem;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+#choiceEmoji.choice-flag {
+  font-size: 3.4rem;
+  line-height: 1;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.18));
+}
+
+.choice-label {
+  flex: 1 1 auto;
+}
+
+#choiceHear {
+  background: var(--leaf);
+  color: #fff;
+}
+
+#choiceHear:hover {
+  background: #238f82;
+}
+
+#choiceNext {
+  background: var(--coral);
+  color: #fff;
+}
+
+#choiceNext:hover {
+  background: #ff7d60;
+}
+
+body.choice-mode .explore {
+  opacity: 0.55;
+}
+
+@media (max-width: 720px) {
+  .choice-prompt {
+    width: min(12.5rem, 46vw);
+  }
+}
+
 .sticker-sheet {
   position: fixed;
   z-index: 45;
@@ -2497,7 +2639,7 @@ body.bedtime .topbar {
   .star, .pin, .pin-glow, .pin.selected .pin-inner,
   .brand h1, .coach, .shooting-star, .spark, .spark-emoji, .loader-orb,
   .ss-orbit, .ss-body, .ss-sun, .anthem-now .pulse,
-  .find-star, .pin-stamp, .find-prompt.found,
+  .find-star, .pin-stamp, .find-prompt.found, .choice-prompt.found, .choice-option.wrong,
   .globe-shadow, .found-flash, .mode-tab.active .mode-emoji {
     animation: none !important;
   }

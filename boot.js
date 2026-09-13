@@ -1,5 +1,5 @@
 import { SPACE_BODIES, diameterKm as spaceDiameterKm } from "./space-catalog.js";
-import { LANDMARKS, WONDERS, CONTINENTS, COUNTRIES, placeById } from "./place.js";
+import { LANDMARKS, WONDERS, CONTINENTS, COUNTRIES, placeById, allPlaces } from "./place.js";
 import { createCardMedia } from "./card-media.js";
 import { createGlobe } from "./globe-app.js";
 import { diveMs, firefliesShouldTick, heatHint, isDeepSpace, SPACE_HANDOFF_ALT, peekAltitudeForTab } from "./orbit-look.js";
@@ -12,8 +12,9 @@ import {
 } from "./adventure.js";
 import { createFindGame } from "./find-game.js";
 import { createFindProgress } from "./find-progress.js";
+import { createChoiceGame } from "./choice-game.js";
 import { createSpaceMode } from "./space-mode.js";
-import { speakName, setSpeechMuted } from "./speak.js";
+import { speakName, speakClip, speakSequence, setSpeechMuted } from "./speak.js";
 import { scheduleOpen } from "./schedule-open.js";
 import { focusStealsSpace } from "./keys.js";
 
@@ -104,6 +105,16 @@ const els = {
   findPhoto: document.getElementById("findPhoto"),
   findHear: document.getElementById("findHear"),
   findAgain: document.getElementById("findAgain"),
+  quizBtn: document.getElementById("quizBtn"),
+  choicePrompt: document.getElementById("choicePrompt"),
+  choiceExit: document.getElementById("choiceExit"),
+  choiceCue: document.getElementById("choiceCue"),
+  choiceScore: document.getElementById("choiceScore"),
+  choiceEmoji: document.getElementById("choiceEmoji"),
+  choicePhoto: document.getElementById("choicePhoto"),
+  choiceOptions: document.getElementById("choiceOptions"),
+  choiceHear: document.getElementById("choiceHear"),
+  choiceNext: document.getElementById("choiceNext"),
   stickersBtn: document.getElementById("stickersBtn"),
   stickerCount: document.getElementById("stickerCount"),
   stickerSheet: document.getElementById("stickerSheet"),
@@ -301,13 +312,14 @@ const card = createCardMedia(els, {
     document.querySelectorAll(SPACE_SEL).forEach((p) => p.classList.remove("selected"));
     adventure.syncStrip();
     if (globe) globe.setWeather();
-    if (!findGame.isActive()) setLunaMood("idle", "🌙");
+    if (!findGame.isActive() && !choiceGame.isActive()) setLunaMood("idle", "🌙");
     if (adventure.getTab() !== "space" && globe) globe.setAutoRotate(true);
     findGame.onCardClose();
   },
 });
 
 let spaceMode;
+let choiceGame;
 const findGame = createFindGame({
   els,
   getTab: () => adventure.getTab(),
@@ -333,6 +345,31 @@ const findGame = createFindGame({
   highlightTarget: (id) => { if (spaceMode) spaceMode.highlight(id); },
 });
 
+choiceGame = createChoiceGame({
+  els,
+  getTab: () => adventure.getTab(),
+  getEarthPlaces: () => allPlaces(),
+  getSpacePlaces: () => SPACE_BODIES,
+  getContinents: () => CONTINENTS,
+  card,
+  stopFind: () => findGame.stop(),
+  playPop,
+  playFanfare,
+  playBoop,
+  ensureAudio: () => sound.ensureAudio(),
+  speakName,
+  speakClip,
+  speakSequence,
+  setLunaMood,
+  sparkBurst,
+  flashFound,
+});
+
+function stopPlayModes() {
+  findGame.stop();
+  choiceGame.stop();
+}
+
 spaceMode = createSpaceMode({
   els,
   getGlobe: () => globe,
@@ -345,7 +382,7 @@ spaceMode = createSpaceMode({
   setAmbient: setAmbientForMode,
   sparkAt,
   onSelect: (id) => openLandmark(id),
-  stopFind: () => findGame.stop(),
+  stopFind: () => stopPlayModes(),
   matchReduce: () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
 });
 
@@ -353,7 +390,7 @@ adventure = createAdventure({
   els,
   getGlobe: () => globe,
   card,
-  stopFind: () => findGame.stop(),
+  stopFind: () => stopPlayModes(),
   spaceEnter: (o) => spaceMode.enter(o),
   spaceLeave: (o) => spaceMode.leave(o),
   diveMs,
@@ -546,14 +583,27 @@ function initGlobe() {
 els.surpriseBtn.addEventListener("click", surprise);
 if (els.findBtn) {
   els.findBtn.addEventListener("click", () => {
+    choiceGame.stop();
     findGame.start();
+  });
+}
+if (els.quizBtn) {
+  els.quizBtn.addEventListener("click", () => {
+    choiceGame.start();
   });
 }
 if (els.findExit) els.findExit.addEventListener("click", () => findGame.stop());
 if (els.findAgain) els.findAgain.addEventListener("click", () => findGame.start());
 if (els.findHear) els.findHear.addEventListener("click", (e) => findGame.speakTarget(e));
+if (els.choiceExit) els.choiceExit.addEventListener("click", () => choiceGame.stop());
+if (els.choiceNext) els.choiceNext.addEventListener("click", () => choiceGame.next());
+if (els.choiceHear) els.choiceHear.addEventListener("click", (e) => choiceGame.speakSubject(e));
 if (els.luna) {
   els.luna.addEventListener("click", () => {
+    if (choiceGame.isActive()) {
+      choiceGame.speakSubject();
+      return;
+    }
     if (findGame.isActive()) {
       findGame.speakTarget();
       return;
@@ -678,6 +728,10 @@ document.addEventListener("keydown", (e) => {
     }
     if (els.findPrompt && !els.findPrompt.hidden) {
       findGame.stop();
+      return;
+    }
+    if (els.choicePrompt && !els.choicePrompt.hidden) {
+      choiceGame.stop();
       return;
     }
     if (els.settingsPanel.classList.contains("open")) {

@@ -20,6 +20,7 @@ import { TRAVELERS } from "./travelers.js";
  * @property {string} [color]
  * @property {string} [kind]
  * @property {string} [continent]
+ * @property {string} [language] primary spoken language for Choice-quiz (countries)
  * @property {"snow"|"rain"} [weather]
  */
 
