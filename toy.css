@@ -215,6 +215,30 @@ body.space-mode .luna-helm { display: block; }
   animation: foundPopToy 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.choice-prompt {
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  left: auto !important;
+  transform: none !important;
+  width: 13.5rem !important;
+  background: #fff8ef;
+  border: 3px solid #fff;
+  box-shadow: 0 8px 20px rgba(26, 80, 120, 0.22);
+  color: #1a2b34;
+  border-radius: 1.35rem;
+}
+
+.choice-prompt.found {
+  animation: foundPopToy 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.choice-option {
+  font-family: "Fredoka", system-ui, sans-serif;
+  border-width: 3px;
+  border-radius: 1rem;
+}
+
 @keyframes foundPopToy {
   0% { transform: scale(1); }
   40% { transform: scale(1.06); }
@@ -227,11 +251,16 @@ body.space-mode .luna-helm { display: block; }
   color: #1b6ea8;
 }
 
-body.find-mode .guide {
+body.find-mode .guide,
+body.choice-mode .guide {
   bottom: auto;
   top: 42%;
   transform: translateY(-50%);
   width: 10.5rem;
+}
+
+body.choice-mode .guide {
+  width: 13.5rem;
 }
 
 .card {
@@ -298,6 +327,7 @@ body.find-mode .guide {
   .luna { width: 5.4rem; }
   .guide { width: 5.6rem; }
   body.find-mode .guide { width: 9.4rem; }
+  body.choice-mode .guide { width: 11.5rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -44,6 +44,9 @@
         <button type="button" class="btn icon-only" id="findBtn" title="Find" aria-label="Find this place">
           <span class="icon" aria-hidden="true">🔍</span>
         </button>
+        <button type="button" class="btn icon-only" id="quizBtn" title="Quiz" aria-label="Start a quiz">
+          <span class="icon" aria-hidden="true">❓</span>
+        </button>
         <button type="button" class="find-badge" id="stickersBtn" hidden title="Stickers" aria-label="Your stickers">
           <span aria-hidden="true">🌟</span>
           <span class="sticker-count" id="stickerCount">0</span>
@@ -125,6 +128,22 @@
           </button>
           <button type="button" class="btn primary icon-only" id="findAgain" title="Again" aria-label="Find another" hidden>
             <span class="icon" aria-hidden="true">🔁</span>
+          </button>
+        </div>
+      </div>
+      <div class="choice-prompt" id="choicePrompt" hidden>
+        <button type="button" class="find-exit" id="choiceExit" aria-label="Stop quiz">×</button>
+        <p class="find-cue" id="choiceCue">Quiz time!</p>
+        <p class="find-tally" id="choiceScore" hidden></p>
+        <div class="find-emoji" id="choiceEmoji" aria-hidden="true">❓</div>
+        <img class="find-photo" id="choicePhoto" alt="" hidden />
+        <div class="choice-options" id="choiceOptions" role="group" aria-label="Quiz choices"></div>
+        <div class="find-actions">
+          <button type="button" class="btn icon-only" id="choiceHear" title="Hear" aria-label="Hear the place">
+            <span class="icon" aria-hidden="true">🔊</span>
+          </button>
+          <button type="button" class="btn primary icon-only" id="choiceNext" title="Next" aria-label="Next question" hidden>
+            <span class="icon" aria-hidden="true">➡️</span>
           </button>
         </div>
       </div>
