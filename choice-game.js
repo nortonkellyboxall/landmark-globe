@@ -150,9 +150,7 @@ export function createChoiceGame(opts) {
     }
     if (els.choicePhoto) {
       const src =
-        question.type === "whereIs" ||
-        question.type === "whichContinent" ||
-        question.type === "whichLanguage"
+        question.type === "whereIs" || question.type === "whichContinent"
           ? question.photo
           : null;
       if (src) {
