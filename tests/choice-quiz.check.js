@@ -68,12 +68,25 @@ assert.match(whichKind.prompt, /^Which is /);
 assert.equal(whichKind.subject.id, whichKind.correctId);
 
 const mixed = [...LANDMARKS, ...WONDERS, ...CONTINENTS, ...COUNTRIES];
+const seenTypes = new Set();
 for (let i = 0; i < 20; i++) {
   const q = buildChoiceQuestion(mixed, { continents: CONTINENTS, rand });
   assert.ok(q, "expected a question from full earth pack");
   assert.ok(q.choices.length >= 3);
   assert.ok(q.choices.some((c) => c.id === q.correctId));
+  seenTypes.add(q.type);
 }
+assert.ok(seenTypes.size >= 2, "expected multiple question templates over seeded draws");
+
+// Live Math.random should mix templates (not stuck on one builder).
+const liveTypes = new Set();
+for (let i = 0; i < 30; i++) {
+  const q = buildChoiceQuestion(mixed, { continents: CONTINENTS });
+  assert.ok(q);
+  liveTypes.add(q.type);
+}
+assert.ok(liveTypes.size >= 3, "expected >=3 templates with Math.random, got " + [...liveTypes]);
+
 
 const spaceQ = buildChoiceQuestion(space, { tab: "space", rand });
 assert.ok(spaceQ);

@@ -118,24 +118,24 @@ export function choicePool(tab, places) {
 
 /**
  * @param {Place[]} list
- * @param {(n: number) => number} rand
+ * @param {() => number} rand
  * @returns {Place | null}
  */
 function pickOne(list, rand) {
   if (!list || !list.length) return null;
-  return list[Math.floor(rand(list.length)) % list.length];
+  return list[Math.floor(rand() * list.length)];
 }
 
 /**
  * @template T
  * @param {T[]} list
- * @param {(n: number) => number} rand
+ * @param {() => number} rand
  * @returns {T[]}
  */
 function shuffle(list, rand) {
   const out = list.slice();
   for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rand(i + 1)) % (i + 1);
+    const j = Math.floor(rand() * (i + 1));
     const tmp = out[i];
     out[i] = out[j];
     out[j] = tmp;
@@ -147,7 +147,7 @@ function shuffle(list, rand) {
  * @param {Place[]} pool
  * @param {Place} correct
  * @param {number} count
- * @param {(n: number) => number} rand
+ * @param {() => number} rand
  * @param {(p: Place) => boolean} [ok]
  * @returns {Place[]}
  */
@@ -182,7 +182,7 @@ function continentOption(continents, id) {
 /**
  * “Where is X?” — name the pictured Place.
  * @param {Place[]} pool
- * @param {(n: number) => number} rand
+ * @param {() => number} rand
  * @returns {ChoiceQuestion | null}
  */
 export function buildWhereIs(pool, rand = Math.random) {
@@ -207,7 +207,7 @@ export function buildWhereIs(pool, rand = Math.random) {
  * “Which is in Africa?” — pick a Place from a continent.
  * @param {Place[]} pool
  * @param {Place[]} continents
- * @param {(n: number) => number} rand
+ * @param {() => number} rand
  * @returns {ChoiceQuestion | null}
  */
 export function buildWhichInContinent(pool, continents, rand = Math.random) {
@@ -256,7 +256,7 @@ export function buildWhichInContinent(pool, continents, rand = Math.random) {
  * “Which continent is X on?”
  * @param {Place[]} pool
  * @param {Place[]} continents
- * @param {(n: number) => number} rand
+ * @param {() => number} rand
  * @returns {ChoiceQuestion | null}
  */
 export function buildWhichContinent(pool, continents, rand = Math.random) {
@@ -287,7 +287,7 @@ export function buildWhichContinent(pool, continents, rand = Math.random) {
 /**
  * “Which is a country?” / kind pick.
  * @param {Place[]} pool
- * @param {(n: number) => number} rand
+ * @param {() => number} rand
  * @returns {ChoiceQuestion | null}
  */
 export function buildWhichKind(pool, rand = Math.random) {
@@ -335,7 +335,7 @@ export function buildWhichKind(pool, rand = Math.random) {
 /**
  * Build one question from the richest templates that fit the pool.
  * @param {Place[]} pool
- * @param {{ continents?: Place[], tab?: string, rand?: (n: number) => number, prefer?: string[] }} [opts]
+ * @param {{ continents?: Place[], tab?: string, rand?: () => number }} [opts]
  * @returns {ChoiceQuestion | null}
  */
 export function buildChoiceQuestion(pool, opts = {}) {
@@ -380,7 +380,7 @@ export function createChoiceQuiz(opts = {}) {
 
   /**
    * @param {Place[]} pool
-   * @param {{ continents?: Place[], tab?: string, rand?: (n: number) => number }} [startOpts]
+   * @param {{ continents?: Place[], tab?: string, rand?: () => number }} [startOpts]
    */
   function start(pool, startOpts = {}) {
     const list = (pool || []).filter((p) => p && p.id && p.name);
