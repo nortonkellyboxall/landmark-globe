@@ -41,8 +41,36 @@ const earth = [
   { id: "eiffel", name: "Eiffel Tower", emoji: "🗼", continent: "Europe", lat: 48, lng: 2, photos: ["e.jpg"] },
   { id: "pyramids", name: "Pyramids", emoji: "🔺", continent: "Africa", lat: 29, lng: 31, photos: [] },
   { id: "wall", name: "Great Wall", emoji: "🧱", continent: "Asia", lat: 40, lng: 116, photos: [] },
-  { id: "france", name: "France", emoji: "🇫🇷", kind: "country", continent: "europe", lat: 46, lng: 2 },
-  { id: "egypt", name: "Egypt", emoji: "🇪🇬", kind: "country", continent: "africa", lat: 26, lng: 30 },
+  {
+    id: "france",
+    name: "France",
+    emoji: "🇫🇷",
+    kind: "country",
+    language: "French",
+    continent: "europe",
+    lat: 46,
+    lng: 2,
+  },
+  {
+    id: "egypt",
+    name: "Egypt",
+    emoji: "🇪🇬",
+    kind: "country",
+    language: "Arabic",
+    continent: "africa",
+    lat: 26,
+    lng: 30,
+  },
+  {
+    id: "japan",
+    name: "Japan",
+    emoji: "🇯🇵",
+    kind: "country",
+    language: "Japanese",
+    continent: "asia",
+    lat: 36,
+    lng: 138,
+  },
   ...CONTINENTS,
 ];
 
@@ -54,7 +82,10 @@ const els = {
   choicePhoto: Object.assign(fakeEl(), { src: "", alt: "" }),
   choiceOptions: fakeEl(),
   choiceNext: fakeEl(),
-  luna: Object.assign(fakeEl(), { dataset: { mood: "idle" }, getBoundingClientRect: () => ({ left: 0, top: 0, width: 10, height: 10 }) }),
+  luna: Object.assign(fakeEl(), {
+    dataset: { mood: "idle" },
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 10, height: 10 }),
+  }),
   card: Object.assign(fakeEl(), { classList: fakeClassList() }),
 };
 
@@ -79,6 +110,7 @@ globalThis.document = {
 
 let findStopped = 0;
 const moods = [];
+const spoken = [];
 const game = createChoiceGame({
   els,
   getTab: () => "landmarks",
@@ -93,7 +125,15 @@ const game = createChoiceGame({
   playFanfare() {},
   playBoop() {},
   ensureAudio() {},
-  speakName() {},
+  speakName(place) {
+    spoken.push(["name", place && place.id]);
+  },
+  speakClip(id) {
+    spoken.push(["clip", id]);
+  },
+  speakSequence(parts) {
+    spoken.push(["seq", parts.map((p) => p.id).join("+")]);
+  },
   setLunaMood(mood) {
     moods.push(mood);
   },
@@ -106,6 +146,10 @@ assert.equal(findStopped, 1);
 assert.equal(els.choicePrompt.hidden, false);
 assert.ok(bodyClass.contains("choice-mode"));
 assert.ok(els.choiceOptions._kids && els.choiceOptions._kids.length >= 3);
+assert.ok(
+  spoken.some((s) => s[0] === "seq" && String(s[1]).includes("quiz-")),
+  "round start should auto-speak a quiz cue"
+);
 
 const q = game.getQuestion();
 assert.ok(q);
@@ -113,11 +157,13 @@ const wrong = q.choices.find((c) => c.id !== q.correctId);
 game.handleAnswer(wrong.id);
 assert.equal(game.isActive(), true);
 assert.ok(moods.includes("oops"));
+assert.ok(spoken.some((s) => s[0] === "seq" && String(s[1]).includes("quiz-almost")));
 
 game.handleAnswer(q.correctId);
 assert.equal(els.choiceNext.hidden, false);
 assert.ok(els.choicePrompt.classList.contains("found"));
 assert.equal(game.score().correct, 1);
+assert.ok(spoken.some((s) => s[0] === "seq" && String(s[1]).includes("quiz-yes")));
 
 game.stop();
 assert.equal(els.choicePrompt.hidden, true);

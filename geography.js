@@ -145,6 +145,7 @@ export const COUNTRIES = [
     emoji: "🇺🇸",
     color: "#3c3b6e",
     kind: "country",
+    language: "English",
     continent: "northamerica",
     story:
       "A big country with 50 states, busy cities, huge parks, and coasts on two oceans. Its capital city is Washington, D.C.",
@@ -166,6 +167,7 @@ export const COUNTRIES = [
     emoji: "🇨🇦",
     color: "#ff0000",
     kind: "country",
+    language: "English and French",
     continent: "northamerica",
     story:
       "Canada is a huge northern country with lakes, forests, and friendly cities. Maple leaves and hockey are famous here.",
@@ -187,6 +189,7 @@ export const COUNTRIES = [
     emoji: "🇲🇽",
     color: "#006847",
     kind: "country",
+    language: "Spanish",
     continent: "northamerica",
     story:
       "Mexico is full of colourful festivals, tasty food, deserts, jungles, and ancient stone cities.",
@@ -208,6 +211,7 @@ export const COUNTRIES = [
     emoji: "🇧🇷",
     color: "#009c3b",
     kind: "country",
+    language: "Portuguese",
     continent: "southamerica",
     story:
       "Brazil is the biggest country in South America. It has the Amazon rainforest, lively cities, and long sandy beaches.",
@@ -229,6 +233,7 @@ export const COUNTRIES = [
     emoji: "🇦🇷",
     color: "#74acdf",
     kind: "country",
+    language: "Spanish",
     continent: "southamerica",
     story:
       "Argentina has grassy plains, big cities, and mountains at the tip of South America near icy Antarctica.",
@@ -250,6 +255,7 @@ export const COUNTRIES = [
     emoji: "🇵🇪",
     color: "#d91023",
     kind: "country",
+    language: "Spanish",
     continent: "southamerica",
     story:
       "Peru has the Andes mountains, desert coast, rainforest, and ancient places high in the clouds.",
@@ -271,6 +277,7 @@ export const COUNTRIES = [
     emoji: "🇬🇧",
     color: "#012169",
     kind: "country",
+    language: "English",
     continent: "europe",
     story:
       "The United Kingdom is a group of countries on islands — England, Scotland, Wales, and Northern Ireland.",
@@ -292,6 +299,7 @@ export const COUNTRIES = [
     emoji: "🇫🇷",
     color: "#002395",
     kind: "country",
+    language: "French",
     continent: "europe",
     story:
       "France is known for the Eiffel Tower, delicious bakery treats, countryside villages, and sunny beaches.",
@@ -313,6 +321,7 @@ export const COUNTRIES = [
     emoji: "🇮🇹",
     color: "#009246",
     kind: "country",
+    language: "Italian",
     continent: "europe",
     story:
       "Italy looks a bit like a boot on the map! It has pizza, pasta, old Roman buildings, and beautiful coastlines.",
@@ -334,6 +343,7 @@ export const COUNTRIES = [
     emoji: "🇩🇪",
     color: "#dd0000",
     kind: "country",
+    language: "German",
     continent: "europe",
     story:
       "Germany has fairy-tale castles, thick forests, busy cities, and lots of trains zooming between them.",
@@ -355,6 +365,7 @@ export const COUNTRIES = [
     emoji: "🇪🇸",
     color: "#aa151b",
     kind: "country",
+    language: "Spanish",
     continent: "europe",
     story:
       "Spain is sunny and colourful, with beaches, mountains, festivals, and tasty food like paella and oranges.",
@@ -376,6 +387,7 @@ export const COUNTRIES = [
     emoji: "🇬🇷",
     color: "#0d5eaf",
     kind: "country",
+    language: "Greek",
     continent: "europe",
     story:
       "Greece has blue seas, white island houses, and very old temples from long ago.",
@@ -397,6 +409,7 @@ export const COUNTRIES = [
     emoji: "🇪🇬",
     color: "#ce1126",
     kind: "country",
+    language: "Arabic",
     continent: "africa",
     story:
       "Egypt is a desert country with the long River Nile, giant pyramids, and stories from ancient times.",
@@ -418,6 +431,7 @@ export const COUNTRIES = [
     emoji: "🇰🇪",
     color: "#bb0000",
     kind: "country",
+    language: "Swahili",
     continent: "africa",
     story:
       "Kenya is famous for safaris — wide grasslands where you can see elephants, lions, zebras, and giraffes.",
@@ -460,6 +474,7 @@ export const COUNTRIES = [
     emoji: "🇲🇦",
     color: "#c1272d",
     kind: "country",
+    language: "Arabic",
     continent: "africa",
     story:
       "Morocco has busy markets, blue towns, sandy deserts, and mountains not far from the sea.",
@@ -481,6 +496,7 @@ export const COUNTRIES = [
     emoji: "🇨🇳",
     color: "#de2910",
     kind: "country",
+    language: "Chinese",
     continent: "asia",
     story:
       "China is a huge Asian country with giant cities, long rivers, mountains, and the Great Wall.",
@@ -502,6 +518,7 @@ export const COUNTRIES = [
     emoji: "🇯🇵",
     color: "#bc002d",
     kind: "country",
+    language: "Japanese",
     continent: "asia",
     story:
       "Japan is a country of islands with cherry blossoms, fast trains, busy cities, and beautiful Mount Fuji.",
@@ -544,6 +561,7 @@ export const COUNTRIES = [
     emoji: "🇮🇩",
     color: "#ce1126",
     kind: "country",
+    language: "Indonesian",
     continent: "asia",
     story:
       "Indonesia is made of thousands of islands with volcanoes, rainforests, and warm blue seas.",
@@ -565,6 +583,7 @@ export const COUNTRIES = [
     emoji: "🇹🇭",
     color: "#a51931",
     kind: "country",
+    language: "Thai",
     continent: "asia",
     story:
       "Thailand has golden temples, tropical beaches, elephants, and friendly smiling cities.",
@@ -586,6 +605,7 @@ export const COUNTRIES = [
     emoji: "🇷🇺",
     color: "#0039a6",
     kind: "country",
+    language: "Russian",
     continent: "asia",
     story:
       "Russia is the biggest country on Earth by land. It stretches across two continents: Europe and Asia.",
@@ -607,6 +627,7 @@ export const COUNTRIES = [
     emoji: "🇦🇺",
     color: "#00008b",
     kind: "country",
+    language: "English",
     continent: "oceania",
     story:
       "Australia is both a country and a huge island continent, with kangaroos, beaches, and the Outback desert.",
@@ -628,6 +649,7 @@ export const COUNTRIES = [
     emoji: "🇳🇿",
     color: "#00247d",
     kind: "country",
+    language: "English",
     continent: "oceania",
     story:
       "New Zealand has two main islands full of mountains, beaches, sheep, and friendly towns — including Auckland and Wellington.",
@@ -649,6 +671,7 @@ export const COUNTRIES = [
     emoji: "🇵🇱",
     color: "#dc143c",
     kind: "country",
+    language: "Polish",
     continent: "europe",
     story:
       "Poland is a country in central Europe with old cities, deep forests, and tasty pierogi dumplings.",
@@ -670,6 +693,7 @@ export const COUNTRIES = [
     emoji: "🇸🇪",
     color: "#006aa7",
     kind: "country",
+    language: "Swedish",
     continent: "europe",
     story:
       "Sweden is a northern country with lakes, forests, and long bright summers. Kids there love cinnamon buns!",
@@ -691,6 +715,7 @@ export const COUNTRIES = [
     emoji: "🇵🇹",
     color: "#006600",
     kind: "country",
+    language: "Portuguese",
     continent: "europe",
     story:
       "Portugal sits on Europe’s west coast with sunny beaches, tiled cities, and delicious pastries.",
@@ -712,6 +737,7 @@ export const COUNTRIES = [
     emoji: "🇰🇷",
     color: "#0047a0",
     kind: "country",
+    language: "Korean",
     continent: "asia",
     story:
       "South Korea is a country of busy cities, green mountains, and amazing technology — plus tasty food like kimchi!",
@@ -733,6 +759,7 @@ export const COUNTRIES = [
     emoji: "🇨🇱",
     color: "#0039a6",
     kind: "country",
+    language: "Spanish",
     continent: "southamerica",
     story:
       "Chile is a long skinny country along South America’s Pacific coast, with deserts in the north and icy lands in the south.",
@@ -754,6 +781,7 @@ export const COUNTRIES = [
     emoji: "🇨🇴",
     color: "#fcd116",
     kind: "country",
+    language: "Spanish",
     continent: "southamerica",
     story:
       "Colombia has jungles, coffee hills, Caribbean beaches, and colourful cities high in the Andes.",
@@ -775,6 +803,7 @@ export const COUNTRIES = [
     emoji: "🇳🇱",
     color: "#ae1c28",
     kind: "country",
+    language: "Dutch",
     continent: "europe",
     story:
       "The Netherlands is a flat country of canals, bikes, windmills, and bright tulip fields.",
@@ -796,6 +825,7 @@ export const COUNTRIES = [
     emoji: "🇳🇴",
     color: "#ba0c2f",
     kind: "country",
+    language: "Norwegian",
     continent: "europe",
     story:
       "Norway has deep blue fjords, snowy mountains, and villages tucked along the coast.",
@@ -817,6 +847,7 @@ export const COUNTRIES = [
     emoji: "🇮🇪",
     color: "#169b62",
     kind: "country",
+    language: "English",
     continent: "europe",
     story:
       "Ireland is a green island of cliffs, castles, music, and friendly towns.",
@@ -859,6 +890,7 @@ export const COUNTRIES = [
     emoji: "🇹🇷",
     color: "#e30a17",
     kind: "country",
+    language: "Turkish",
     continent: "asia",
     story:
       "Turkey bridges Europe and Asia. It has busy markets, hot-air balloons over fairy chimneys, and seas on three sides.",
@@ -880,6 +912,7 @@ export const COUNTRIES = [
     emoji: "🇮🇸",
     color: "#02529c",
     kind: "country",
+    language: "Icelandic",
     continent: "europe",
     weather: "snow",
     story:
@@ -902,6 +935,7 @@ export const COUNTRIES = [
     emoji: "🇫🇮",
     color: "#003580",
     kind: "country",
+    language: "Finnish",
     continent: "europe",
     story:
       "Finland is a northern land of thousands of lakes, thick forests, and cosy saunas.",
@@ -944,6 +978,7 @@ export const COUNTRIES = [
     emoji: "🇪🇹",
     color: "#078930",
     kind: "country",
+    language: "Amharic",
     continent: "africa",
     story:
       "Ethiopia has high plateaus, rock-hewn churches, and ancient stories. Coffee plants first grew here!",
@@ -965,6 +1000,7 @@ export const COUNTRIES = [
     emoji: "🇬🇭",
     color: "#006b3f",
     kind: "country",
+    language: "English",
     continent: "africa",
     story:
       "Ghana is on Africa’s west coast, with beaches, cocoa farms, and friendly festivals.",
@@ -986,6 +1022,7 @@ export const COUNTRIES = [
     emoji: "🇹🇿",
     color: "#1eb53a",
     kind: "country",
+    language: "Swahili",
     continent: "africa",
     story:
       "Tanzania has Mount Kilimanjaro, huge wildlife parks, and the spice island of Zanzibar.",
@@ -1007,6 +1044,7 @@ export const COUNTRIES = [
     emoji: "🇻🇳",
     color: "#da251d",
     kind: "country",
+    language: "Vietnamese",
     continent: "asia",
     story:
       "Vietnam is a long skinny country with rice paddies, busy cities, and limestone islands in blue bays.",
@@ -1028,6 +1066,7 @@ export const COUNTRIES = [
     emoji: "🇵🇭",
     color: "#0038a8",
     kind: "country",
+    language: "Filipino",
     continent: "asia",
     story:
       "The Philippines is made of more than seven thousand islands with beaches, volcanoes, and cheerful festivals.",
@@ -1049,6 +1088,7 @@ export const COUNTRIES = [
     emoji: "🇸🇦",
     color: "#006c35",
     kind: "country",
+    language: "Arabic",
     continent: "asia",
     story:
       "Saudi Arabia is a large desert country on the Arabian Peninsula, with huge dunes and modern cities.",
@@ -1091,6 +1131,7 @@ export const COUNTRIES = [
     emoji: "🇨🇷",
     color: "#00247d",
     kind: "country",
+    language: "Spanish",
     continent: "northamerica",
     story:
       "Costa Rica is a green Central American country with rainforests, volcanoes, and two oceans.",
@@ -1112,6 +1153,7 @@ export const COUNTRIES = [
     emoji: "🇨🇺",
     color: "#002a8f",
     kind: "country",
+    language: "Spanish",
     continent: "northamerica",
     story:
       "Cuba is a Caribbean island with colourful cars, music in the streets, and warm turquoise water.",
@@ -1133,6 +1175,7 @@ export const COUNTRIES = [
     emoji: "🇫🇯",
     color: "#68bfe5",
     kind: "country",
+    language: "English",
     continent: "oceania",
     story:
       "Fiji is a Pacific island country with coral reefs, coconut palms, and smiling villages.",

@@ -14,7 +14,7 @@ import { createFindGame } from "./find-game.js";
 import { createFindProgress } from "./find-progress.js";
 import { createChoiceGame } from "./choice-game.js";
 import { createSpaceMode } from "./space-mode.js";
-import { speakName, setSpeechMuted } from "./speak.js";
+import { speakName, speakClip, speakSequence, setSpeechMuted } from "./speak.js";
 import { scheduleOpen } from "./schedule-open.js";
 import { focusStealsSpace } from "./keys.js";
 
@@ -358,6 +358,8 @@ choiceGame = createChoiceGame({
   playBoop,
   ensureAudio: () => sound.ensureAudio(),
   speakName,
+  speakClip,
+  speakSequence,
   setLunaMood,
   sparkBurst,
   flashFound,

@@ -41,10 +41,11 @@ function clipUrl(id, kind) {
 
 /**
  * @param {string} url
+ * @param {number} gen
+ * @param {(() => void) | undefined} onEnded
  */
-function playUrl(url) {
-  if (speechMuted) return;
-  const my = ++speakGen;
+function playUrlForGen(url, gen, onEnded) {
+  if (speechMuted || gen !== speakGen) return;
   if (currentAudio) {
     try {
       currentAudio.pause();
@@ -58,19 +59,54 @@ function playUrl(url) {
   currentAudio = audio;
   audio.onended = () => {
     if (currentAudio === audio) currentAudio = null;
+    if (gen === speakGen && typeof onEnded === "function") onEnded();
   };
   audio.onerror = () => {
     console.warn("[speak] failed to play", url);
     if (currentAudio === audio) currentAudio = null;
+    // Skip broken clip so multi-clip sequences can continue.
+    if (gen === speakGen && typeof onEnded === "function") onEnded();
   };
 
   const play = audio.play();
   if (play && typeof play.catch === "function") {
     play.catch((err) => {
-      if (my !== speakGen) return;
+      if (gen !== speakGen) return;
       console.warn("[speak]", err);
+      if (typeof onEnded === "function") onEnded();
     });
   }
+}
+
+/**
+ * Play one pre-baked clip by id + kind.
+ * @param {string} id
+ * @param {"card"|"name"} [kind]
+ */
+export function speakClip(id, kind = "name") {
+  if (!id) return;
+  const gen = ++speakGen;
+  playUrlForGen(clipUrl(id, kind), gen);
+}
+
+/**
+ * Play a sequence of pre-baked clips (stops prior speech).
+ * @param {{ id: string, kind?: "card"|"name" }[]} parts
+ */
+export function speakSequence(parts) {
+  const list = (parts || []).filter((p) => p && p.id);
+  if (!list.length) return;
+  if (speechMuted) return;
+  const gen = ++speakGen;
+  let i = 0;
+  const next = () => {
+    if (gen !== speakGen) return;
+    if (i >= list.length) return;
+    const part = list[i++];
+    const more = i < list.length;
+    playUrlForGen(clipUrl(part.id, part.kind || "name"), gen, more ? next : undefined);
+  };
+  next();
 }
 
 /**
@@ -79,7 +115,7 @@ function playUrl(url) {
  */
 export function speakCard(place) {
   if (!place?.id) return;
-  playUrl(clipUrl(place.id, "card"));
+  speakClip(place.id, "card");
 }
 
 /**
@@ -88,7 +124,7 @@ export function speakCard(place) {
  */
 export function speakName(place) {
   if (!place?.id) return;
-  playUrl(clipUrl(place.id, "name"));
+  speakClip(place.id, "name");
 }
 
 /**
@@ -97,5 +133,5 @@ export function speakName(place) {
  */
 export function speakPhase(phaseId) {
   if (!phaseId) return;
-  playUrl(clipUrl(`phase-${phaseId}`, "name"));
+  speakClip(`phase-${phaseId}`, "name");
 }

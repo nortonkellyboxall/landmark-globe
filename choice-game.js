@@ -4,6 +4,7 @@ import {
   choicePool,
   createChoiceQuiz,
   earthChoicePool,
+  promptSpeakPlan,
   spaceChoicePool,
 } from "./choice-quiz.js";
 
@@ -32,6 +33,8 @@ function makeEl(tag) {
  *   playBoop: () => void,
  *   ensureAudio: () => void,
  *   speakName: (place: object) => void,
+ *   speakSequence?: (parts: { id: string, kind?: string }[]) => void,
+ *   speakClip?: (id: string, kind?: string) => void,
  *   setLunaMood: (mood: string, emoji?: string) => void,
  *   sparkBurst: (x: number, y: number) => void,
  *   flashFound: () => void,
@@ -41,6 +44,29 @@ export function createChoiceGame(opts) {
   const els = opts.els;
   let lastQuestion = null;
   let awaitingNext = false;
+
+  function speakParts(parts) {
+    if (!parts || !parts.length) return;
+    opts.ensureAudio();
+    if (typeof opts.speakSequence === "function") {
+      opts.speakSequence(parts);
+      return;
+    }
+    const first = parts[0];
+    if (first && typeof opts.speakClip === "function") opts.speakClip(first.id, first.kind || "name");
+    else if (first) opts.speakName({ id: first.id });
+  }
+
+  function speakPrompt(question) {
+    speakParts(promptSpeakPlan(question));
+  }
+
+  function speakChoiceLabel(opt) {
+    if (!opt || !opt.speakId) return;
+    opts.ensureAudio();
+    if (typeof opts.speakClip === "function") opts.speakClip(opt.speakId, "name");
+    else opts.speakName({ id: opt.speakId });
+  }
 
   function syncScore() {
     if (!els.choiceScore) return;
@@ -89,6 +115,7 @@ export function createChoiceGame(opts) {
         if (opt.id === question.correctId) btn.classList.add("correct");
       } else {
         btn.addEventListener("click", () => handleAnswer(opt.id));
+        btn.addEventListener("focus", () => speakChoiceLabel(opt));
       }
       els.choiceOptions.appendChild(btn);
     });
@@ -108,14 +135,24 @@ export function createChoiceGame(opts) {
     opts.setLunaMood("hunt", "❓");
     if (els.choiceEmoji) {
       const emoji =
-        question.type === "whichInContinent"
-          ? question.subject.emoji || "🌍"
-          : question.subject.emoji || "📍";
+        question.type === "flagCountry"
+          ? question.subject.emoji || "🏳️"
+          : question.type === "whichInContinent"
+            ? question.subject.emoji || "🌍"
+            : question.type === "whichLanguage"
+              ? question.subject.emoji || "🗣️"
+              : question.subject.emoji || "📍";
       els.choiceEmoji.textContent = emoji;
+      if (els.choiceEmoji.classList) {
+        if (question.type === "flagCountry") els.choiceEmoji.classList.add("choice-flag");
+        else els.choiceEmoji.classList.remove("choice-flag");
+      }
     }
     if (els.choicePhoto) {
       const src =
-        question.type === "whereIs" || question.type === "whichContinent"
+        question.type === "whereIs" ||
+        question.type === "whichContinent" ||
+        question.type === "whichLanguage"
           ? question.photo
           : null;
       if (src) {
@@ -129,24 +166,25 @@ export function createChoiceGame(opts) {
       }
     }
     renderChoices(question, false);
+    // Speech-first for pre-readers: auto-speak the cue when a round opens.
+    speakPrompt(question);
   }
 
   function markCorrect(question) {
     if (!els.choicePrompt) return;
     els.choicePrompt.classList.remove("oops");
     els.choicePrompt.classList.add("found");
-    if (els.choiceCue) {
-      const label =
-        (question.choices || []).find((c) => c.id === question.correctId)?.label ||
-        question.subject.name ||
-        "You got it!";
-      els.choiceCue.textContent = "Yes! " + label;
-    }
+    const correctOpt = (question.choices || []).find((c) => c.id === question.correctId);
+    const label = correctOpt?.label || question.subject.name || "You got it!";
+    if (els.choiceCue) els.choiceCue.textContent = "Yes! " + label;
     if (els.choiceNext) els.choiceNext.hidden = false;
     awaitingNext = true;
     opts.setLunaMood("cheer", "🎉");
     renderChoices(question, true);
     syncScore();
+    const celebrate = [{ id: "quiz-yes", kind: "name" }];
+    if (correctOpt?.speakId) celebrate.push({ id: correctOpt.speakId, kind: "name" });
+    speakParts(celebrate);
   }
 
   function markWrong(choiceId) {
@@ -155,6 +193,7 @@ export function createChoiceGame(opts) {
     els.choicePrompt.classList.add("oops");
     if (els.choiceCue) els.choiceCue.textContent = "Almost — try again!";
     opts.setLunaMood("oops", "🙈");
+    speakParts([{ id: "quiz-almost", kind: "name" }]);
     if (els.choiceOptions && typeof els.choiceOptions.querySelector === "function") {
       const btn = els.choiceOptions.querySelector(`[data-id="${choiceId}"]`);
       if (btn) {
@@ -175,8 +214,10 @@ export function createChoiceGame(opts) {
         els.choicePrompt.classList.remove("oops");
         if (els.choiceCue && lastQuestion) els.choiceCue.textContent = lastQuestion.prompt;
         opts.setLunaMood("hunt", "❓");
+        // Re-speak the question so non-readers hear the ask again.
+        speakPrompt(lastQuestion);
       }
-    }, 700);
+    }, 900);
   }
 
   function burstFrom(el) {
@@ -243,12 +284,12 @@ export function createChoiceGame(opts) {
     quiz.answer(choiceId);
   }
 
+  /** Hear: re-speak the question cue (and subject name when part of the ask). */
   function speakSubject(e) {
     if (e && typeof e.stopPropagation === "function") e.stopPropagation();
     const q = quiz.getQuestion() || lastQuestion;
-    if (!q || !q.subject || !q.subject.name) return;
-    opts.ensureAudio();
-    opts.speakName(q.subject);
+    if (!q) return;
+    speakPrompt(q);
   }
 
   return {

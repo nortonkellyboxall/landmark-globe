@@ -14,8 +14,11 @@ import {
   VOICE,
   SPEED,
   PHASE_NAMES,
+  QUIZ_CUES,
   cardText,
   nameText,
+  languageClipId,
+  languageText,
   clipKey,
   textHash,
   expectedClipSources,
@@ -164,6 +167,26 @@ for (const p of byId.values()) {
 
 for (const [id, text] of PHASE_NAMES) {
   const r = await bakeOne(tts, `phase-${id}`, "name", text, hashes, { recordOnly });
+  if (r.baked) baked += 1;
+  else if (r.recorded) recorded += 1;
+  else skipped += 1;
+}
+
+for (const [id, text] of QUIZ_CUES) {
+  const r = await bakeOne(tts, id, "name", text, hashes, { recordOnly });
+  if (r.baked) baked += 1;
+  else if (r.recorded) recorded += 1;
+  else skipped += 1;
+}
+
+const languages = new Set();
+for (const p of byId.values()) {
+  if (p.language) languages.add(String(p.language).trim());
+}
+for (const lang of [...languages].sort()) {
+  const id = languageClipId(lang);
+  if (!id) continue;
+  const r = await bakeOne(tts, id, "name", languageText(lang), hashes, { recordOnly });
   if (r.baked) baked += 1;
   else if (r.recorded) recorded += 1;
   else skipped += 1;

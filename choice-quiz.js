@@ -7,6 +7,7 @@
  * @property {string} [emoji]
  * @property {string} [continent]
  * @property {string} [kind]
+ * @property {string} [language]
  * @property {number} [lat]
  * @property {number} [lng]
  * @property {string[]} [photos]
@@ -18,6 +19,7 @@
  * @property {string} id
  * @property {string} label
  * @property {string} [emoji]
+ * @property {string} [speakId]
  */
 
 /**
@@ -28,6 +30,8 @@
  * @property {ChoiceOption[]} choices
  * @property {string} correctId
  * @property {string} [photo]
+ * @property {string} [speakCueId]
+ * @property {string} [speakSubjectId]
  */
 
 const SPACE_KINDS = new Set(["star", "planet", "moon", "belt", "comet", "station"]);
@@ -49,6 +53,19 @@ const KIND_LABEL = {
   planet: "planet",
   moon: "moon",
 };
+
+const KIND_CUE = {
+  landmark: "quiz-kind-landmark",
+  wonder: "quiz-kind-wonder",
+  country: "quiz-kind-country",
+  continent: "quiz-kind-continent",
+  star: "quiz-kind-star",
+  planet: "quiz-kind-planet",
+  moon: "quiz-kind-moon",
+};
+
+/** Regional-indicator pair ≈ national flag emoji. */
+const FLAG_EMOJI_RE = /[\u{1F1E6}-\u{1F1FF}]{2}/u;
 
 /**
  * @param {Place} place
@@ -75,6 +92,27 @@ export function placeKind(place) {
   if (!place) return "landmark";
   if (place.kind) return place.kind;
   return "landmark";
+}
+
+/**
+ * Stable clip id for a spoken language label (mirrors bake-speech).
+ * @param {string} language
+ * @returns {string}
+ */
+export function languageSpeakId(language) {
+  const slug = String(language || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug ? `lang-${slug}` : "";
+}
+
+/**
+ * @param {Place} place
+ * @returns {boolean}
+ */
+export function hasFlagEmoji(place) {
+  return !!(place && placeKind(place) === "country" && place.emoji && FLAG_EMOJI_RE.test(place.emoji));
 }
 
 /**
@@ -165,6 +203,22 @@ function placeOption(place) {
     id: place.id,
     label: place.name || place.id,
     emoji: place.emoji || "📍",
+    speakId: place.id,
+  };
+}
+
+/**
+ * @param {string} language
+ * @returns {ChoiceOption | null}
+ */
+function languageOption(language) {
+  const speakId = languageSpeakId(language);
+  if (!speakId) return null;
+  return {
+    id: speakId,
+    label: language,
+    emoji: "🗣️",
+    speakId,
   };
 }
 
@@ -180,7 +234,21 @@ function continentOption(continents, id) {
 }
 
 /**
- * “Where is X?” — name the pictured Place.
+ * Speak plan for a question prompt (cue ± subject name).
+ * @param {ChoiceQuestion} question
+ * @returns {{ id: string, kind?: "name" }[]}
+ */
+export function promptSpeakPlan(question) {
+  if (!question) return [];
+  /** @type {{ id: string, kind?: "name" }[]} */
+  const parts = [];
+  if (question.speakCueId) parts.push({ id: question.speakCueId, kind: "name" });
+  if (question.speakSubjectId) parts.push({ id: question.speakSubjectId, kind: "name" });
+  return parts;
+}
+
+/**
+ * “Where is this?” — name the pictured Place.
  * @param {Place[]} pool
  * @param {() => number} rand
  * @returns {ChoiceQuestion | null}
@@ -200,6 +268,73 @@ export function buildWhereIs(pool, rand = Math.random) {
     choices,
     correctId: subject.id,
     photo: subject.photos && subject.photos[0],
+    speakCueId: "quiz-where-is",
+  };
+}
+
+/**
+ * “What country does this flag show?” — flag emoji → country name.
+ * @param {Place[]} pool
+ * @param {() => number} rand
+ * @returns {ChoiceQuestion | null}
+ */
+export function buildFlagCountry(pool, rand = Math.random) {
+  const list = (pool || []).filter((p) => hasFlagEmoji(p));
+  if (list.length < 3) return null;
+  const subject = pickOne(list, rand);
+  if (!subject) return null;
+  const distractors = pickDistractors(list, subject, 3, rand);
+  if (distractors.length < 2) return null;
+  const choices = shuffle([subject, ...distractors].map(placeOption), rand).slice(0, 4);
+  return {
+    type: "flagCountry",
+    prompt: "What country does this flag show?",
+    subject,
+    choices,
+    correctId: subject.id,
+    speakCueId: "quiz-flag-country",
+  };
+}
+
+/**
+ * “What language do they speak here?” — country → language (honest Place.language only).
+ * @param {Place[]} pool
+ * @param {() => number} rand
+ * @returns {ChoiceQuestion | null}
+ */
+export function buildWhichLanguage(pool, rand = Math.random) {
+  const list = (pool || []).filter(
+    (p) => placeKind(p) === "country" && p.language && languageSpeakId(p.language)
+  );
+  if (list.length < 1) return null;
+  const subject = pickOne(list, rand);
+  if (!subject || !subject.language) return null;
+  const correctOpt = languageOption(subject.language);
+  if (!correctOpt) return null;
+  const otherLangs = [
+    ...new Set(
+      list
+        .map((p) => p.language)
+        .filter((lang) => lang && lang !== subject.language)
+        .map((lang) => String(lang))
+    ),
+  ];
+  if (otherLangs.length < 2) return null;
+  const distractors = shuffle(otherLangs, rand)
+    .slice(0, 3)
+    .map((lang) => languageOption(lang))
+    .filter(Boolean);
+  if (distractors.length < 2) return null;
+  const choices = shuffle([correctOpt, ...distractors], rand).slice(0, 4);
+  return {
+    type: "whichLanguage",
+    prompt: "What language do they speak here?",
+    subject,
+    choices,
+    correctId: correctOpt.id,
+    photo: subject.photos && subject.photos[0],
+    speakCueId: "quiz-language",
+    speakSubjectId: subject.id,
   };
 }
 
@@ -249,11 +384,13 @@ export function buildWhichInContinent(pool, continents, rand = Math.random) {
     choices,
     correctId: correct.id,
     photo: correct.photos && correct.photos[0],
+    speakCueId: "quiz-which-in",
+    speakSubjectId: subjectContinent.id,
   };
 }
 
 /**
- * “Which continent is X on?”
+ * “Which continent is this on?”
  * @param {Place[]} pool
  * @param {Place[]} continents
  * @param {() => number} rand
@@ -276,11 +413,13 @@ export function buildWhichContinent(pool, continents, rand = Math.random) {
   const choices = shuffle([correctOpt, ...distractors], rand).slice(0, 4);
   return {
     type: "whichContinent",
-    prompt: `Which continent is ${subject.name} on?`,
+    prompt: "Which continent is this on?",
     subject,
     choices,
     correctId: correctKey,
     photo: subject.photos && subject.photos[0],
+    speakCueId: "quiz-which-continent",
+    speakSubjectId: subject.id,
   };
 }
 
@@ -329,6 +468,7 @@ export function buildWhichKind(pool, rand = Math.random) {
     choices,
     correctId: correct.id,
     photo: correct.photos && correct.photos[0],
+    speakCueId: KIND_CUE[targetKind] || "quiz-kind-landmark",
   };
 }
 
@@ -344,7 +484,14 @@ export function buildChoiceQuestion(pool, opts = {}) {
   const tryOrder = shuffle(
     opts.tab === "space"
       ? [buildWhereIs, buildWhichKind]
-      : [buildWhereIs, buildWhichInContinent, buildWhichContinent, buildWhichKind],
+      : [
+          buildWhereIs,
+          buildFlagCountry,
+          buildWhichLanguage,
+          buildWhichInContinent,
+          buildWhichContinent,
+          buildWhichKind,
+        ],
     rand
   );
   for (const fn of tryOrder) {
