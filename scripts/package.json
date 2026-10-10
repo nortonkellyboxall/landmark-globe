@@ -12,6 +12,6 @@
   "type": "commonjs",
   "dependencies": {
     "kitten-tts-js": "^0.1.2",
-    "onnxruntime-node": "^1.20.1"
+    "onnxruntime-node": "^1.30.0"
   }
 }
